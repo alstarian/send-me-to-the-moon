@@ -1,46 +1,29 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <title>MoonFund</title>
-  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.min.js"></script>
-</head>
-<body>
-  <h1>MoonFund</h1>
-  <button id="connect">Connect Wallet</button>
-  <button id="donate">Donate 1 USDC</button>
-  <div id="status"></div>
+<script>
+  async function init() {
+    if (!window.ethereum) {
+      alert("MetaMask not detected!");
+      return;
+    }
 
-  <script>
-    let provider;
-    let signer;
-    let contract;
-
-    const contractAddress = "0x9BF0898b74Dd8535cCae7dc5D2404d25a382758A";
-    const abi = /* paste your ABI here */;
-
-    document.getElementById('connect').onclick = async () => {
-      if (!window.ethereum) {
-        alert("MetaMask not detected!");
-        return;
-      }
-
-      provider = new ethers.providers.Web3Provider(window.ethereum);
+    const provider = new ethers.providers.Web3Provider(window.ethereum, "any");
+    try {
       await provider.send("eth_requestAccounts", []);
-      signer = provider.getSigner();
-      contract = new ethers.Contract(contractAddress, abi, signer);
-      document.getElementById('status').innerText = "Wallet connected!";
+    } catch (err) {
+      console.error("User rejected connection", err);
+      return;
     }
 
-    document.getElementById('donate').onclick = async () => {
-      if (!contract) return alert("Connect wallet first");
-      try {
-        const tx = await contract.donate(1000000); // 1 USDC = 1e6
-        await tx.wait();
-        document.getElementById('status').innerText = "Donation sent!";
-      } catch(e) {
-        document.getElementById('status').innerText = "Error: " + e.message;
-      }
-    }
-  </script>
-</body>
-</html>
+    const signer = provider.getSigner();
+    const contractAddress = "0x9BF0898b74Dd8535cCae7dc5D2404d25a382758A";
+    const abi = /* your ABI here */;
+    const contract = new ethers.Contract(contractAddress, abi, signer);
+
+    document.getElementById("status").innerText = "Wallet connected: " + await signer.getAddress();
+    
+    // Example: show raised amount
+    const [raised, goal] = await contract.progress();
+    document.getElementById("status").innerText += `\nRaised: ${raised / 1e6} / ${goal / 1e6} USDC`;
+  }
+
+  document.getElementById("connect").onclick = init;
+</script>
