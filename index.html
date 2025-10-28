@@ -10,33 +10,33 @@
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script crossorigin src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-  <!-- Wagmi + Viem + OnchainKit (UMD versions) -->
+  <!-- Wagmi + Viem + OnchainKit (UMD) -->
   <script crossorigin src="https://cdn.jsdelivr.net/npm/viem@2.21.1/dist/index.umd.js"></script>
   <script crossorigin src="https://cdn.jsdelivr.net/npm/@wagmi/core@2.13.0/dist/index.umd.js"></script>
   <script crossorigin src="https://cdn.jsdelivr.net/npm/@wagmi/connectors@5.2.2/dist/index.umd.js"></script>
   <script crossorigin src="https://cdn.jsdelivr.net/npm/@coinbase/onchainkit@0.29.0/dist/umd/index.js"></script>
 
   <style>
-    body { font-family: -apple-system, sans-serif; padding: 20px; max-width: 400px; margin: auto; background: #f9f9fb; }
-    h1 { font-size: 28px; font-weight: bold; color: #6b21a8; }
-    input, button { width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid #ddd; }
+    body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; padding: 20px; max-width: 400px; margin: auto; background: #f9f9fb; }
+    h1 { font-size: 28px; font-weight: bold; color: #6b21a8; margin-bottom: 8px; }
+    input, button { width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid #ddd; font-size: 16px; }
     button { background: #8b5cf6; color: white; font-weight: bold; border: none; cursor: pointer; }
-    button:disabled { opacity: 0.6; }
+    button:disabled { opacity: 0.6; cursor: not-allowed; }
     .progress { height: 32px; background: #eee; border-radius: 16px; overflow: hidden; margin: 12px 0; }
     .fill { height: 100%; background: linear-gradient(to right, #8b5cf6, #ec4899); transition: width 0.5s; }
-    .warning { color: #d97706; font-weight: bold; }
+    .warning { color: #d97706; font-weight: bold; margin: 12px 0; }
+    .footer { font-size: 12px; color: #666; text-align: center; margin-top: 30px; }
   </style>
 </head>
 <body>
-  <div id="root">Loading app...</div>
+  <div id="root"></div>
 
   <script type="text/babel">
     const { useState } = React;
-    const { createPublicClient, http } = viem;
     const { createWagmiConfig, useAccount, useWriteContract, useReadContract } = wagmi;
-    const { OnchainKitProvider, useOnchainKit } = OnchainKit;
+    const { OnchainKitProvider } = OnchainKit;
 
-    // Base Mainnet
+    // Base Mainnet config
     const config = createWagmiConfig({
       chains: [{
         id: 8453,
@@ -93,45 +93,4 @@
 
           <div className="progress">
             <div className="fill" style={{ width: `${progress}%` }} />
-          </div>
-          <p>Raised: ${(Number(raised) / 1e6).toFixed(2)} • {daysLeft} days left</p>
-
-          {!unlocked && daysLeft > 0 && (
-            <>
-              <input type="number" placeholder="Amount in USDC" value={amount} onChange={e => setAmount(e.target.value)} />
-              <button onClick={donate} disabled={isPending || !amount}>
-                {isPending ? "Confirming..." : "Donate USDC"}
-              </button>
-            </>
-          )}
-
-          {isCreator && unlocked && timeUntilWithdraw > 0 && (
-            <p className="warning">Withdraw in {Math.ceil(Number(timeUntilWithdraw) / 3600)} hours</p>
-          )}
-          {isCreator && unlocked && timeUntilWithdraw === 0n && (
-            <button onClick={() => writeContract({ address: CONTRACT, abi: ABI, functionName: "withdraw" })}>
-              Withdraw Funds
-            </button>
-          )}
-
-          {daysLeft === 0 && !unlocked && myContrib > 0 && (
-            <button onClick={() => writeContract({ address: CONTRACT, abi: ABI, functionName: "refund" })}>
-              Claim Refund
-            </button>
-          )}
-        </div>
-      );
-    }
-
-    // Render after all scripts
-    setTimeout(() => {
-      const root = ReactDOM.createRoot(document.getElementById('root'));
-      root.render(
-        <OnchainKitProvider apiKey="none" chainId={8453}>
-          <App />
-        </OnchainKitProvider>
-      );
-    }, 1000);
-  </script>
-</body>
-</html>
+         Is there anything else you'd like to add to your app?
