@@ -3,132 +3,18 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Send Me to the Moon</title>
-
-  <!-- React + Babel -->
-  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <title>Test React App</title>
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-
-  <!-- Wagmi + Viem + OnchainKit (UMD - NO MODULES) -->
-  <script src="https://cdn.jsdelivr.net/npm/viem@2.21.1/dist/index.umd.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@wagmi/core@2.13.0/dist/index.umd.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@wagmi/connectors@5.2.2/dist/index.umd.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@coinbase/onchainkit@0.29.0/dist/umd/index.js"></script>
-
-  <style>
-    body { font-family: -apple-system, sans-serif; padding: 20px; max-width: 400px; margin: auto; background: #f9f9fb; }
-    h1 { font-size: 28px; font-weight: bold; color: #6b21a8; }
-    input, button { width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid #ddd; }
-    button { background: #8b5cf6; color: white; font-weight: bold; border: none; cursor: pointer; }
-    button:disabled { opacity: 0.6; }
-    .progress { height: 32px; background: #eee; border-radius: 16px; overflow: hidden; margin: 12px 0; }
-    .fill { height: 100%; background: linear-gradient(to right, #8b5cf6, #ec4899); transition: width 0.5s; }
-    .warning { color: #d97706; font-weight: bold; }
-  </style>
 </head>
 <body>
-  <div id="root">Loading...</div>
+  <div id="root"></div>
 
   <script type="text/babel">
-    const { useState } = React;
-    const { createWagmiConfig, useAccount, useWriteContract, useReadContract } = wagmi;
-    const { OnchainKitProvider } = OnchainKit;
-
-    // Base config
-    const config = createWagmiConfig({
-      chains: [{
-        id: 8453,
-        name: 'Base',
-        network: 'base',
-        nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
-        rpcUrls: { default: { http: ['https://mainnet.base.org'] } },
-      }],
-      connectors: [new wagmi.InjectedConnector()],
-    });
-
-    const CONTRACT = "0x9BF0898b74Dd8535cCae7dc5D2404d25a382758A";
-    const CREATOR = "0x095c853C222934395a07D363967bed337F02a11F";
-    const USDC = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913";
-
-    const ABI = [
-      { "name": "progress", "type": "function", "stateMutability": "view", "inputs": [], "outputs": [{ "type": "uint256" }, { "type": "uint256" }, { "type": "bool" }, { "type": "uint256" }, { "type": "uint256" }] },
-      { "name": "donate", "type": "function", "stateMutability": "nonpayable", "inputs": [{ "type": "uint256" }], "outputs": [] },
-      { "name": "withdraw", "type": "function", "stateMutability": "nonpayable", "inputs": [], "outputs": [] },
-      { "name": "refund", "type": "function", "stateMutability": "nonpayable", "inputs": [], "outputs": [] },
-      { "name": "contributions", "type": "function", "stateMutability": "view", "inputs": [{ "type": "address" }], "outputs": [{ "type": "uint256" }] }
-    ];
-
-    function App() {
-      const { address } = useAccount();
-      const { writeContract, isPending } = useWriteContract();
-      const [amount, setAmount] = useState("");
-
-      const { data: prog } = useReadContract({ address: CONTRACT, abi: ABI, functionName: "progress" });
-      const { data: myContrib } = useReadContract({ address: CONTRACT, abi: ABI, functionName: "contributions", args: [address ?? "0x0"] });
-
-      const [raised, goal, unlocked, timeLeft, timeUntilWithdraw] = prog || [0n, 0n, false, 0n, 0n];
-      const progress = goal > 0 ? Number(raised * 100n / goal) : 0;
-      const daysLeft = Math.ceil(Number(timeLeft) / 86400);
-      const isCreator = address?.toLowerCase() === CREATOR.toLowerCase();
-
-      const donate = () => {
-        const amt = BigInt(Math.round(parseFloat(amount) * 1e6));
-        writeContract({
-          address: USDC,
-          abi: [{ "name": "approve", "inputs": [{ "type": "address" }, { "type": "uint256" }], "outputs": [] }],
-          functionName: "approve",
-          args: [CONTRACT, amt],
-        });
-        setTimeout(() => {
-          writeContract({ address: CONTRACT, abi: ABI, functionName: "donate", args: [amt] });
-        }, 8000);
-      };
-
-      return (
-        <div>
-          <h1>Send Me to the Moon</h1>
-          <p><strong>Goal: ${(Number(goal) / 1e6).toFixed(0)} USDC</strong></p>
-
-          <div className="progress">
-            <div className="fill" style={{ width: `${progress}%` }} />
-          </div>
-          <p>Raised: ${(Number(raised) / 1e6).toFixed(2)} • {daysLeft} days left</p>
-
-          {!unlocked && daysLeft > 0 && (
-            <>
-              <input type="number" placeholder="USDC" value={amount} onChange={e => setAmount(e.target.value)} />
-              <button onClick={donate} disabled={isPending || !amount}>
-                {isPending ? "Confirming..." : "Donate USDC"}
-              </button>
-            </>
-          )}
-
-          {isCreator && unlocked && timeUntilWithdraw > 0 && (
-            <p className="warning">Withdraw in {Math.ceil(Number(timeUntilWithdraw) / 3600)} hours</p>
-          )}
-          {isCreator && unlocked && timeUntilWithdraw === 0n && (
-            <button onClick={() => writeContract({ address: CONTRACT, abi: ABI, functionName: "withdraw" })}>
-              Withdraw Funds
-            </button>
-          )}
-
-          {daysLeft === 0 && !unlocked && myContrib > 0 && (
-            <button onClick={() => writeContract({ address: CONTRACT, abi: ABI, functionName: "refund" })}>
-              Claim Refund
-            </button>
-          )}
-        </div>
-      );
-    }
-
-    // Render immediately
-    const root = ReactDOM.createRoot(document.getElementById('root'));
-    root.render(
-      <OnchainKitProvider apiKey="none" chainId={8453}>
-        <App />
-      </OnchainKitProvider>
-    );
+    const App = () => <h1>Hello GitHub Pages 👋</h1>;
+    const root = ReactDOM.createRoot(document.getElementById("root"));
+    root.render(<App />);
   </script>
 </body>
 </html>
