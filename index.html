@@ -2,7 +2,7 @@
 <html>
 <head>
   <title>MoonFund</title>
-  <script src="https://cdn.jsdelivr.net/npm/ethers@6/dist/ethers.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.min.js"></script>
 </head>
 <body>
   <h1>MoonFund</h1>
@@ -11,25 +11,35 @@
   <div id="status"></div>
 
   <script>
-    const provider = new ethers.BrowserProvider(window.ethereum);
+    let provider;
     let signer;
+    let contract;
+
     const contractAddress = "0x9BF0898b74Dd8535cCae7dc5D2404d25a382758A";
     const abi = /* paste your ABI here */;
 
-    let contract;
-
     document.getElementById('connect').onclick = async () => {
+      if (!window.ethereum) {
+        alert("MetaMask not detected!");
+        return;
+      }
+
+      provider = new ethers.providers.Web3Provider(window.ethereum);
       await provider.send("eth_requestAccounts", []);
-      signer = await provider.getSigner();
+      signer = provider.getSigner();
       contract = new ethers.Contract(contractAddress, abi, signer);
       document.getElementById('status').innerText = "Wallet connected!";
     }
 
     document.getElementById('donate').onclick = async () => {
       if (!contract) return alert("Connect wallet first");
-      const tx = await contract.donate(1000000); // 1 USDC = 1e6
-      await tx.wait();
-      document.getElementById('status').innerText = "Donation sent!";
+      try {
+        const tx = await contract.donate(1000000); // 1 USDC = 1e6
+        await tx.wait();
+        document.getElementById('status').innerText = "Donation sent!";
+      } catch(e) {
+        document.getElementById('status').innerText = "Error: " + e.message;
+      }
     }
   </script>
 </body>
