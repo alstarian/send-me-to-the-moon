@@ -10,56 +10,34 @@
   </style>
 </head>
 <body>
-  <h1>MoonFund</h1>
+  <body>
+  <h1>Send Me to the Moon</h1>
   <button id="connect">Connect Wallet</button>
   <button id="donate">Donate 1 USDC</button>
   <button id="withdraw">Withdraw (Creator)</button>
   <button id="refund">Claim Refund</button>
   <div id="status">Status: Not connected</div>
+  <div class="progress"><div class="fill" id="fill" style="width: 0%"></div></div>
+  <p>Raised: <span id="raised">$0.00</span> / <span id="goal">$500</span> • <span id="days">30</span> days left</p>
 
-  <!-- Load ethers.js -->
-  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.min.js"></script>
+  <!-- LOAD ETHERS FIRST -->
+  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
 
+  <!-- YOUR SCRIPT AFTER -->
   <script>
     const contractAddress = "0x9BF0898b74Dd8535cCae7dc5D2404d25a382758A";
+    const usdcAddress = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913";
+    const creatorAddress = "0x095c853C222934395a07D363967bed337F02a11F";
+
     const abi = [
-      // Flattened ABI (no extra array wrapper)
-      {
-        "inputs": [
-          { "internalType": "address","name": "_creator","type": "address" },
-          { "internalType": "address","name": "_usdc","type": "address" },
-          { "internalType": "uint256","name": "_goal","type": "uint256" },
-          { "internalType": "uint256","name": "_days","type": "uint256" }
-        ],
-        "stateMutability": "nonpayable",
-        "type": "constructor"
-      },
-      {"inputs":[],"name":"AlreadyUnlocked","type":"error"},
-      {"inputs":[],"name":"DeadlineActive","type":"error"},
-      {"inputs":[],"name":"DelayNotElapsed","type":"error"},
-      {"inputs":[],"name":"GoalNotReached","type":"error"},
-      {"inputs":[],"name":"InsufficientAllowance","type":"error"},
-      {"inputs":[],"name":"InvalidCreator","type":"error"},
-      {"inputs":[],"name":"InvalidToken","type":"error"},
-      {"inputs":[],"name":"NoContribution","type":"error"},
-      {"inputs":[],"name":"TransferFailed","type":"error"},
-      {"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"donor","type":"address"},{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"}],"name":"Donated","type":"event"},
-      {"anonymous":false,"inputs":[{"indexed":false,"internalType":"uint256","name":"total","type":"uint256"}],"name":"GoalReached","type":"event"},
-      {"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"donor","type":"address"},{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"}],"name":"Refunded","type":"event"},
-      {"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"creator","type":"address"},{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"}],"name":"Withdrawn","type":"event"},
-      {"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"contributions","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
-      {"inputs":[],"name":"creator","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},
-      {"inputs":[],"name":"deadline","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
-      {"inputs":[{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"donate","outputs":[],"stateMutability":"nonpayable","type":"function"},
-      {"inputs":[],"name":"goal","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
-      {"inputs":[],"name":"progress","outputs":[{"internalType":"uint256","name":"raised_","type":"uint256"},{"internalType":"uint256","name":"goal_","type":"uint256"},{"internalType":"bool","name":"unlocked_","type":"bool"},{"internalType":"uint256","name":"timeLeft_","type":"uint256"},{"internalType":"uint256","name":"timeUntilWithdraw_","type":"uint256"}],"stateMutability":"view","type":"function"},
-      {"inputs":[],"name":"raised","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
-      {"inputs":[],"name":"refund","outputs":[],"stateMutability":"nonpayable","type":"function"},
-      {"inputs":[],"name":"unlockDelay","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
-      {"inputs":[],"name":"unlockTimestamp","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
-      {"inputs":[],"name":"unlocked","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},
-      {"inputs":[],"name":"usdc","outputs":[{"internalType":"contract IERC20","name":"","type":"address"}],"stateMutability":"view","type":"function"},
-      {"inputs":[],"name":"withdraw","outputs":[],"stateMutability":"nonpayable","type":"function"}
+      "function progress() view returns (uint256, uint256, bool, uint256, uint256)",
+      "function donate(uint256)",
+      "function withdraw()",
+      "function refund()",
+      "function contributions(address) view returns (uint256)",
+      "function creator() view returns (address)",
+      "function goal() view returns (uint256)",
+      "function deadline() view returns (uint256)"
     ];
 
     let provider, signer, contract, userAddress;
@@ -69,42 +47,44 @@
 
     async function connectWallet() {
       try {
-        if (!window.ethereum) { alert("MetaMask not detected!"); return; }
+        if (!window.ethereum) throw new Error("MetaMask not found!");
         provider = new ethers.providers.Web3Provider(window.ethereum);
         await provider.send("eth_requestAccounts", []);
         signer = provider.getSigner();
         userAddress = await signer.getAddress();
         contract = new ethers.Contract(contractAddress, abi, signer);
 
-        document.getElementById("status").innerText = "Wallet connected: " + userAddress;
+        document.getElementById("status").innerText = `Connected: ${userAddress.slice(0,6)}...${userAddress.slice(-4)}`;
 
         const creator = await contract.creator();
         if (creator.toLowerCase() === userAddress.toLowerCase()) {
           document.getElementById("withdraw").style.display = "block";
         }
 
-        const contribution = await contract.contributions(userAddress);
-        const progressData = await contract.progress();
-        const unlocked = progressData.unlocked_;
-        if (contribution > 0 && !unlocked) {
-          document.getElementById("refund").style.display = "block";
-        }
+        await updateProgress();
+        setInterval(updateProgress, 10000);
 
       } catch (err) {
-        console.error(err);
-        document.getElementById("status").innerText = "Error connecting wallet: " + err.message;
+        document.getElementById("status").innerText = "Error: " + err.message;
       }
     }
 
     async function donate() {
       if (!contract) return alert("Connect wallet first");
       try {
-        const tx = await contract.donate(1000000); // 1 USDC = 1e6
-        await tx.wait();
-        document.getElementById("status").innerText = "Donation sent!";
+        const usdc = new ethers.Contract(usdcAddress, ["function approve(address,uint256) returns (bool)"], signer);
+        const tx1 = await usdc.approve(contractAddress, ethers.utils.parseUnits("1", 6));
+        document.getElementById("status").innerText = "Approving...";
+        await tx1.wait();
+
+        const tx2 = await contract.donate(ethers.utils.parseUnits("1", 6));
+        document.getElementById("status").innerText = "Donating...";
+        await tx2.wait();
+
+        document.getElementById("status").innerText = "Donated 1 USDC!";
+        await updateProgress();
       } catch (err) {
-        console.error(err);
-        document.getElementById("status").innerText = "Donation error: " + err.message;
+        document.getElementById("status").innerText = "Error: " + err.message;
       }
     }
 
@@ -112,11 +92,12 @@
       if (!contract) return alert("Connect wallet first");
       try {
         const tx = await contract.withdraw();
+        document.getElementById("status").innerText = "Withdrawing...";
         await tx.wait();
-        document.getElementById("status").innerText = "Withdrawn successfully!";
+        document.getElementById("status").innerText = "Withdrawn!";
+        await updateProgress();
       } catch (err) {
-        console.error(err);
-        document.getElementById("status").innerText = "Withdraw error: " + err.message;
+        document.getElementById("status").innerText = "Error: " + err.message;
       }
     }
 
@@ -124,11 +105,33 @@
       if (!contract) return alert("Connect wallet first");
       try {
         const tx = await contract.refund();
+        document.getElementById("status").innerText = "Refunding...";
         await tx.wait();
         document.getElementById("status").innerText = "Refund claimed!";
+        await updateProgress();
+      } catch (err) {
+        document.getElementById("status").innerText = "Error: " + err.message;
+      }
+    }
+
+    async function updateProgress() {
+      try {
+        const [raised, goal, unlocked, timeLeft] = await contract.progress();
+        const raisedUSD = Number(ethers.utils.formatUnits(raised, 6)).toFixed(2);
+        const goalUSD = Number(ethers.utils.formatUnits(goal, 6)).toFixed(0);
+        const daysLeft = Math.ceil(timeLeft / 86400);
+
+        document.getElementById("raised").innerText = `$${raisedUSD}`;
+        document.getElementById("goal").innerText = `$${goalUSD}`;
+        document.getElementById("days").innerText = daysLeft;
+        document.getElementById("fill").style.width = `${(raised * 100n) / goal}%`;
+
+        const contrib = await contract.contributions(userAddress || "0x0");
+        if (contrib > 0 && daysLeft === 0 && !unlocked) {
+          document.getElementById("refund").style.display = "block";
+        }
       } catch (err) {
         console.error(err);
-        document.getElementById("status").innerText = "Refund error: " + err.message;
       }
     }
 
@@ -137,5 +140,6 @@
     document.getElementById("withdraw").onclick = withdraw;
     document.getElementById("refund").onclick = refund;
   </script>
+</body>
 </body>
 </html>
