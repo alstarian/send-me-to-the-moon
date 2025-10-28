@@ -5,17 +5,19 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Send Me to the Moon</title>
 
-  <!-- React + ReactDOM from CDN -->
+  <!-- React + ReactDOM -->
   <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script crossorigin src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-  <!-- Wagmi + OnchainKit from CDN -->
-  <script type="module" crossorigin src="https://cdn.jsdelivr.net/npm/@coinbase/onchainkit@0.29.0/dist/index.js"></script>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@coinbase/onchainkit@0.29.0/dist/index.css">
+  <!-- Wagmi + Viem + OnchainKit (UMD versions) -->
+  <script crossorigin src="https://cdn.jsdelivr.net/npm/viem@2.21.1/dist/index.umd.js"></script>
+  <script crossorigin src="https://cdn.jsdelivr.net/npm/@wagmi/core@2.13.0/dist/index.umd.js"></script>
+  <script crossorigin src="https://cdn.jsdelivr.net/npm/@wagmi/connectors@5.2.2/dist/index.umd.js"></script>
+  <script crossorigin src="https://cdn.jsdelivr.net/npm/@coinbase/onchainkit@0.29.0/dist/umd/index.js"></script>
 
   <style>
-    body { font-family: sans-serif; padding: 20px; max-width: 400px; margin: auto; background: #f9f9fb; }
+    body { font-family: -apple-system, sans-serif; padding: 20px; max-width: 400px; margin: auto; background: #f9f9fb; }
     h1 { font-size: 28px; font-weight: bold; color: #6b21a8; }
     input, button { width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid #ddd; }
     button { background: #8b5cf6; color: white; font-weight: bold; border: none; cursor: pointer; }
@@ -26,12 +28,25 @@
   </style>
 </head>
 <body>
-  <div id="root"></div>
+  <div id="root">Loading app...</div>
 
   <script type="text/babel">
     const { useState } = React;
-    const { useAccount, useWriteContract, useReadContract } = wagmi;
-    const { Transaction, TransactionButton } = OnchainKit;
+    const { createPublicClient, http } = viem;
+    const { createWagmiConfig, useAccount, useWriteContract, useReadContract } = wagmi;
+    const { OnchainKitProvider, useOnchainKit } = OnchainKit;
+
+    // Base Mainnet
+    const config = createWagmiConfig({
+      chains: [{
+        id: 8453,
+        name: 'Base',
+        network: 'base',
+        nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
+        rpcUrls: { default: { http: ['https://mainnet.base.org'] } },
+      }],
+      connectors: [new wagmi.InjectedConnector()],
+    });
 
     const CONTRACT = "0x9BF0898b74Dd8535cCae7dc5D2404d25a382758A";
     const CREATOR = "0x095c853C222934395a07D363967bed337F02a11F";
@@ -62,7 +77,7 @@
         const amt = BigInt(Math.round(parseFloat(amount) * 1e6));
         writeContract({
           address: USDC,
-          abi: [{ "name": "approve", "type": "function", "inputs": [{ "type": "address" }, { "type": "uint256" }], "outputs": [] }],
+          abi: [{ "name": "approve", "inputs": [{ "type": "address" }, { "type": "uint256" }], "outputs": [] }],
           functionName: "approve",
           args: [CONTRACT, amt],
         });
@@ -83,12 +98,7 @@
 
           {!unlocked && daysLeft > 0 && (
             <>
-              <input
-                type="number"
-                placeholder="Amount in USDC"
-                value={amount}
-                onChange={e => setAmount(e.target.value)}
-              />
+              <input type="number" placeholder="Amount in USDC" value={amount} onChange={e => setAmount(e.target.value)} />
               <button onClick={donate} disabled={isPending || !amount}>
                 {isPending ? "Confirming..." : "Donate USDC"}
               </button>
@@ -96,9 +106,7 @@
           )}
 
           {isCreator && unlocked && timeUntilWithdraw > 0 && (
-            <p className="warning">
-              Withdraw in {Math.ceil(Number(timeUntilWithdraw) / 3600)} hours
-            </p>
+            <p className="warning">Withdraw in {Math.ceil(Number(timeUntilWithdraw) / 3600)} hours</p>
           )}
           {isCreator && unlocked && timeUntilWithdraw === 0n && (
             <button onClick={() => writeContract({ address: CONTRACT, abi: ABI, functionName: "withdraw" })}>
@@ -115,8 +123,15 @@
       );
     }
 
-    const root = ReactDOM.createRoot(document.getElementById('root'));
-    root.render(<App />);
+    // Render after all scripts
+    setTimeout(() => {
+      const root = ReactDOM.createRoot(document.getElementById('root'));
+      root.render(
+        <OnchainKitProvider apiKey="none" chainId={8453}>
+          <App />
+        </OnchainKitProvider>
+      );
+    }, 1000);
   </script>
 </body>
 </html>
