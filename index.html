@@ -5,38 +5,37 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Send Me to the Moon</title>
 
-  <!-- React + ReactDOM -->
-  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-  <script crossorigin src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <!-- React + Babel -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-  <!-- Wagmi + Viem + OnchainKit (UMD) -->
-  <script crossorigin src="https://cdn.jsdelivr.net/npm/viem@2.21.1/dist/index.umd.js"></script>
-  <script crossorigin src="https://cdn.jsdelivr.net/npm/@wagmi/core@2.13.0/dist/index.umd.js"></script>
-  <script crossorigin src="https://cdn.jsdelivr.net/npm/@wagmi/connectors@5.2.2/dist/index.umd.js"></script>
-  <script crossorigin src="https://cdn.jsdelivr.net/npm/@coinbase/onchainkit@0.29.0/dist/umd/index.js"></script>
+  <!-- Wagmi + Viem + OnchainKit (UMD - NO MODULES) -->
+  <script src="https://cdn.jsdelivr.net/npm/viem@2.21.1/dist/index.umd.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@wagmi/core@2.13.0/dist/index.umd.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@wagmi/connectors@5.2.2/dist/index.umd.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@coinbase/onchainkit@0.29.0/dist/umd/index.js"></script>
 
   <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; padding: 20px; max-width: 400px; margin: auto; background: #f9f9fb; }
-    h1 { font-size: 28px; font-weight: bold; color: #6b21a8; margin-bottom: 8px; }
-    input, button { width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid #ddd; font-size: 16px; }
+    body { font-family: -apple-system, sans-serif; padding: 20px; max-width: 400px; margin: auto; background: #f9f9fb; }
+    h1 { font-size: 28px; font-weight: bold; color: #6b21a8; }
+    input, button { width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid #ddd; }
     button { background: #8b5cf6; color: white; font-weight: bold; border: none; cursor: pointer; }
-    button:disabled { opacity: 0.6; cursor: not-allowed; }
+    button:disabled { opacity: 0.6; }
     .progress { height: 32px; background: #eee; border-radius: 16px; overflow: hidden; margin: 12px 0; }
     .fill { height: 100%; background: linear-gradient(to right, #8b5cf6, #ec4899); transition: width 0.5s; }
-    .warning { color: #d97706; font-weight: bold; margin: 12px 0; }
-    .footer { font-size: 12px; color: #666; text-align: center; margin-top: 30px; }
+    .warning { color: #d97706; font-weight: bold; }
   </style>
 </head>
 <body>
-  <div id="root"></div>
+  <div id="root">Loading...</div>
 
   <script type="text/babel">
     const { useState } = React;
     const { createWagmiConfig, useAccount, useWriteContract, useReadContract } = wagmi;
     const { OnchainKitProvider } = OnchainKit;
 
-    // Base Mainnet config
+    // Base config
     const config = createWagmiConfig({
       chains: [{
         id: 8453,
@@ -93,4 +92,43 @@
 
           <div className="progress">
             <div className="fill" style={{ width: `${progress}%` }} />
-         Is there anything else you'd like to add to your app?
+          </div>
+          <p>Raised: ${(Number(raised) / 1e6).toFixed(2)} • {daysLeft} days left</p>
+
+          {!unlocked && daysLeft > 0 && (
+            <>
+              <input type="number" placeholder="USDC" value={amount} onChange={e => setAmount(e.target.value)} />
+              <button onClick={donate} disabled={isPending || !amount}>
+                {isPending ? "Confirming..." : "Donate USDC"}
+              </button>
+            </>
+          )}
+
+          {isCreator && unlocked && timeUntilWithdraw > 0 && (
+            <p className="warning">Withdraw in {Math.ceil(Number(timeUntilWithdraw) / 3600)} hours</p>
+          )}
+          {isCreator && unlocked && timeUntilWithdraw === 0n && (
+            <button onClick={() => writeContract({ address: CONTRACT, abi: ABI, functionName: "withdraw" })}>
+              Withdraw Funds
+            </button>
+          )}
+
+          {daysLeft === 0 && !unlocked && myContrib > 0 && (
+            <button onClick={() => writeContract({ address: CONTRACT, abi: ABI, functionName: "refund" })}>
+              Claim Refund
+            </button>
+          )}
+        </div>
+      );
+    }
+
+    // Render immediately
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(
+      <OnchainKitProvider apiKey="none" chainId={8453}>
+        <App />
+      </OnchainKitProvider>
+    );
+  </script>
+</body>
+</html>
