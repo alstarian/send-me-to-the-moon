@@ -1,190 +1,1638 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Moon Fund</title>
-  <style>
-    body {
-      font-family: 'Courier New', monospace;
-      background: #0a0a1a;
-      color: #8b5cf6;
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Expense Tracker</title>
+
+<!-- iOS App Icons -->
+<link rel="apple-touch-icon" sizes="180x180" href="icon.JPG">
+<link rel="apple-touch-icon" sizes="152x152" href="icon.JPG">
+<link rel="apple-touch-icon" sizes="120x120" href="icon.JPG">
+<link rel="icon" type="image/jpeg" href="icon.JPG">
+
+<!-- PWA Settings -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Expense Tracker">
+
+<!-- Theme Colors -->
+<meta name="theme-color" content="#000000">
+<meta name="msapplication-TileColor" content="#ffffff">
+<meta name="msapplication-TileImage" content="icon.JPG">
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}.app-header{position:fixed;top:0;left:0;right:0;background:linear-gradient(135deg,rgba(10,10,10,.95) 0%,rgba(0,0,0,.98) 100%);backdrop-filter:blur(20px) saturate(180%);-webkit-backdrop-filter:blur(20px) saturate(180%);border-bottom:1px solid rgba(255,255,255,.1);padding:16px 20px;display:flex;align-items:center;justify-content:center;gap:16px;z-index:1001;box-shadow:0 4px 24px rgba(0,0,0,.5)}.app-logo{font-size:2.5rem;animation:float 3s ease-in-out infinite;filter:drop-shadow(0 0 20px rgba(251,191,36,.4))}.app-title{font-size:1.8rem;font-weight:800;background:linear-gradient(135deg,#fbbf24,#f59e0b,#fbbf24);background-size:200% 200%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;letter-spacing:-1px;animation:gradient-shift 3s ease infinite}@keyframes gradient-shift{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#000;background-image:radial-gradient(at 0% 0%,rgba(30,64,175,.15) 0px,transparent 50%),radial-gradient(at 100% 0%,rgba(139,92,246,.15) 0px,transparent 50%),radial-gradient(at 100% 100%,rgba(16,185,129,.1) 0px,transparent 50%);min-height:100vh;padding:100px 20px 60px 20px;display:flex;align-items:center;justify-content:center;color:#fff;position:relative;overflow-x:hidden}body::before{content:'';position:fixed;top:0;left:0;right:0;bottom:0;background:linear-gradient(45deg,transparent 48%,rgba(255,255,255,.01) 50%,transparent 52%),linear-gradient(-45deg,transparent 48%,rgba(255,255,255,.01) 50%,transparent 52%);background-size:60px 60px;pointer-events:none;opacity:.3}.container{max-width:1600px;width:100%;display:grid;grid-template-columns:1fr 1fr;gap:32px;position:relative;z-index:1}.sync-bar{grid-column:1/-1;background:rgba(255,255,255,.03);backdrop-filter:blur(30px) saturate(180%);-webkit-backdrop-filter:blur(30px) saturate(180%);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:20px 28px;display:flex;gap:16px;justify-content:center;align-items:center;flex-wrap:wrap;box-shadow:0 8px 32px rgba(0,0,0,.3),inset 0 1px 0 rgba(255,255,255,.1);position:relative;overflow:hidden}.sync-bar::before{content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.05),transparent);animation:shimmer 3s infinite}@keyframes shimmer{to{left:200%}}.sync-btn{background:linear-gradient(135deg,rgba(255,255,255,.1),rgba(255,255,255,.05));border:1px solid rgba(255,255,255,.15);color:white;padding:12px 24px;border-radius:12px;cursor:pointer;font-size:.95rem;font-weight:600;transition:all .3s cubic-bezier(.4,0,.2,1);display:flex;align-items:center;gap:10px;position:relative;overflow:hidden;box-shadow:0 4px 16px rgba(0,0,0,.2)}.sync-btn::before{content:'';position:absolute;top:0;left:0;width:100%;height:100%;background:linear-gradient(135deg,rgba(255,255,255,.2),transparent);opacity:0;transition:opacity .3s}.sync-btn:hover::before{opacity:1}.sync-btn:hover{transform:translateY(-3px);box-shadow:0 8px 24px rgba(0,0,0,.3)}.sync-btn:active{transform:translateY(-1px)}.sync-btn.export{background:linear-gradient(135deg,rgba(16,185,129,.25),rgba(16,185,129,.15));border-color:rgba(16,185,129,.4);box-shadow:0 4px 20px rgba(16,185,129,.2)}.sync-btn.import{background:linear-gradient(135deg,rgba(99,102,241,.25),rgba(99,102,241,.15));border-color:rgba(99,102,241,.4);box-shadow:0 4px 20px rgba(99,102,241,.2)}.sync-btn.analytics{background:linear-gradient(135deg,rgba(251,191,36,.25),rgba(251,191,36,.15));border-color:rgba(251,191,36,.4);box-shadow:0 4px 20px rgba(251,191,36,.2)}.sync-btn.insights{background:linear-gradient(135deg,rgba(236,72,153,.25),rgba(236,72,153,.15));border-color:rgba(236,72,153,.4);box-shadow:0 4px 20px rgba(236,72,153,.2)}.sync-btn.settings{background:linear-gradient(135deg,rgba(139,92,246,.25),rgba(139,92,246,.15));border-color:rgba(139,92,246,.4);box-shadow:0 4px 20px rgba(139,92,246,.2)}.sync-btn.danger{background:linear-gradient(135deg,rgba(239,68,68,.25),rgba(239,68,68,.15));border-color:rgba(239,68,68,.4);box-shadow:0 4px 20px rgba(239,68,68,.2)}.pane{background:linear-gradient(135deg,rgba(30,30,30,.95) 0%,rgba(15,15,15,.98) 100%);backdrop-filter:blur(30px) saturate(180%);-webkit-backdrop-filter:blur(30px) saturate(180%);border:1px solid rgba(255,255,255,.1);border-radius:24px;padding:36px;box-shadow:0 24px 64px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.1);position:relative;overflow:hidden;transition:all .4s cubic-bezier(.4,0,.2,1)}.pane::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.2),transparent)}.pane::after{content:'';position:absolute;top:0;left:0;width:100%;height:100%;background:radial-gradient(circle at 50% 0%,rgba(255,255,255,.05),transparent 70%);pointer-events:none}.pane.current{border-color:rgba(251,191,36,.4);box-shadow:0 24px 64px rgba(0,0,0,.5),0 0 40px rgba(251,191,36,.15),inset 0 1px 0 rgba(251,191,36,.2)}.pane.current::before{background:linear-gradient(90deg,transparent,rgba(251,191,36,.4),transparent)}.pane.monthly{border-color:rgba(59,130,246,.4);box-shadow:0 24px 64px rgba(0,0,0,.5),0 0 40px rgba(59,130,246,.15),inset 0 1px 0 rgba(59,130,246,.2)}.pane.monthly::before{background:linear-gradient(90deg,transparent,rgba(59,130,246,.4),transparent)}.pane:hover{transform:translateY(-4px);box-shadow:0 32px 80px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.15)}.pane-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;padding-bottom:20px;border-bottom:1px solid rgba(255,255,255,.08);position:relative;z-index:1;gap:20px}.period-nav{display:flex;gap:12px;align-items:center;flex:1}.period-nav button{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);color:white;width:36px;height:36px;border-radius:8px;cursor:pointer;font-size:1.1rem;transition:all .2s;display:flex;align-items:center;justify-content:center}.period-nav button:hover{background:rgba(255,255,255,.15);transform:scale(1.1)}.period-nav button:active{transform:scale(.95)}.period-title{font-size:1.1rem;font-weight:600;color:#fff;text-align:center;flex:1}.star-toggle{font-size:1.8rem;cursor:pointer;transition:all .3s cubic-bezier(.4,0,.2,1);user-select:none;filter:grayscale(100%) brightness(.5);flex-shrink:0}.star-toggle:hover{transform:scale(1.2) rotate(15deg);filter:grayscale(0%) brightness(1)}.star-toggle.active{filter:grayscale(0%) brightness(1);animation:pulse 2s ease-in-out infinite;text-shadow:0 0 12px rgba(251,191,36,.6)}@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.7;transform:scale(1.15)}}.summary{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:28px;position:relative;z-index:1}.summary-item{background:linear-gradient(135deg,rgba(255,255,255,.08),rgba(255,255,255,.03));padding:18px;border-radius:14px;text-align:center;border:1px solid rgba(255,255,255,.1);transition:all .3s cubic-bezier(.4,0,.2,1);position:relative;overflow:hidden;box-shadow:0 4px 16px rgba(0,0,0,.2),inset 0 1px 0 rgba(255,255,255,.1)}.summary-item.full-width{grid-column:1/-1}.summary-item::before{content:'';position:absolute;top:0;left:0;width:100%;height:100%;background:linear-gradient(135deg,rgba(255,255,255,.1),transparent);opacity:0;transition:opacity .3s}.summary-item:hover::before{opacity:1}.summary-item:hover{border-color:rgba(255,255,255,.2);transform:translateY(-3px) scale(1.02);box-shadow:0 8px 24px rgba(0,0,0,.3),inset 0 1px 0 rgba(255,255,255,.15)}.summary-label{font-size:.65rem;color:rgba(255,255,255,.6);margin-bottom:8px;text-transform:uppercase;letter-spacing:1.2px;font-weight:600}.summary-value{font-size:1.6rem;font-weight:800;color:#fff;letter-spacing:-1px;text-shadow:0 2px 12px rgba(0,0,0,.3)}.summary-value.positive{color:#10b981;text-shadow:0 2px 12px rgba(16,185,129,.4)}.summary-value.negative{color:#ef4444;text-shadow:0 2px 12px rgba(239,68,68,.4)}.summary-value.info{color:#8b5cf6;text-shadow:0 2px 12px rgba(139,92,246,.4)}.input-group{margin-bottom:16px;position:relative;z-index:1}.input-label{font-size:.75rem;color:rgba(255,255,255,.7);margin-bottom:8px;display:block;font-weight:600;text-transform:uppercase;letter-spacing:.8px}input,select{width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:12px 14px;color:#fff;font-size:.95rem;font-family:inherit;transition:all .3s cubic-bezier(.4,0,.2,1);box-shadow:inset 0 2px 8px rgba(0,0,0,.15)}input[type="date"]{color-scheme:dark}input::placeholder{color:rgba(255,255,255,.35)}input:focus,select:focus{outline:0;background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.25);box-shadow:inset 0 2px 8px rgba(0,0,0,.15),0 0 0 4px rgba(255,255,255,.05);transform:translateY(-1px)}select option{background:#1a1a1a;color:#fff}.btn{width:100%;background:linear-gradient(135deg,#fff,#f0f0f0);color:#0a0a0a;border:none;border-radius:10px;padding:14px;font-size:.85rem;font-weight:700;cursor:pointer;transition:all .3s cubic-bezier(.4,0,.2,1);text-transform:uppercase;letter-spacing:.8px;position:relative;overflow:hidden;box-shadow:0 4px 16px rgba(255,255,255,.15),0 8px 24px rgba(0,0,0,.2)}.btn::before{content:'';position:absolute;top:0;left:0;width:100%;height:100%;background:linear-gradient(135deg,rgba(255,255,255,.3),transparent);opacity:0;transition:opacity .3s}.btn:hover::before{opacity:1}.btn:hover{transform:translateY(-3px);box-shadow:0 6px 20px rgba(255,255,255,.2),0 12px 32px rgba(0,0,0,.3)}.btn:active{transform:translateY(-1px)}.quick-add-section{margin-top:20px;padding-top:16px;border-top:1px solid rgba(255,255,255,.08);position:relative;z-index:1}.quick-add-label{font-size:.75rem;color:rgba(255,255,255,.6);margin-bottom:10px;text-transform:uppercase;letter-spacing:.8px;font-weight:600}.quick-add-buttons{display:flex;flex-wrap:wrap;gap:8px}.quick-add-btn{background:linear-gradient(135deg,rgba(251,191,36,.15),rgba(251,191,36,.08));border:1px solid rgba(251,191,36,.3);color:#fbbf24;padding:8px 16px;border-radius:8px;cursor:pointer;font-size:.85rem;font-weight:600;transition:all .3s cubic-bezier(.4,0,.2,1);display:flex;align-items:center;gap:6px;white-space:nowrap;box-shadow:0 2px 8px rgba(251,191,36,.1)}.quick-add-btn:hover{background:linear-gradient(135deg,rgba(251,191,36,.25),rgba(251,191,36,.15));border-color:rgba(251,191,36,.5);transform:translateY(-2px);box-shadow:0 4px 12px rgba(251,191,36,.2)}.quick-add-btn:active{transform:translateY(0)}.quick-add-empty{font-size:.85rem;color:rgba(255,255,255,.4);font-style:italic}.expenses-list{max-height:350px;overflow-y:auto;overflow-x:hidden;margin-top:20px;padding-right:8px;position:relative;z-index:1}.expense-item-wrapper{position:relative;margin-bottom:10px;overflow:visible}.expense-item{background:linear-gradient(135deg,rgba(255,255,255,.06),rgba(255,255,255,.03));padding:14px 16px;border-radius:12px;display:flex;justify-content:space-between;align-items:center;border:1px solid rgba(255,255,255,.08);box-shadow:0 2px 8px rgba(0,0,0,.15);position:relative;touch-action:pan-y;-webkit-user-select:none;user-select:none;will-change:transform;-webkit-transform:translate3d(0,0,0);transform:translate3d(0,0,0)}.expense-item.transitioning{transition:transform .3s cubic-bezier(.4,0,.2,1)}.swipe-actions{position:absolute;right:0;top:0;bottom:0;display:flex;opacity:0;transition:opacity .3s;pointer-events:none}.expense-item.swiped{transform:translate3d(-160px,0,0)}.expense-item.swiped+.swipe-actions{opacity:1;pointer-events:auto}@media (hover:hover) and (pointer:fine){.expense-item-wrapper:hover .expense-item{transform:translate3d(-160px,0,0);transition:transform .3s cubic-bezier(.4,0,.2,1)}.expense-item-wrapper:hover .swipe-actions{opacity:1;pointer-events:auto}}.action-btn{width:80px;border:none;color:white;font-weight:700;font-size:.8rem;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;transition:all .2s}.action-btn.edit{background:linear-gradient(135deg,#3b82f6,#2563eb);border-radius:0}.action-btn.edit:hover{background:linear-gradient(135deg,#2563eb,#1d4ed8);transform:scale(1.05)}.action-btn.delete{background:linear-gradient(135deg,#ef4444,#dc2626);border-radius:0 12px 12px 0}.action-btn.delete:hover{background:linear-gradient(135deg,#dc2626,#b91c1c);transform:scale(1.05)}.action-icon{font-size:1.2rem}.expense-info{flex:1;pointer-events:none}.expense-desc{font-size:.95rem;font-weight:600;color:#fff;margin-bottom:4px}.expense-cat{font-size:.75rem;color:rgba(255,255,255,.5)}.expense-amount{font-size:1.1rem;font-weight:700;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.2);min-width:80px;text-align:right;pointer-events:none}.empty-state{text-align:center;padding:50px 20px;color:rgba(255,255,255,.35)}.empty-state-icon{font-size:3rem;margin-bottom:16px;opacity:.5;filter:drop-shadow(0 4px 12px rgba(0,0,0,.3))}.expenses-list::-webkit-scrollbar{width:6px}.expenses-list::-webkit-scrollbar-track{background:rgba(255,255,255,.03);border-radius:3px}.expenses-list::-webkit-scrollbar-thumb{background:linear-gradient(180deg,rgba(255,255,255,.15),rgba(255,255,255,.1));border-radius:3px;border:1px solid rgba(255,255,255,.05)}.expenses-list::-webkit-scrollbar-thumb:hover{background:linear-gradient(180deg,rgba(255,255,255,.2),rgba(255,255,255,.15))}.month-nav{display:flex;gap:8px;align-items:center;justify-content:center;margin-bottom:16px}.month-nav button{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);color:white;padding:8px 12px;border-radius:8px;cursor:pointer;font-size:1.2rem;transition:all .2s}.month-nav button:hover{background:rgba(255,255,255,.15);transform:scale(1.1)}.month-display{font-size:1.1rem;font-weight:600;min-width:140px;text-align:center}.pane-title{font-size:1.4rem;font-weight:700;color:#fff;letter-spacing:-.8px;text-shadow:0 2px 10px rgba(0,0,0,.3)}.modal{display:none;position:fixed;z-index:1000;left:0;top:0;width:100%;height:100%;background:rgba(0,0,0,.85);backdrop-filter:blur(10px)}.modal.active{display:flex;align-items:center;justify-content:center}.modal-content{background:linear-gradient(135deg,rgba(30,30,30,.98) 0%,rgba(15,15,15,.98) 100%);border:1px solid rgba(255,255,255,.2);border-radius:24px;padding:40px;max-width:500px;width:90%;max-height:85vh;overflow-y:auto;box-shadow:0 32px 96px rgba(0,0,0,.7);position:relative}.insights-content{max-width:700px}.modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:30px;padding-bottom:20px;border-bottom:1px solid rgba(255,255,255,.1)}.modal-title{font-size:1.8rem;font-weight:700;color:#fff}.close-btn{background:rgba(239,68,68,.2);border:1px solid rgba(239,68,68,.3);color:#ef4444;width:36px;height:36px;border-radius:50%;cursor:pointer;font-size:1.2rem;display:flex;align-items:center;justify-content:center;transition:all .3s}.close-btn:hover{background:rgba(239,68,68,.3);transform:rotate(90deg)}.modal-buttons{display:flex;gap:12px;margin-top:24px}.modal-btn{flex:1;padding:14px;border-radius:10px;font-size:.9rem;font-weight:700;cursor:pointer;transition:all .3s;text-transform:uppercase;letter-spacing:.8px;border:none}.modal-btn.cancel{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:white}.modal-btn.cancel:hover{background:rgba(255,255,255,.15)}.modal-btn.save{background:linear-gradient(135deg,#10b981,#059669);border:none;color:white}.modal-btn.save:hover{transform:translateY(-2px);box-shadow:0 4px 16px rgba(16,185,129,.4)}.insights-body{display:flex;flex-direction:column;gap:24px}.insight-section{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:24px}.insight-title{font-size:1.1rem;font-weight:700;color:#fff;margin-bottom:16px;display:flex;align-items:center;gap:10px}.insight-card{background:rgba(255,255,255,.05);border-radius:12px;padding:16px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center}.insight-label{font-size:.9rem;color:rgba(255,255,255,.7)}.insight-value{font-size:1.3rem;font-weight:700;color:#fff}.insight-trend{font-size:.85rem;font-weight:600;margin-left:8px}.insight-trend.up{color:#ef4444}.insight-trend.down{color:#10b981}.category-breakdown{display:flex;flex-direction:column;gap:12px}.category-item{display:flex;justify-content:space-between;align-items:center;padding:12px;background:rgba(255,255,255,.03);border-radius:10px}.category-name{font-size:.95rem;font-weight:600;color:#fff}.category-amount{font-size:1.1rem;font-weight:700;color:#fbbf24}.stat-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}.stat-card{background:rgba(255,255,255,.05);border-radius:12px;padding:16px;text-align:center}.stat-label{font-size:.75rem;color:rgba(255,255,255,.6);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px}.stat-value{font-size:1.4rem;font-weight:800;color:#fff}.analytics-table{width:100%;border-collapse:collapse;margin-top:20px}.analytics-table th,.analytics-table td{padding:16px;text-align:left;border-bottom:1px solid rgba(255,255,255,.08)}.analytics-table th{background:rgba(255,255,255,.05);font-weight:700;text-transform:uppercase;font-size:.75rem;letter-spacing:1px;color:rgba(255,255,255,.7)}.analytics-table td{font-size:.95rem;color:rgba(255,255,255,.9)}.analytics-table tr:hover{background:rgba(255,255,255,.03)}.analytics-table td:last-child{font-weight:700;color:#10b981}.setup-wizard{text-align:center}.setup-wizard .modal-content{max-width:600px}.wizard-icon{font-size:4rem;margin-bottom:20px;animation:float 3s ease-in-out infinite}.wizard-subtitle{font-size:1rem;color:rgba(255,255,255,.7);margin-bottom:30px;line-height:1.6}.quick-dates{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin:20px 0}.quick-date-btn{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);color:white;padding:12px;border-radius:10px;cursor:pointer;font-size:.9rem;font-weight:600;transition:all .3s}.quick-date-btn:hover{background:rgba(255,255,255,.15);border-color:rgba(255,255,255,.25);transform:translateY(-2px)}.quick-date-btn.selected{background:linear-gradient(135deg,rgba(16,185,129,.25),rgba(16,185,129,.15));border-color:rgba(16,185,129,.4)}.divider{display:flex;align-items:center;gap:16px;margin:24px 0;color:rgba(255,255,255,.4);font-size:.85rem}.divider::before,.divider::after{content:'';flex:1;height:1px;background:rgba(255,255,255,.1)}.settings-info{background:rgba(139,92,246,.1);border:1px solid rgba(139,92,246,.3);border-radius:12px;padding:16px;margin-bottom:24px}.settings-info-title{font-size:.85rem;font-weight:700;color:rgba(255,255,255,.9);margin-bottom:8px;text-transform:uppercase;letter-spacing:.8px}.settings-info-value{font-size:1.1rem;font-weight:600;color:#8b5cf6}.warning-box{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:12px;padding:16px;margin:20px 0}.warning-box p{font-size:.9rem;color:rgba(255,255,255,.8);line-height:1.6;margin:0}@media (max-width:1200px){.container{grid-template-columns:1fr}}@media (max-width:768px){.app-header{padding:12px 16px}.app-logo{font-size:2rem}.app-title{font-size:1.4rem}body{padding:80px 20px 60px 20px}.summary{grid-template-columns:1fr}.stat-grid{grid-template-columns:1fr}.quick-dates{grid-template-columns:1fr}.quick-add-buttons{gap:6px}.quick-add-btn{font-size:.8rem;padding:6px 12px}.analytics-table{font-size:.85rem}.analytics-table th,.analytics-table td{padding:12px 8px}}
+
+
+/* ==================== AUTHENTICATION & SWIPE STYLES ==================== */
+
+.auth-modal .modal-content { max-width: 500px; }
+.auth-content { text-align: center; }
+.auth-icon { font-size: 5rem; margin: 20px 0; animation: float 3s ease-in-out infinite; }
+.auth-subtitle { color: rgba(255,255,255,0.7); font-size: 0.95rem; line-height: 1.6; margin-bottom: 30px; }
+
+.passcode-input-group { display: flex; gap: 10px; justify-content: center; margin: 30px 0; }
+.passcode-digit {
+      width: 50px;
+      height: 60px;
+      font-size: 28px;
       text-align: center;
-      padding: 40px;
-      margin: 0;
-    }
-    h1 { font-size: 48px; margin: 20px 0; }
-    .card {
-      background: #111120;
-      padding: 30px;
-      border-radius: 20px;
-      max-width: 500px;
-      margin: 20px auto;
-      border: 2px solid #8b5cf6;
-    }
-    input, button {
-      padding: 14px;
-      margin: 10px;
-      font-size: 18px;
-      width: 90%;
-      border-radius: 10px;
-    }
-    input { background: white; border: 1px solid #ccc; }
-    button {
-      background: #8b5cf6;
+      border: 2px solid rgba(255,255,255,0.2);
+      border-radius: 12px;
+      background: rgba(255,255,255,0.05);
       color: white;
-      border: none;
-      cursor: pointer;
-      font-weight: bold;
+      font-weight: 700;
+      transition: all 0.2s;
+      caret-color: #60a5fa;
+      line-height: 60px;
+      padding: 0;
+      box-sizing: border-box;
     }
-    button:hover { background: #7c3aed; }
-    .progress { font-size: 24px; margin: 20px; font-weight: bold; }
-    .countdown { font-size: 18px; margin: 10px; color: #a78bfa; }
-    .refund { display: none; background: #e91e63 !important; }
-    small { color: #aaa; }
-    a { color: #8b5cf6; text-decoration: none; }
-    a:hover { text-decoration: underline; }
-  </style>
+.passcode-digit:focus {
+  border-color: #fbbf24 !important; background: rgba(251,191,36,0.1) !important;
+  transform: scale(1.1); box-shadow: 0 0 20px rgba(251,191,36,0.3);
+}
+.passcode-hint { color: rgba(255,255,255,0.5); font-size: 0.85rem; margin-top: -20px; margin-bottom: 20px; }
+
+#lock-screen {
+  position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+  background: linear-gradient(135deg, #000 0%, #1a1a1a 100%);
+  display: flex; align-items: center; justify-content: center; z-index: 10000;
+}
+.lock-container {
+  text-align: center; padding: 40px; background: rgba(0,0,0,0.5);
+  border-radius: 24px; backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1);
+}
+.lock-header { margin-bottom: 20px; }
+.unlock-forgot-btn {
+  background: none; border: none; color: #fbbf24; font-size: 0.9rem;
+  cursor: pointer; text-decoration: underline; transition: all 0.3s;
+}
+.unlock-forgot-btn:hover { color: #f59e0b; transform: scale(1.05); }
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-10px); }
+  20%, 40%, 60%, 80% { transform: translateX(10px); }
+}
+.shake-error { animation: shake 0.5s; }
+
+.security-question-select {
+  width: 100%; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 10px; padding: 12px 14px; color: #fff; font-size: 0.95rem;
+  font-family: inherit; transition: all 0.3s;
+}
+.security-question-select:focus { outline: 0; background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.25); }
+.security-question-select option { background: #1a1a1a; color: #fff; }
+
+.recovery-key-display {
+  background: rgba(251,191,36,0.1); border: 2px solid rgba(251,191,36,0.3);
+  border-radius: 16px; padding: 24px; margin: 20px 0;
+  font-family: 'Courier New', monospace; font-size: 1.1rem; font-weight: 700;
+  color: #fbbf24; line-height: 1.8; word-break: break-word; user-select: all;
+}
+
+.recovery-option-buttons { display: flex; flex-direction: column; gap: 16px; margin: 30px 0; }
+.recovery-option-btn {
+  display: flex; align-items: center; gap: 20px; padding: 20px;
+  background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 16px; cursor: pointer; transition: all 0.3s; text-align: left;
+}
+.recovery-option-btn:hover { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.2); transform: translateY(-2px); }
+.recovery-option-btn.danger { border-color: rgba(239,68,68,0.3); }
+.recovery-option-btn.danger:hover { background: rgba(239,68,68,0.1); border-color: rgba(239,68,68,0.5); }
+.recovery-icon { font-size: 2.5rem; flex-shrink: 0; }
+.recovery-text { flex: 1; }
+.recovery-text strong { display: block; font-size: 1.1rem; color: #fff; margin-bottom: 5px; }
+.recovery-text span { display: block; font-size: 0.85rem; color: rgba(255,255,255,0.6); }
+
+/* Swipe Gestures */
+@keyframes swipeIndicator {
+  0% { opacity: 0; transform: translateY(-50%) scale(0.3); }
+  40% { opacity: 1; transform: translateY(-50%) scale(1.3); }
+  100% { opacity: 0; transform: translateY(-50%) scale(0.5); }
+}
+.pane {
+  position: relative; overflow: visible !important; touch-action: pan-y;
+  user-select: none; will-change: transform, opacity;
+}
+.pane::before, .pane::after {
+  position: absolute; top: 50%; transform: translateY(-50%);
+  font-size: 2.5rem; color: rgba(251,191,36,0.15); font-weight: 900;
+  pointer-events: none; z-index: 1; transition: all 0.3s;
+}
+.pane::before { content: '‹'; left: 15px; }
+.pane::after { content: '›'; right: 15px; }
+@media (hover: hover) {
+  .pane:hover::before, .pane:hover::after {
+    color: rgba(251,191,36,0.35); text-shadow: 0 0 10px rgba(251,191,36,0.3);
+  }
+}
+
+@media (max-width: 768px) {
+  .passcode-digit { width: 45px !important; height: 55px; font-size: 1.6rem; }
+  .passcode-input-group { gap: 8px; }
+  .lock-container { padding: 30px 20px; }
+  .recovery-key-display { font-size: 0.95rem; padding: 16px; }
+}
+
+
+/* Remove decorative line from Monthly Utilities pane */
+.pane.monthly::before {
+  display: none !important;
+}
+
+/* Notification Toggle Switch */
+#notifications-toggle:checked + span {
+  background: linear-gradient(135deg, #10b981, #059669);
+}
+#notifications-toggle:checked + span + span {
+  transform: translateX(26px);
+}
+</style>
 </head>
 <body>
-  <h1>MOON FUND</h1>
-  <div class="card">
-    <div class="progress" id="progress">Loading ethers.js...</div>
-    <div class="countdown" id="countdown"></div>
-    <input type="number" id="amount" placeholder="USDC Amount (min 1)" min="1" step="0.01" />
-    <button id="connect" style="display:none">Connect Wallet</button>
-    <button id="donate" style="display:none">Donate & Get NFT</button>
-    <button id="refund" class="refund">Refund My Donation</button>
-    <p><small>Contract: <a href="https://basescan.org/address/0xb9e95E4cd1d151CDfbe4db004004B976eA4697A4" target="_blank">0xb9e95...97A4</a></small></p>
+<div class="app-header"><div class="app-logo">💰</div><h1 class="app-title">Expense Tracker</h1></div>
+<div class="container">
+<div class="sync-bar">
+<button class="sync-btn settings" onclick="showSettings()">⚙️ Settings</button>
+<button class="sync-btn insights" onclick="showInsights()">📈 Insights</button>
+<button class="sync-btn analytics" onclick="showAnalytics()">📊 Analytics</button>
+<button class="sync-btn export" onclick="exportData()">📥 Export</button>
+<button class="sync-btn import" onclick="document.getElementById('import-file').click()">📤 Import</button>
+<button class="sync-btn danger" onclick="resetApp()">🔄 Reset</button>
+<input type="file" id="import-file" accept=".json" style="display:none" onchange="importData(event)">
+</div>
+<div class="pane" id="pane-period">
+<div class="pane-header"><div class="period-nav"><button onclick="changePeriod(-1)">◀</button><div class="period-title" id="period-dates">Loading...</div><button onclick="changePeriod(1)">▶</button></div><div class="star-toggle" id="star-current" onclick="jumpToCurrent()">⭐</div></div>
+<div class="summary">
+<div class="summary-item"><div class="summary-label">Salary</div><div class="summary-value" id="salary-display">$0</div></div>
+<div class="summary-item"><div class="summary-label">Expenses</div><div class="summary-value" id="expenses-display">$0</div></div>
+<div class="summary-item"><div class="summary-label">This Period Savings</div><div class="summary-value" id="savings-display">$0</div></div>
+<div class="summary-item"><div class="summary-label">Previous Balance</div><div class="summary-value info" id="carry-forward-display">$0</div></div>
+<div class="summary-item full-width"><div class="summary-label">Total Cumulative Savings</div><div class="summary-value" id="total-savings-display">$0</div></div>
+</div>
+<div class="input-group"><label class="input-label">Salary</label><input type="number" id="salary-input" placeholder="Enter salary" step="0.01"></div>
+<div class="input-group"><label class="input-label">Category</label><input type="text" id="category-input" placeholder="e.g., Groceries, Rent"></div>
+<div class="input-group"><label class="input-label">Amount</label><input type="number" id="amount-input" placeholder="0.00" step="0.01"></div>
+<button class="btn" onclick="addExpense()">Add Expense</button>
+<div class="quick-add-section"><div class="quick-add-label">Quick Add:</div><div class="quick-add-buttons" id="quick-add-buttons"></div></div>
+<div class="expenses-list" id="expenses-list"><div class="empty-state"><div class="empty-state-icon">📊</div><div>No expenses yet</div></div></div>
+</div>
+<div class="pane monthly">
+<div class="pane-header"><div class="pane-title">Monthly Utilities</div></div>
+<div class="month-nav"><button onclick="changeMonth(-1)">◀</button><div class="month-display" id="month-display">Loading...</div><button onclick="changeMonth(1)">▶</button></div>
+    <div id="utility-disclaimer" style="background:rgba(139,92,246,0.1);border:1px solid rgba(139,92,246,0.3);border-radius:12px;padding:16px;margin:16px 0 20px 0;display:none;">
+      <div style="display:flex;align-items:start;gap:12px;">
+        <span style="font-size:1.5rem;flex-shrink:0;">📊</span>
+        <div style="flex:1;">
+          <div style="font-weight:700;color:#8b5cf6;margin-bottom:6px;font-size:0.95rem;">📌 Tracking Only - Not Added to Expenses</div>
+          <p style="margin:0;font-size:0.85rem;line-height:1.6;color:rgba(255,255,255,0.85);">
+            This section is for <strong style="color:#8b5cf6;">tracking your monthly utility bills</strong> and viewing analytics. 
+            <span style="display:block;margin-top:8px;padding:8px;background:rgba(239,68,68,0.1);border-radius:6px;border-left:3px solid rgba(239,68,68,0.5);">
+              <strong style="color:#ef4444;">⚠️ Not Auto-Added:</strong> These utilities are <strong>NOT automatically included</strong> in your bi-weekly expenses.
+            </span>
+            <span style="display:block;margin-top:8px;color:rgba(255,255,255,0.7);font-size:0.8rem;">
+              💡 <em>To track a utility payment in your bi-weekly budget, add it manually as a regular expense.</em>
+            </span>
+          </p>
+          <div style="display:flex;gap:10px;margin-top:12px;padding-top:12px;border-top:1px solid rgba(139,92,246,0.2);flex-wrap:wrap;">
+            <button onclick="dismissUtilityDisclaimer(false)" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:#fff;padding:8px 16px;border-radius:8px;cursor:pointer;font-size:0.85rem;font-weight:600;transition:all 0.3s;">
+              Got it
+            </button>
+            <button onclick="dismissUtilityDisclaimer(true)" style="background:rgba(139,92,246,0.2);border:1px solid rgba(139,92,246,0.4);color:#8b5cf6;padding:8px 16px;border-radius:8px;cursor:pointer;font-size:0.85rem;font-weight:600;transition:all 0.3s;">
+              Don't show again
+            </button>
+          </div>
+        </div>
+        <button onclick="dismissUtilityDisclaimer(false)" style="background:none;border:none;color:rgba(255,255,255,0.5);font-size:1.5rem;cursor:pointer;padding:0;margin:0;line-height:1;transition:color 0.3s;" onmouseover="this.style.color='rgba(255,255,255,0.9)'" onmouseout="this.style.color='rgba(255,255,255,0.5)'">×</button>
+      </div>
+    </div>
+
+<div class="summary"><div class="summary-item full-width"><div class="summary-label">Total Bills</div><div class="summary-value" id="monthly-total">$0</div></div></div>
+<div class="input-group"><label class="input-label">Utility Type</label><select id="utility-type"><option value="">Select utility...</option><option value="💧 Water">💧 Water</option><option value="🔥 Gas">🔥 Gas</option><option value="⚡ Hydro">⚡ Hydro</option><option value="📡 Internet">📡 Internet</option><option value="📱 Phone">📱 Phone</option><option value="🏠 Home Insurance">🏠 Home Insurance</option><option value="🚗 Car Insurance">🚗 Car Insurance</option><option value="Other">Other</option></select></div>
+<div class="input-group" id="custom-utility-group" style="display:none"><label class="input-label">Custom Utility</label><input type="text" id="custom-utility" placeholder="Enter utility name"></div>
+<div class="input-group"><label class="input-label">Amount</label><input type="number" id="utility-amount" placeholder="0.00" step="0.01"></div>
+<button class="btn" onclick="addUtility()">Add Utility</button>
+<div class="expenses-list" id="utilities-list"><div class="empty-state"><div class="empty-state-icon">💡</div><div>No utilities yet</div></div></div>
+</div>
+</div>
+<div id="setup-wizard" class="modal setup-wizard"><div class="modal-content"><div class="modal-header"><div class="modal-title">Welcome! 👋</div></div><div class="wizard-icon">💰</div><div class="input-group" style="margin-bottom:24px">
+  <label class="input-label">Select Your Pay Frequency</label>
+  <select id="pay-frequency-select" style="font-size:1rem;padding:14px" onchange="handleFrequencyChange()">
+    <option value="biweekly">Bi-weekly (Every 2 weeks - 26 periods/year)</option>
+    <option value="monthly">Monthly (12 periods/year)</option>
+  </select>
+</div>
+<p class="wizard-subtitle">Let's get you set up! When does your bi-weekly pay cycle start? This helps us track your expenses accurately across pay periods.</p><div class="quick-dates" id="quick-dates"></div><div class="divider">OR CHOOSE A DATE</div><div class="input-group"><label class="input-label">Custom Start Date</label><input type="date" id="setup-start-date" max="2099-12-31"></div><div class="modal-buttons"><button class="modal-btn save" onclick="completeSetup()">Get Started! 🚀</button></div><p style="margin-top:20px;font-size:.85rem;color:rgba(255,255,255,.5)">💡 Tip: Choose the first day of any recent pay period.</p></div></div>
+<div id="settings-modal" class="modal"><div class="modal-content"><div class="modal-header"><div class="modal-title">Settings ⚙️</div><button class="close-btn" onclick="closeSettings()">✕</button></div><div class="settings-info"><div class="settings-info-title">Current Pay Cycle Start</div><div class="settings-info-value" id="current-start-date">Loading...</div></div><div class="input-group">
+  <label class="input-label">Pay Frequency</label>
+  <select id="settings-pay-frequency" style="font-size:1rem;padding:14px">
+    <option value="biweekly">Bi-weekly (Every 2 weeks)</option>
+    <option value="monthly">Monthly</option>
+  </select>
+</div>
+<div class="input-group"><label class="input-label">Update Pay Cycle Start Date</label><input type="date" id="settings-start-date" max="2099-12-31"></div><div class="divider" style="margin:30px 0">🔐 Security</div>
+<div class="settings-info" style="background:rgba(251,191,36,.1);border-color:rgba(251,191,36,.3)">
+  <div class="settings-info-title">Change Passcode</div>
+  <div class="settings-info-value" style="color:#fbbf24">Update your 6-digit PIN</div>
+</div>
+<div class="input-group">
+  <label class="input-label">Current Passcode (6 digits)</label>
+  <input type="password" id="current-passcode-settings" maxlength="6" placeholder="••••••" inputmode="numeric">
+</div>
+<div class="input-group">
+  <label class="input-label">New Passcode (6 digits)</label>
+  <input type="password" id="new-passcode-settings" maxlength="6" placeholder="••••••" inputmode="numeric">
+</div>
+<div class="input-group">
+  <label class="input-label">Confirm New Passcode</label>
+  <input type="password" id="confirm-passcode-settings" maxlength="6" placeholder="••••••" inputmode="numeric">
+</div>
+<button class="sync-btn" style="width:100%;margin-bottom:30px;background:linear-gradient(135deg,rgba(251,191,36,.25),rgba(251,191,36,.15));border-color:rgba(251,191,36,.4)" onclick="changePasscodeSettings()">🔒 Update Passcode</button>
+
+      <div class="divider" style="margin:30px 0">🔑 Recovery Code</div>
+
+      <div style="background:rgba(59,130,246,0.15);border:2px solid rgba(59,130,246,0.4);border-radius:16px;padding:24px;margin:20px 0">
+        <div style="font-size:1.1rem;font-weight:700;color:#3b82f6;margin-bottom:12px">
+          Generate New Recovery Code
+        </div>
+        <p style="font-size:0.9rem;color:rgba(255,255,255,0.85);line-height:1.6;margin:12px 0 16px 0">
+          Lost your recovery code email? Generate a new one here. You'll need your current PIN to verify.
+        </p>
+        <button class="modal-btn save" style="width:100%;background:linear-gradient(135deg,rgba(59,130,246,0.3),rgba(59,130,246,0.2));border-color:rgba(59,130,246,0.5)" onclick="showRegenerateRecoveryCode()">
+          🔑 Generate New Recovery Code
+        </button>
+      </div>
+
+
+
+    <div class="divider" style="margin:30px 0">🔔 Push Notifications</div>
+    <div style="background:rgba(251,191,36,0.1);border:1px solid rgba(251,191,36,0.3);border-radius:12px;padding:16px;margin-bottom:20px;">
+      <div style="font-size:0.85rem;color:rgba(255,255,255,0.8);line-height:1.6;">
+        <strong style="color:#fbbf24;">📱 Get reminded about expenses!</strong><br>
+        Enable notifications to receive reminders at the start of each pay period.
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,0.03);padding:16px;border-radius:12px;margin-bottom:12px;">
+      <div>
+        <div style="font-weight:600;margin-bottom:4px;">Enable Notifications</div>
+        <div style="font-size:0.75rem;color:rgba(255,255,255,0.6);">Get pay period reminders</div>
+      </div>
+      <label style="position:relative;display:inline-block;width:60px;height:34px;">
+        <input type="checkbox" id="notifications-toggle" onchange="toggleNotifications()" style="opacity:0;width:0;height:0;">
+        <span style="position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:rgba(255,255,255,0.1);transition:0.4s;border-radius:34px;"></span>
+        <span style="position:absolute;content:'';height:26px;width:26px;left:4px;bottom:4px;background:white;transition:0.4s;border-radius:50%;"></span>
+      </label>
+    </div>
+    <div id="notification-status" style="font-size:0.85rem;color:rgba(255,255,255,0.6);padding:12px;background:rgba(255,255,255,0.03);border-radius:8px;margin-bottom:20px;display:none;">
+      <span id="notification-status-text"></span>
+    </div>
+<div class="divider" style="margin:30px 0">📅 Pay Cycle Settings</div>
+<div class="warning-box"><p>⚠️ <strong>Important:</strong> Changing your pay cycle start date will recalculate all periods.</p></div><div class="modal-buttons"><button class="modal-btn cancel" onclick="closeSettings()">Cancel</button><button class="modal-btn save" onclick="saveSettings()">Save Changes</button></div></div></div>
+<div id="edit-modal" class="modal"><div class="modal-content"><div class="modal-header"><div class="modal-title">Edit Expense</div><button class="close-btn" onclick="closeEditModal()">✕</button></div><div class="input-group"><label class="input-label">Category</label><input type="text" id="edit-category" placeholder="e.g., Groceries"></div><div class="input-group"><label class="input-label">Amount</label><input type="number" id="edit-amount" placeholder="0.00" step="0.01"></div><div class="modal-buttons"><button class="modal-btn cancel" onclick="closeEditModal()">Cancel</button><button class="modal-btn save" onclick="saveEdit()">Save Changes</button></div></div></div>
+<div id="analytics-modal" class="modal"><div class="modal-content"><div class="modal-header"><div class="modal-title">Utility Analytics</div><button class="close-btn" onclick="closeAnalytics()">✕</button></div><div id="analytics-body"></div></div></div>
+<div id="insights-modal" class="modal"><div class="modal-content insights-content"><div class="modal-header"><div class="modal-title">Spending Insights 📈</div><button class="close-btn" onclick="closeInsights()">✕</button></div><div id="insights-body" class="insights-body"></div></div></div>
+<script>let transactions=[],salaries={},utilities=[],settings=null,currentPeriodOffset=0,currentMonthOffset=0,editingItem=null,editingType=null,selectedQuickDate=null;
+
+function loadData(){
+  try{
+    transactions=JSON.parse(localStorage.getItem('transactions')||'[]');
+    salaries=JSON.parse(localStorage.getItem('salaries')||'{}');
+    utilities=JSON.parse(localStorage.getItem('utilities')||'[]');
+    settings=JSON.parse(localStorage.getItem('paySettings')||'null');
+
+    // Default to biweekly if not set
+    if(settings && !settings.payFrequency) {
+      settings.payFrequency = 'biweekly';
+      localStorage.setItem('paySettings', JSON.stringify(settings));
+    }
+  }catch(e){
+    console.error('Error loading data:',e);
+    alert('Data loading error. Try clicking Reset.');
+  }
+}
+
+function resetApp(){
+  confirm('⚠️ Delete ALL data and restart setup?')&&(localStorage.clear(),location.reload());
+}
+
+function checkFirstTimeUser(){
+  settings&&settings.startDate?(updatePeriodDisplay(),updateMonthlyDisplay(),renderQuickAddButtons()):showSetupWizard();
+}
+
+function showSetupWizard(){
+  generateQuickDates();
+  document.getElementById('setup-wizard').classList.add('active');
+}
+
+function handleFrequencyChange() {
+  const frequency = document.getElementById('pay-frequency-select').value;
+  const subtitle = document.querySelector('.wizard-subtitle');
+
+  if(frequency === 'monthly') {
+    subtitle.textContent = "When does your monthly pay cycle start? Choose the day of the month you typically get paid (e.g., 1st, 15th, or last day of month).";
+  } else {
+    subtitle.textContent = "Let's get you set up! When does your bi-weekly pay cycle start? This helps us track your expenses accurately across pay periods.";
+  }
+}
+
+function generateQuickDates(){
+  const container=document.getElementById('quick-dates');
+  const frequency = document.getElementById('pay-frequency-select')?.value || 'biweekly';
+  const today=new Date();
+  const dates=[];
+
+  if(frequency === 'monthly') {
+    // For monthly, suggest 1st, 15th, and last day of current/previous month
+    const currentMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    const previousMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+
+    dates.push(new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1)); // 1st of current month
+    dates.push(new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 15)); // 15th of current month
+    dates.push(new Date(previousMonth.getFullYear(), previousMonth.getMonth(), 1)); // 1st of previous month
+    dates.push(new Date(previousMonth.getFullYear(), previousMonth.getMonth(), 15)); // 15th of previous month
+  } else {
+    // Existing biweekly logic
+    for(let i=0;i<4;i++){
+      const date=new Date(today);
+      date.setDate(date.getDate()-i*14);
+      const dayOfWeek=date.getDay();
+      const daysToMonday=0===dayOfWeek?-6:1-dayOfWeek;
+      date.setDate(date.getDate()+daysToMonday);
+      dates.push(date);
+    }
+  }
+
+  container.innerHTML=dates.map((date,index)=>{
+    const formatted=date.toISOString().split('T')[0];
+    const display=date.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+    const label=0===index?' (Recommended)':'';
+    return`<button class="quick-date-btn" onclick="selectQuickDate('${formatted}')">${display}${label}</button>`;
+  }).join('');
+}
+
+function selectQuickDate(dateStr){
+  selectedQuickDate=dateStr;
+  document.getElementById('setup-start-date').value=dateStr;
+  document.querySelectorAll('.quick-date-btn').forEach(btn=>btn.classList.remove('selected'));
+  event.target.classList.add('selected');
+}
+
+function completeSetup(){
+  const startDate=document.getElementById('setup-start-date').value;
+  const frequency=document.getElementById('pay-frequency-select').value;
+
+  if(!startDate){
+    alert('Please select a start date');
+    return;
+  }
+
+  settings={startDate:startDate, payFrequency:frequency};
+  localStorage.setItem('paySettings',JSON.stringify(settings));
+  document.getElementById('setup-wizard').classList.remove('active');
+
+  // Show passcode setup
+  showPasscodeSetup();
+}
+
+function getPeriodDates(offset=0){
+  if(!settings)return null;
+
+  const start=new Date(settings.startDate);
+
+  if(settings.payFrequency === 'monthly') {
+    // Monthly calculation
+    const targetDate = new Date(start);
+    targetDate.setMonth(targetDate.getMonth() + offset);
+
+    // Get first day of the month
+    const periodStart = new Date(targetDate.getFullYear(), targetDate.getMonth(), 1);
+    // Get last day of the month
+    const periodEnd = new Date(targetDate.getFullYear(), targetDate.getMonth() + 1, 0);
+
+    return {start:periodStart, end:periodEnd};
+  } else {
+    // Existing biweekly logic
+    const periodStart=new Date(start);
+    periodStart.setDate(start.getDate()+offset*14);
+
+    const periodEnd=new Date(periodStart);
+    periodEnd.setDate(periodStart.getDate()+13);
+
+    return {start:periodStart,end:periodEnd};
+  }
+}
+
+function formatPeriodDisplay(periodDates){
+  if(!periodDates)return'Loading...';
+
+  const {start,end}=periodDates;
+
+  if(settings.payFrequency === 'monthly') {
+    // For monthly, just show "Month Year"
+    return start.toLocaleDateString('en-US',{month:'long',year:'numeric'});
+  } else {
+    // For biweekly, show date range with years
+    const startStr=start.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+    const endStr=end.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+
+    // If same year, only show year once at the end
+    if(start.getFullYear() === end.getFullYear()) {
+      const startShort=start.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+      return`${startShort} - ${endStr}`;
+    }
+
+    return`${startStr} - ${endStr}`;
+  }
+}
+
+function updatePeriodDisplay(){
+  const period=getPeriodDates(currentPeriodOffset);
+  if(!period)return;
+
+  document.getElementById('period-dates').textContent=formatPeriodDisplay(period);
+
+  const periodKey=period.start.toISOString().split('T')[0];
+  const salary=salaries[periodKey]||0;
+
+  const periodExpenses=transactions.filter(t=>{
+    const tDate=new Date(t.date);
+    return tDate>=period.start&&tDate<=period.end;
+  });
+
+  const totalExpenses=periodExpenses.reduce((sum,t)=>sum+t.amount,0);
+  const savings=salary-totalExpenses;
+
+  const allPeriods=getAllPeriodsBeforeCurrent();
+  const carryForward=allPeriods.reduce((total,p)=>{
+    const pKey=p.start.toISOString().split('T')[0];
+    const pSalary=salaries[pKey]||0;
+    const pExpenses=transactions.filter(t=>{
+      const tDate=new Date(t.date);
+      return tDate>=p.start&&tDate<=p.end;
+    }).reduce((sum,t)=>sum+t.amount,0);
+    return total+(pSalary-pExpenses);
+  },0);
+
+  const totalSavings=carryForward+savings;
+
+  document.getElementById('salary-display').textContent=`$${salary.toFixed(2)}`;
+  document.getElementById('expenses-display').textContent=`$${totalExpenses.toFixed(2)}`;
+  document.getElementById('savings-display').textContent=`$${savings.toFixed(2)}`;
+  document.getElementById('savings-display').className=`summary-value ${savings>=0?'positive':'negative'}`;
+  document.getElementById('carry-forward-display').textContent=`$${carryForward.toFixed(2)}`;
+  document.getElementById('carry-forward-display').className=`summary-value info`;
+  document.getElementById('total-savings-display').textContent=`$${totalSavings.toFixed(2)}`;
+  document.getElementById('total-savings-display').className=`summary-value ${totalSavings>=0?'positive':'negative'}`;
+
+  document.getElementById('salary-input').value=salary>0?salary:'';
+
+  updateStarToggle();
+  renderExpenses(periodExpenses);
+}
+
+function getAllPeriodsBeforeCurrent(){
+  const currentPeriod=getPeriodDates(currentPeriodOffset);
+  if(!currentPeriod)return[];
+
+  const periods=[];
+  let offset=currentPeriodOffset-1;
+
+  while(offset>=-1000){
+    const period=getPeriodDates(offset);
+    if(!period)break;
+
+    const hasData=salaries[period.start.toISOString().split('T')[0]]||
+                   transactions.some(t=>{
+                     const tDate=new Date(t.date);
+                     return tDate>=period.start&&tDate<=period.end;
+                   });
+
+    if(hasData){
+      periods.push(period);
+      offset--;
+    }else if(period.end<new Date(settings.startDate)){
+      break;
+    }else{
+      offset--;
+    }
+  }
+
+  return periods.reverse();
+}
+
+function changePeriod(direction){
+  currentPeriodOffset+=direction;
+  updatePeriodDisplay();
+}
+
+function jumpToCurrent(){
+  currentPeriodOffset=0;
+  updatePeriodDisplay();
+}
+
+function updateStarToggle(){
+  const star=document.getElementById('star-current');
+  star.classList.toggle('active',currentPeriodOffset===0);
+}
+
+function addExpense(){
+  if(!checkAuth())return;
+
+  const category=document.getElementById('category-input').value.trim();
+  const amount=parseFloat(document.getElementById('amount-input').value);
+
+  if(!category||!amount||amount<=0){
+    alert('Please enter valid category and amount');
+    return;
+  }
+
+  const period=getPeriodDates(currentPeriodOffset);
+  const transaction={
+    id:Date.now(),
+    date:period.start.toISOString().split('T')[0],
+    category:category,
+    amount:amount
+  };
+
+  transactions.push(transaction);
+  localStorage.setItem('transactions',JSON.stringify(transactions));
+
+  document.getElementById('category-input').value='';
+  document.getElementById('amount-input').value='';
+
+  updatePeriodDisplay();
+  renderQuickAddButtons();
+}
+
+document.getElementById('salary-input')?.addEventListener('blur',function(){
+  if(!checkAuth())return;
+
+  const salary=parseFloat(this.value)||0;
+  const period=getPeriodDates(currentPeriodOffset);
+  const periodKey=period.start.toISOString().split('T')[0];
+
+  if(salary>0){
+    salaries[periodKey]=salary;
+  }else{
+    delete salaries[periodKey];
+  }
+
+  localStorage.setItem('salaries',JSON.stringify(salaries));
+  updatePeriodDisplay();
+});
+
+document.getElementById('category-input')?.addEventListener('keypress',function(e){
+  if(e.key==='Enter'){
+    document.getElementById('amount-input').focus();
+  }
+});
+
+document.getElementById('amount-input')?.addEventListener('keypress',function(e){
+  if(e.key==='Enter'){
+    addExpense();
+  }
+});
+
+function renderExpenses(expenses){
+  const list=document.getElementById('expenses-list');
+
+  if(expenses.length===0){
+    list.innerHTML='<div class="empty-state"><div class="empty-state-icon">📊</div><div>No expenses yet</div></div>';
+    return;
+  }
+
+  list.innerHTML=expenses.sort((a,b)=>b.id-a.id).map(exp=>`
+    <div class="expense-item-wrapper">
+      <div class="expense-item" data-id="${exp.id}">
+        <div class="expense-info">
+          <div class="expense-desc">${exp.category}</div>
+          <div class="expense-cat">${new Date(exp.date).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}</div>
+        </div>
+        <div class="expense-amount">$${exp.amount.toFixed(2)}</div>
+      </div>
+      <div class="swipe-actions">
+        <button class="action-btn edit" onclick="editExpense(${exp.id})">
+          <span class="action-icon">✏️</span>
+          <span>Edit</span>
+        </button>
+        <button class="action-btn delete" onclick="deleteExpense(${exp.id})">
+          <span class="action-icon">🗑️</span>
+          <span>Delete</span>
+        </button>
+      </div>
+    </div>
+  `).join('');
+
+  setupSwipeGestures();
+}
+
+function setupSwipeGestures(){
+  const items=document.querySelectorAll('.expense-item');
+
+  items.forEach(item=>{
+    let startX=0,currentX=0,isDragging=false;
+
+    const handleStart=e=>{
+      if(!checkAuth())return;
+      startX=e.type==='touchstart'?e.touches[0].clientX:e.clientX;
+      isDragging=true;
+      item.classList.remove('transitioning');
+    };
+
+    const handleMove=e=>{
+      if(!isDragging)return;
+      currentX=e.type==='touchmove'?e.touches[0].clientX:e.clientX;
+      const diff=startX-currentX;
+
+      if(diff>20){
+        item.style.transform=`translate3d(-${Math.min(diff,160)}px,0,0)`;
+      }
+    };
+
+    const handleEnd=()=>{
+      if(!isDragging)return;
+      isDragging=false;
+
+      const diff=startX-currentX;
+      item.classList.add('transitioning');
+
+      if(diff>80){
+        item.classList.add('swiped');
+        item.style.transform='translate3d(-160px,0,0)';
+      }else{
+        item.classList.remove('swiped');
+        item.style.transform='translate3d(0,0,0)';
+      }
+    };
+
+    item.addEventListener('touchstart',handleStart,{passive:true});
+    item.addEventListener('touchmove',handleMove,{passive:true});
+    item.addEventListener('touchend',handleEnd);
+    item.addEventListener('mousedown',handleStart);
+    item.addEventListener('mousemove',handleMove);
+    item.addEventListener('mouseup',handleEnd);
+    item.addEventListener('mouseleave',handleEnd);
+  });
+}
+
+function editExpense(id){
+  if(!checkAuth())return;
+
+  const expense=transactions.find(t=>t.id===id);
+  if(!expense)return;
+
+  editingItem=expense;
+  editingType='expense';
+
+  document.getElementById('edit-category').value=expense.category;
+  document.getElementById('edit-amount').value=expense.amount;
+  document.getElementById('edit-modal').classList.add('active');
+}
+
+function closeEditModal(){
+  document.getElementById('edit-modal').classList.remove('active');
+  editingItem=null;
+  editingType=null;
+}
+
+function saveEdit(){
+  if(!checkAuth())return;
+
+  const category=document.getElementById('edit-category').value.trim();
+  const amount=parseFloat(document.getElementById('edit-amount').value);
+
+  if(!category||!amount||amount<=0){
+    alert('Please enter valid category and amount');
+    return;
+  }
+
+  if(editingType==='expense'){
+    const index=transactions.findIndex(t=>t.id===editingItem.id);
+    if(index!==-1){
+      transactions[index].category=category;
+      transactions[index].amount=amount;
+      localStorage.setItem('transactions',JSON.stringify(transactions));
+    }
+  }else if(editingType==='utility'){
+    const index=utilities.findIndex(u=>u.id===editingItem.id);
+    if(index!==-1){
+      utilities[index].type=category;
+      utilities[index].amount=amount;
+      localStorage.setItem('utilities',JSON.stringify(utilities));
+    }
+  }
+
+  closeEditModal();
+  updatePeriodDisplay();
+  updateMonthlyDisplay();
+}
+
+function deleteExpense(id){
+  if(!checkAuth())return;
+  if(!confirm('Delete this expense?'))return;
+
+  transactions=transactions.filter(t=>t.id!==id);
+  localStorage.setItem('transactions',JSON.stringify(transactions));
+  updatePeriodDisplay();
+}
+
+function renderQuickAddButtons(){
+  const container=document.getElementById('quick-add-buttons');
+  const recentCategories=[...new Set(transactions.map(t=>t.category))].slice(-5).reverse();
+
+  if(recentCategories.length===0){
+    container.innerHTML='<div class="quick-add-empty">Add your first expense to see quick options</div>';
+    return;
+  }
+
+  container.innerHTML=recentCategories.map(cat=>`
+    <button class="quick-add-btn" onclick="quickAddExpense('${cat}')">
+      💰 ${cat}
+    </button>
+  `).join('');
+}
+
+function quickAddExpense(category){
+  if(!checkAuth())return;
+
+  const amount=prompt(`Enter amount for ${category}:`);
+  if(!amount||isNaN(amount)||parseFloat(amount)<=0)return;
+
+  const period=getPeriodDates(currentPeriodOffset);
+  const transaction={
+    id:Date.now(),
+    date:period.start.toISOString().split('T')[0],
+    category:category,
+    amount:parseFloat(amount)
+  };
+
+  transactions.push(transaction);
+  localStorage.setItem('transactions',JSON.stringify(transactions));
+  updatePeriodDisplay();
+}
+
+function changeMonth(direction){
+  currentMonthOffset+=direction;
+  updateMonthlyDisplay();
+}
+
+function updateMonthlyDisplay(){
+  const today=new Date();
+  today.setMonth(today.getMonth()+currentMonthOffset);
+
+  const monthStart=new Date(today.getFullYear(),today.getMonth(),1);
+  const monthEnd=new Date(today.getFullYear(),today.getMonth()+1,0);
+
+  document.getElementById('month-display').textContent=today.toLocaleDateString('en-US',{month:'long',year:'numeric'});
+
+  const monthUtilities=utilities.filter(u=>{
+    const uDate=new Date(u.date);
+    return uDate>=monthStart&&uDate<=monthEnd;
+  });
+
+  const total=monthUtilities.reduce((sum,u)=>sum+u.amount,0);
+  document.getElementById('monthly-total').textContent=`$${total.toFixed(2)}`;
+
+  renderUtilities(monthUtilities);
+  checkUtilityDisclaimer();
+}
+
+function checkUtilityDisclaimer(){
+  const dismissed=localStorage.getItem('utilityDisclaimerDismissed');
+  const disclaimer=document.getElementById('utility-disclaimer');
+
+  if(!dismissed&&utilities.length===0){
+    disclaimer.style.display='block';
+  }else{
+    disclaimer.style.display='none';
+  }
+}
+
+function dismissUtilityDisclaimer(permanently){
+  document.getElementById('utility-disclaimer').style.display='none';
+  if(permanently){
+    localStorage.setItem('utilityDisclaimerDismissed','true');
+  }
+}
+
+document.getElementById('utility-type')?.addEventListener('change',function(){
+  const customGroup=document.getElementById('custom-utility-group');
+  customGroup.style.display=this.value==='Other'?'block':'none';
+});
+
+function addUtility(){
+  if(!checkAuth())return;
+
+  let type=document.getElementById('utility-type').value;
+  const amount=parseFloat(document.getElementById('utility-amount').value);
+
+  if(type==='Other'){
+    type=document.getElementById('custom-utility').value.trim();
+  }
+
+  if(!type||!amount||amount<=0){
+    alert('Please select utility type and enter amount');
+    return;
+  }
+
+  const today=new Date();
+  today.setMonth(today.getMonth()+currentMonthOffset);
+
+  const utility={
+    id:Date.now(),
+    date:new Date(today.getFullYear(),today.getMonth(),1).toISOString().split('T')[0],
+    type:type,
+    amount:amount
+  };
+
+  utilities.push(utility);
+  localStorage.setItem('utilities',JSON.stringify(utilities));
+
+  document.getElementById('utility-type').value='';
+  document.getElementById('utility-amount').value='';
+  document.getElementById('custom-utility').value='';
+  document.getElementById('custom-utility-group').style.display='none';
+
+  updateMonthlyDisplay();
+}
+
+function renderUtilities(utilityList){
+  const list=document.getElementById('utilities-list');
+
+  if(utilityList.length===0){
+    list.innerHTML='<div class="empty-state"><div class="empty-state-icon">💡</div><div>No utilities yet</div></div>';
+    return;
+  }
+
+  list.innerHTML=utilityList.sort((a,b)=>b.id-a.id).map(util=>`
+    <div class="expense-item-wrapper">
+      <div class="expense-item" data-id="${util.id}">
+        <div class="expense-info">
+          <div class="expense-desc">${util.type}</div>
+          <div class="expense-cat">${new Date(util.date).toLocaleDateString('en-US',{month:'long',year:'numeric'})}</div>
+        </div>
+        <div class="expense-amount">$${util.amount.toFixed(2)}</div>
+      </div>
+      <div class="swipe-actions">
+        <button class="action-btn edit" onclick="editUtility(${util.id})">
+          <span class="action-icon">✏️</span>
+          <span>Edit</span>
+        </button>
+        <button class="action-btn delete" onclick="deleteUtility(${util.id})">
+          <span class="action-icon">🗑️</span>
+          <span>Delete</span>
+        </button>
+      </div>
+    </div>
+  `).join('');
+
+  setupSwipeGestures();
+}
+
+function editUtility(id){
+  if(!checkAuth())return;
+
+  const utility=utilities.find(u=>u.id===id);
+  if(!utility)return;
+
+  editingItem=utility;
+  editingType='utility';
+
+  document.getElementById('edit-category').value=utility.type;
+  document.getElementById('edit-amount').value=utility.amount;
+  document.getElementById('edit-modal').classList.add('active');
+}
+
+function deleteUtility(id){
+  if(!checkAuth())return;
+  if(!confirm('Delete this utility?'))return;
+
+  utilities=utilities.filter(u=>u.id!==id);
+  localStorage.setItem('utilities',JSON.stringify(utilities));
+  updateMonthlyDisplay();
+}
+
+function showSettings(){
+  if(!checkAuth())return;
+
+  const currentDate=settings?new Date(settings.startDate).toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}):'Not set';
+  document.getElementById('current-start-date').textContent=currentDate;
+  document.getElementById('settings-start-date').value=settings?settings.startDate:'';
+  document.getElementById('settings-pay-frequency').value=settings?settings.payFrequency:'biweekly';
+
+  checkNotificationPermissions();
+
+  document.getElementById('settings-modal').classList.add('active');
+}
+
+function closeSettings(){
+  document.getElementById('settings-modal').classList.remove('active');
+}
+
+function saveSettings(){
+  if(!checkAuth())return;
+
+  const newStartDate=document.getElementById('settings-start-date').value;
+  const newFrequency=document.getElementById('settings-pay-frequency').value;
+
+  if(!newStartDate){
+    alert('Please select a start date');
+    return;
+  }
+
+  if(settings.startDate!==newStartDate||settings.payFrequency!==newFrequency){
+    if(!confirm('⚠️ This will recalculate all pay periods. Continue?'))return;
+
+    settings.startDate=newStartDate;
+    settings.payFrequency=newFrequency;
+    localStorage.setItem('paySettings',JSON.stringify(settings));
+
+    currentPeriodOffset=0;
+    updatePeriodDisplay();
+    updateMonthlyDisplay();
+  }
+
+  closeSettings();
+  alert('✅ Settings saved!');
+}
+
+function exportData(){
+  const data={
+    transactions:transactions,
+    salaries:salaries,
+    utilities:utilities,
+    settings:settings,
+    exportDate:new Date().toISOString()
+  };
+
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  a.download=`expense-tracker-backup-${new Date().toISOString().split('T')[0]}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+
+  alert('✅ Data exported successfully!');
+}
+
+function importData(event){
+  if(!checkAuth())return;
+
+  const file=event.target.files[0];
+  if(!file)return;
+
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      const data=JSON.parse(e.target.result);
+
+      if(!confirm('⚠️ This will replace ALL current data. Continue?'))return;
+
+      transactions=data.transactions||[];
+      salaries=data.salaries||{};
+      utilities=data.utilities||[];
+      settings=data.settings||null;
+
+      localStorage.setItem('transactions',JSON.stringify(transactions));
+      localStorage.setItem('salaries',JSON.stringify(salaries));
+      localStorage.setItem('utilities',JSON.stringify(utilities));
+      localStorage.setItem('paySettings',JSON.stringify(settings));
+
+      currentPeriodOffset=0;
+      currentMonthOffset=0;
+
+      updatePeriodDisplay();
+      updateMonthlyDisplay();
+      renderQuickAddButtons();
+
+      alert('✅ Data imported successfully!');
+    }catch(err){
+      alert('❌ Error importing data. Please check the file format.');
+      console.error(err);
+    }
+  };
+  reader.readAsText(file);
+  event.target.value='';
+}
+
+function showAnalytics(){
+  const monthlyData={};
+
+  utilities.forEach(u=>{
+    const date=new Date(u.date);
+    const monthKey=`${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}`;
+
+    if(!monthlyData[monthKey])monthlyData[monthKey]={};
+    if(!monthlyData[monthKey][u.type])monthlyData[monthKey][u.type]=0;
+    monthlyData[monthKey][u.type]+=u.amount;
+  });
+
+  const sortedMonths=Object.keys(monthlyData).sort().reverse();
+
+  let html='<table class="analytics-table"><thead><tr><th>Month</th><th>Utility</th><th>Amount</th></tr></thead><tbody>';
+
+  sortedMonths.forEach(month=>{
+    const monthDate=new Date(month+'-01');
+    const monthName=monthDate.toLocaleDateString('en-US',{month:'long',year:'numeric'});
+    const utilities=monthlyData[month];
+
+    Object.entries(utilities).forEach(([type,amount],index)=>{
+      html+=`<tr><td>${index===0?monthName:''}</td><td>${type}</td><td>$${amount.toFixed(2)}</td></tr>`;
+    });
+  });
+
+  html+='</tbody></table>';
+
+  document.getElementById('analytics-body').innerHTML=html;
+  document.getElementById('analytics-modal').classList.add('active');
+}
+
+function closeAnalytics(){
+  document.getElementById('analytics-modal').classList.remove('active');
+}
+
+function showInsights(){
+  const allPeriods=[];
+  let offset=-50;
+
+  while(offset<=50){
+    const period=getPeriodDates(offset);
+    if(!period)break;
+
+    const periodKey=period.start.toISOString().split('T')[0];
+    const salary=salaries[periodKey]||0;
+    const expenses=transactions.filter(t=>{
+      const tDate=new Date(t.date);
+      return tDate>=period.start&&tDate<=period.end;
+    }).reduce((sum,t)=>sum+t.amount,0);
+
+    if(salary>0||expenses>0){
+      allPeriods.push({period:period,salary:salary,expenses:expenses,savings:salary-expenses});
+    }
+    offset++;
+  }
+
+  if(allPeriods.length<2){
+    alert('📊 Need more data to generate insights. Add expenses for at least 2 pay periods!');
+    return;
+  }
+
+  const avgSalary=allPeriods.reduce((sum,p)=>sum+p.salary,0)/allPeriods.length;
+  const avgExpenses=allPeriods.reduce((sum,p)=>sum+p.expenses,0)/allPeriods.length;
+  const avgSavings=avgSalary-avgExpenses;
+
+  const categoryTotals={};
+  transactions.forEach(t=>{
+    categoryTotals[t.category]=(categoryTotals[t.category]||0)+t.amount;
+  });
+
+  const topCategories=Object.entries(categoryTotals).sort((a,b)=>b[1]-a[1]).slice(0,5);
+
+  const lastPeriod=allPeriods[allPeriods.length-1];
+  const previousPeriod=allPeriods[allPeriods.length-2];
+  const expenseTrend=lastPeriod.expenses-previousPeriod.expenses;
+
+  let html=`
+    <div class="insight-section">
+      <div class="insight-title">💰 Financial Overview</div>
+      <div class="insight-card">
+        <span class="insight-label">Average ${settings.payFrequency === 'monthly' ? 'Monthly' : 'Bi-weekly'} Income</span>
+        <span class="insight-value">$${avgSalary.toFixed(2)}</span>
+      </div>
+      <div class="insight-card">
+        <span class="insight-label">Average ${settings.payFrequency === 'monthly' ? 'Monthly' : 'Bi-weekly'} Expenses</span>
+        <span class="insight-value">$${avgExpenses.toFixed(2)}</span>
+      </div>
+      <div class="insight-card">
+        <span class="insight-label">Average ${settings.payFrequency === 'monthly' ? 'Monthly' : 'Bi-weekly'} Savings</span>
+        <span class="insight-value ${avgSavings>=0?'positive':'negative'}">$${avgSavings.toFixed(2)}</span>
+      </div>
+    </div>
+
+    <div class="insight-section">
+      <div class="insight-title">📈 Spending Trends</div>
+      <div class="insight-card">
+        <span class="insight-label">Last Period vs Previous</span>
+        <span class="insight-value">
+          ${expenseTrend>0?'↑':'↓'} $${Math.abs(expenseTrend).toFixed(2)}
+          <span class="insight-trend ${expenseTrend>0?'up':'down'}">
+            ${expenseTrend>0?'(Increased)':'(Decreased)'}
+          </span>
+        </span>
+      </div>
+    </div>
+
+    <div class="insight-section">
+      <div class="insight-title">🏆 Top Spending Categories</div>
+      <div class="category-breakdown">
+        ${topCategories.map(([cat,amount])=>`
+          <div class="category-item">
+            <span class="category-name">${cat}</span>
+            <span class="category-amount">$${amount.toFixed(2)}</span>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `;
+
+  document.getElementById('insights-body').innerHTML=html;
+  document.getElementById('insights-modal').classList.add('active');
+}
+
+function closeInsights(){
+  document.getElementById('insights-modal').classList.remove('active');
+}
+
+// Authentication & Security Functions
+let authData = JSON.parse(localStorage.getItem('authData') || 'null');
+
+function showPasscodeSetup() {
+  showModal('passcode-setup-modal');
+  document.getElementById('setup-digit-1').focus();
+}
+
+function setupPasscodeDigitInputs() {
+  const digits = document.querySelectorAll('.passcode-digit');
+  digits.forEach((digit, index) => {
+    digit.addEventListener('input', (e) => {
+      if (e.target.value.length === 1 && index < digits.length - 1) {
+        digits[index + 1].focus();
+      }
+    });
+
+    digit.addEventListener('keydown', (e) => {
+      if (e.key === 'Backspace' && !e.target.value && index > 0) {
+        digits[index - 1].focus();
+      }
+    });
+  });
+}
+
+function completePasscodeSetup() {
+  const passcode = Array.from(document.querySelectorAll('[id^="setup-digit-"]'))
+    .map(input => input.value)
+    .join('');
+
+  if (passcode.length !== 6 || !/^\d{6}$/.test(passcode)) {
+    alert('Please enter a valid 6-digit PIN');
+    return;
+  }
+
+  showModal('security-question-modal');
+}
+
+function showModal(modalId) {
+  document.querySelectorAll('.modal').forEach(m => m.classList.remove('active'));
+  document.getElementById(modalId).classList.add('active');
+}
+
+function completeSecuritySetup() {
+  const question = document.getElementById('security-question').value;
+  const answer = document.getElementById('security-answer').value.trim().toLowerCase();
+
+  if (!question || !answer) {
+    alert('Please select a question and provide an answer');
+    return;
+  }
+
+  const passcode = Array.from(document.querySelectorAll('[id^="setup-digit-"]'))
+    .map(input => input.value)
+    .join('');
+
+  const recoveryCode = generateRecoveryCode();
+
+  authData = {
+    passcode: hashCode(passcode),
+    securityQuestion: question,
+    securityAnswer: hashCode(answer),
+    recoveryCode: hashCode(recoveryCode)
+  };
+
+  localStorage.setItem('authData', JSON.stringify(authData));
+
+  document.getElementById('displayed-recovery-code').textContent = recoveryCode;
+  showModal('recovery-code-modal');
+}
+
+function generateRecoveryCode() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let code = '';
+  for (let i = 0; i < 16; i++) {
+    if (i > 0 && i % 4 === 0) code += '-';
+    code += chars[Math.floor(Math.random() * chars.length)];
+  }
+  return code;
+}
+
+function hashCode(str) {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash;
+  }
+  return hash.toString();
+}
+
+function copyRecoveryCode() {
+  const code = document.getElementById('displayed-recovery-code').textContent;
+  navigator.clipboard.writeText(code).then(() => {
+    alert('✅ Recovery code copied to clipboard!');
+  });
+}
+
+function emailRecoveryCode() {
+  const code = document.getElementById('displayed-recovery-code').textContent;
+  const subject = 'Expense Tracker Recovery Code';
+  const body = `Your Expense Tracker Recovery Code:
+
+${code}
+
+⚠️ Keep this code safe! You'll need it if you forget your PIN.
+
+Do not share this code with anyone.`;
+  window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+}
+
+function finishSetup() {
+  document.querySelectorAll('.modal').forEach(m => m.classList.remove('active'));
+  updatePeriodDisplay();
+  updateMonthlyDisplay();
+  renderQuickAddButtons();
+}
+
+function checkAuth() {
+  if (!authData) return true;
+
+  const lastAuth = sessionStorage.getItem('lastAuth');
+  const now = Date.now();
+
+  if (lastAuth && (now - parseInt(lastAuth)) < 15 * 60 * 1000) {
+    return true;
+  }
+
+  showLockScreen();
+  return false;
+}
+
+function showLockScreen() {
+  const existingLock = document.getElementById('lock-screen');
+  if (existingLock) return;
+
+  const lockScreen = document.createElement('div');
+  lockScreen.id = 'lock-screen';
+  lockScreen.innerHTML = `
+    <div class="lock-container">
+      <div class="lock-header">
+        <div class="auth-icon">🔒</div>
+        <h2 style="font-size:1.5rem;margin-bottom:10px">Enter PIN</h2>
+      </div>
+      <div class="passcode-input-group">
+        <input type="password" class="passcode-digit" id="unlock-digit-1" maxlength="1" inputmode="numeric">
+        <input type="password" class="passcode-digit" id="unlock-digit-2" maxlength="1" inputmode="numeric">
+        <input type="password" class="passcode-digit" id="unlock-digit-3" maxlength="1" inputmode="numeric">
+        <input type="password" class="passcode-digit" id="unlock-digit-4" maxlength="1" inputmode="numeric">
+        <input type="password" class="passcode-digit" id="unlock-digit-5" maxlength="1" inputmode="numeric">
+        <input type="password" class="passcode-digit" id="unlock-digit-6" maxlength="1" inputmode="numeric">
+      </div>
+      <button class="modal-btn save" onclick="verifyUnlock()" style="width:100%;margin:20px 0">Unlock</button>
+      <button class="unlock-forgot-btn" onclick="showRecoveryOptions()">Forgot PIN?</button>
+    </div>
+  `;
+
+  document.body.appendChild(lockScreen);
+  setupPasscodeDigitInputs();
+  document.getElementById('unlock-digit-1').focus();
+}
+
+function verifyUnlock() {
+  const passcode = Array.from(document.querySelectorAll('[id^="unlock-digit-"]'))
+    .map(input => input.value)
+    .join('');
+
+  if (hashCode(passcode) === authData.passcode) {
+    sessionStorage.setItem('lastAuth', Date.now().toString());
+    document.getElementById('lock-screen').remove();
+  } else {
+    const container = document.querySelector('.lock-container');
+    container.classList.add('shake-error');
+    setTimeout(() => container.classList.remove('shake-error'), 500);
+    document.querySelectorAll('[id^="unlock-digit-"]').forEach(input => input.value = '');
+    document.getElementById('unlock-digit-1').focus();
+  }
+}
+
+function showRecoveryOptions() {
+  document.getElementById('lock-screen').remove();
+  showModal('recovery-options-modal');
+}
+
+function selectRecoveryMethod(method) {
+  if (method === 'security') {
+    document.getElementById('recovery-question-text').textContent = authData.securityQuestion;
+    showModal('security-question-recovery-modal');
+  } else if (method === 'recovery') {
+    showModal('recovery-code-recovery-modal');
+  } else if (method === 'reset') {
+    if (confirm('⚠️ WARNING: This will delete ALL your data including expenses, salaries, and settings. This cannot be undone!
+
+Are you absolutely sure?')) {
+      localStorage.clear();
+      sessionStorage.clear();
+      location.reload();
+    }
+  }
+}
+
+function verifySecurityAnswer() {
+  const answer = document.getElementById('security-answer-input').value.trim().toLowerCase();
+
+  if (hashCode(answer) === authData.securityAnswer) {
+    sessionStorage.setItem('lastAuth', Date.now().toString());
+    document.querySelectorAll('.modal').forEach(m => m.classList.remove('active'));
+    alert('✅ Verified! You can now change your PIN in Settings.');
+  } else {
+    alert('❌ Incorrect answer. Please try again.');
+    document.getElementById('security-answer-input').value = '';
+  }
+}
+
+function verifyRecoveryCode() {
+  const code = document.getElementById('recovery-code-input').value.trim().toUpperCase();
+
+  if (hashCode(code) === authData.recoveryCode) {
+    sessionStorage.setItem('lastAuth', Date.now().toString());
+    document.querySelectorAll('.modal').forEach(m => m.classList.remove('active'));
+    alert('✅ Verified! You can now change your PIN in Settings.');
+  } else {
+    alert('❌ Incorrect recovery code. Please try again.');
+    document.getElementById('recovery-code-input').value = '';
+  }
+}
+
+function changePasscodeSettings() {
+  const current = document.getElementById('current-passcode-settings').value;
+  const newPass = document.getElementById('new-passcode-settings').value;
+  const confirm = document.getElementById('confirm-passcode-settings').value;
+
+  if (!current || !newPass || !confirm) {
+    alert('Please fill in all fields');
+    return;
+  }
+
+  if (!/^\d{6}$/.test(newPass)) {
+    alert('New PIN must be exactly 6 digits');
+    return;
+  }
+
+  if (newPass !== confirm) {
+    alert('New PINs do not match');
+    return;
+  }
+
+  if (hashCode(current) !== authData.passcode) {
+    alert('❌ Current PIN is incorrect');
+    return;
+  }
+
+  authData.passcode = hashCode(newPass);
+  localStorage.setItem('authData', JSON.stringify(authData));
+
+  document.getElementById('current-passcode-settings').value = '';
+  document.getElementById('new-passcode-settings').value = '';
+  document.getElementById('confirm-passcode-settings').value = '';
+
+  alert('✅ PIN changed successfully!');
+}
+
+function showRegenerateRecoveryCode() {
+  showModal('regenerate-recovery-modal');
+  document.getElementById('verify-pin-digit-1').focus();
+}
+
+function verifyPINForRecovery() {
+  const passcode = Array.from(document.querySelectorAll('[id^="verify-pin-digit-"]'))
+    .map(input => input.value)
+    .join('');
+
+  if (hashCode(passcode) === authData.passcode) {
+    const newRecoveryCode = generateRecoveryCode();
+    authData.recoveryCode = hashCode(newRecoveryCode);
+    localStorage.setItem('authData', JSON.stringify(authData));
+
+    document.getElementById('new-recovery-code-display').textContent = newRecoveryCode;
+    showModal('new-recovery-code-modal');
+  } else {
+    alert('❌ Incorrect PIN');
+    document.querySelectorAll('[id^="verify-pin-digit-"]').forEach(input => input.value = '');
+    document.getElementById('verify-pin-digit-1').focus();
+  }
+}
+
+function copyNewRecoveryCode() {
+  const code = document.getElementById('new-recovery-code-display').textContent;
+  navigator.clipboard.writeText(code).then(() => {
+    alert('✅ Recovery code copied!');
+  });
+}
+
+function emailNewRecoveryCode() {
+  const code = document.getElementById('new-recovery-code-display').textContent;
+  const subject = 'New Expense Tracker Recovery Code';
+  const body = `Your NEW Expense Tracker Recovery Code:
+
+${code}
+
+⚠️ This replaces your previous recovery code. Keep it safe!
+
+Do not share this code with anyone.`;
+  window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+}
+
+function closeRegenerateModal() {
+  document.querySelectorAll('.modal').forEach(m => m.classList.remove('active'));
+  document.getElementById('settings-modal').classList.add('active');
+}
+
+// Notifications
+function checkNotificationPermissions() {
+  if (!('Notification' in window)) {
+    document.getElementById('notification-status').style.display = 'block';
+    document.getElementById('notification-status-text').textContent = '⚠️ Notifications not supported on this device';
+    document.getElementById('notifications-toggle').disabled = true;
+    return;
+  }
+
+  const enabled = localStorage.getItem('notificationsEnabled') === 'true';
+  document.getElementById('notifications-toggle').checked = enabled;
+
+  if (enabled && Notification.permission === 'granted') {
+    document.getElementById('notification-status').style.display = 'block';
+    document.getElementById('notification-status-text').textContent = '✅ Notifications enabled';
+  } else if (enabled && Notification.permission === 'denied') {
+    document.getElementById('notification-status').style.display = 'block';
+    document.getElementById('notification-status-text').textContent = '⚠️ Notifications blocked. Enable in device settings.';
+  }
+}
+
+function toggleNotifications() {
+  const toggle = document.getElementById('notifications-toggle');
+
+  if (toggle.checked) {
+    if (Notification.permission === 'granted') {
+      localStorage.setItem('notificationsEnabled', 'true');
+      scheduleNotifications();
+      document.getElementById('notification-status').style.display = 'block';
+      document.getElementById('notification-status-text').textContent = '✅ Notifications enabled';
+    } else if (Notification.permission !== 'denied') {
+      Notification.requestPermission().then(permission => {
+        if (permission === 'granted') {
+          localStorage.setItem('notificationsEnabled', 'true');
+          scheduleNotifications();
+          document.getElementById('notification-status').style.display = 'block';
+          document.getElementById('notification-status-text').textContent = '✅ Notifications enabled';
+        } else {
+          toggle.checked = false;
+          document.getElementById('notification-status').style.display = 'block';
+          document.getElementById('notification-status-text').textContent = '⚠️ Permission denied';
+        }
+      });
+    } else {
+      toggle.checked = false;
+      alert('Please enable notifications in your device settings');
+    }
+  } else {
+    localStorage.setItem('notificationsEnabled', 'false');
+    document.getElementById('notification-status').style.display = 'none';
+  }
+}
+
+function scheduleNotifications() {
+  if (localStorage.getItem('notificationsEnabled') === 'true' && Notification.permission === 'granted') {
+    const period = getPeriodDates(0);
+    if (period) {
+      new Notification('💰 New Pay Period!', {
+        body: `Your ${settings.payFrequency === 'monthly' ? 'monthly' : 'bi-weekly'} pay period has started. Track your expenses!`,
+        icon: 'icon.JPG'
+      });
+    }
+  }
+}
+
+// Initialize app
+loadData();
+if (authData) {
+  showLockScreen();
+} else {
+  checkFirstTimeUser();
+}
+setupPasscodeDigitInputs();
+
+// Add pane swipe navigation
+let touchStartX = 0;
+let touchEndX = 0;
+
+document.querySelectorAll('.pane').forEach(pane => {
+  pane.addEventListener('touchstart', e => {
+    touchStartX = e.changedTouches[0].screenX;
+  });
+
+  pane.addEventListener('touchend', e => {
+    touchEndX = e.changedTouches[0].screenX;
+    handleSwipe(pane);
+  });
+});
+
+function handleSwipe(pane) {
+  if (touchEndX < touchStartX - 50) {
+    if (pane.id === 'pane-period') {
+      changePeriod(1);
+    }
+  }
+
+  if (touchEndX > touchStartX + 50) {
+    if (pane.id === 'pane-period') {
+      changePeriod(-1);
+    }
+  }
+}
+</script></script>
+
+<!-- ==================== AUTHENTICATION SYSTEM ==================== -->
+
+<!-- Passcode Setup -->
+<div id="passcode-setup-modal" class="modal auth-modal">
+  <div class="modal-content auth-content">
+    <div class="modal-header"><div class="modal-title">🔐 Secure Your App</div></div>
+    <div class="auth-icon">🔒</div>
+    <p class="auth-subtitle">Create a 6-digit passcode to protect your financial data</p>
+    <div class="passcode-input-group">
+      <input type="password" id="setup-1" maxlength="1" class="passcode-digit" inputmode="numeric" pattern="[0-9]">
+      <input type="password" id="setup-2" maxlength="1" class="passcode-digit" inputmode="numeric" pattern="[0-9]">
+      <input type="password" id="setup-3" maxlength="1" class="passcode-digit" inputmode="numeric" pattern="[0-9]">
+      <input type="password" id="setup-4" maxlength="1" class="passcode-digit" inputmode="numeric" pattern="[0-9]">
+      <input type="password" id="setup-5" maxlength="1" class="passcode-digit" inputmode="numeric" pattern="[0-9]">
+      <input type="password" id="setup-6" maxlength="1" class="passcode-digit" inputmode="numeric" pattern="[0-9]">
+    </div>
+    <p class="passcode-hint">Enter 6 digits (0-9)</p>
+    <div class="modal-buttons">
+      <button class="modal-btn save" onclick="completeAuthSetup()">🔒 Complete Setup</button>
+    </div>
   </div>
+</div>
 
-  <!-- RELIABLE CDN -->
-  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+  <div id="recovery-code-modal" class="modal auth-modal" style="z-index:10001"><div class="modal-content" style="max-width:550px"><div class="modal-header"><div class="modal-title">✅ PIN Created!</div></div><div class="auth-content"><div class="auth-icon">🔑</div><p class="auth-subtitle" style="font-size:1.1rem;margin-bottom:20px"><strong>Your Recovery Code:</strong></p><div style="background:rgba(251,191,36,0.15);border:2px solid rgba(251,191,36,0.4);border-radius:16px;padding:30px;margin:20px 0"><div id="recovery-display-code" style="font-size:3rem;font-weight:800;letter-spacing:8px;color:#fbbf24;text-align:center;font-family:monospace">XXXX</div></div><div style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:12px;padding:20px;margin:20px 0"><p style="color:rgba(255,255,255,0.9);font-size:0.95rem;margin:0"><strong style="color:#ef4444">⚠️</strong> Email NOW!</p></div><button class="modal-btn save" style="width:100%;margin-bottom:12px" onclick="emailRecoveryCode()">📧 Email</button><button class="modal-btn cancel" style="width:100%" onclick="closeRecoveryCodeModal()">Later</button></div></div></div>
+  <div id="recovery-input-modal" class="modal auth-modal" style="z-index:10001"><div class="modal-content"><div class="modal-header"><div class="modal-title">🔓 Enter Code</div><button class="close-btn" onclick="closeRecoveryInputModal()">×</button></div><div class="auth-content"><div class="auth-icon">🔑</div><p class="auth-subtitle">4-character code from email</p><div class="passcode-input-group"><input type="text" class="passcode-digit" id="recovery-1" maxlength="1" style="text-transform:uppercase"><input type="text" class="passcode-digit" id="recovery-2" maxlength="1" style="text-transform:uppercase"><input type="text" class="passcode-digit" id="recovery-3" maxlength="1" style="text-transform:uppercase"><input type="text" class="passcode-digit" id="recovery-4" maxlength="1" style="text-transform:uppercase"></div><p class="passcode-hint">From email</p><button class="modal-btn save" style="width:100%;margin-top:20px" onclick="verifyRecoveryCode()">✅ Verify</button></div></div></div>
+  <div id="new-pin-modal" class="modal auth-modal" style="z-index:10001"><div class="modal-content"><div class="modal-header"><div class="modal-title">🔑 New PIN</div></div><div class="auth-content"><div class="auth-icon">✅</div><p class="auth-subtitle">Create new PIN</p><div class="passcode-input-group"><input type="password" class="passcode-digit" id="newpin-1" maxlength="1" inputmode="numeric"><input type="password" class="passcode-digit" id="newpin-2" maxlength="1" inputmode="numeric"><input type="password" class="passcode-digit" id="newpin-3" maxlength="1" inputmode="numeric"><input type="password" class="passcode-digit" id="newpin-4" maxlength="1" inputmode="numeric"><input type="password" class="passcode-digit" id="newpin-5" maxlength="1" inputmode="numeric"><input type="password" class="passcode-digit" id="newpin-6" maxlength="1" inputmode="numeric"></div><p class="passcode-hint">6 digits</p><button class="modal-btn save" style="width:100%;margin-top:20px" onclick="saveNewPinAfterRecovery()">✅ Save</button></div></div></div>
+  <div id="regenerate-recovery-modal" class="modal auth-modal" style="z-index:10001"><div class="modal-content"><div class="modal-header"><div class="modal-title">🔐 Verify PIN</div><button class="close-btn" onclick="closeRegenerateModal()">×</button></div><div class="auth-content"><div class="auth-icon">🔑</div><p class="auth-subtitle">Enter current PIN</p><div class="passcode-input-group"><input type="password" class="passcode-digit" id="verify-1" maxlength="1" inputmode="numeric"><input type="password" class="passcode-digit" id="verify-2" maxlength="1" inputmode="numeric"><input type="password" class="passcode-digit" id="verify-3" maxlength="1" inputmode="numeric"><input type="password" class="passcode-digit" id="verify-4" maxlength="1" inputmode="numeric"><input type="password" class="passcode-digit" id="verify-5" maxlength="1" inputmode="numeric"><input type="password" class="passcode-digit" id="verify-6" maxlength="1" inputmode="numeric"></div><p class="passcode-hint">Current PIN</p><button class="modal-btn save" style="width:100%;margin-top:20px" onclick="verifyPinAndGenerateNew()">✅ Generate</button></div></div></div>
+  <div id="new-recovery-code-modal" class="modal auth-modal" style="z-index:10002"><div class="modal-content" style="max-width:550px"><div class="modal-header"><div class="modal-title">✅ New Code!</div></div><div class="auth-content"><div class="auth-icon">🔑</div><p class="auth-subtitle" style="font-size:1.1rem;margin-bottom:20px"><strong>NEW Code:</strong></p><div style="background:rgba(251,191,36,0.15);border:2px solid rgba(251,191,36,0.4);border-radius:16px;padding:30px;margin:20px 0"><div id="new-recovery-display" style="font-size:3rem;font-weight:800;letter-spacing:8px;color:#fbbf24;text-align:center;font-family:monospace">XXXX</div></div><div style="background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.3);border-radius:12px;padding:20px;margin:20px 0"><p style="color:rgba(255,255,255,0.9);font-size:0.95rem;margin:0"><strong style="color:#3b82f6">ℹ️</strong> Old code invalid!</p></div><button class="modal-btn save" style="width:100%;margin-bottom:12px" onclick="emailRecoveryCode()">📧 Email</button><button class="modal-btn cancel" style="width:100%" onclick="closeNewRecoveryModal()">Done</button></div></div></div>
+  <!-- Lock Screen -->
+<div id="lock-screen" style="display:none">
+  <div class="lock-container">
+    <div class="lock-header">
+      <div style="font-size:4rem">💰</div>
+      <h1 style="font-size:1.8rem; margin:10px 0">Expense Tracker</h1>
+      <p style="color:rgba(255,255,255,0.6); margin-bottom:40px">Enter your passcode</p>
+    </div>
+    <div class="passcode-input-group">
+      <input type="password" id="unlock-1" maxlength="1" class="passcode-digit" inputmode="numeric" pattern="[0-9]">
+      <input type="password" id="unlock-2" maxlength="1" class="passcode-digit" inputmode="numeric" pattern="[0-9]">
+      <input type="password" id="unlock-3" maxlength="1" class="passcode-digit" inputmode="numeric" pattern="[0-9]">
+      <input type="password" id="unlock-4" maxlength="1" class="passcode-digit" inputmode="numeric" pattern="[0-9]">
+      <input type="password" id="unlock-5" maxlength="1" class="passcode-digit" inputmode="numeric" pattern="[0-9]">
+      <input type="password" id="unlock-6" maxlength="1" class="passcode-digit" inputmode="numeric" pattern="[0-9]">
+    </div>
+    <div id="passcode-error" style="display:none; color:#ef4444; margin-top:20px; font-weight:600">❌ Incorrect passcode</div>
+        <div style="margin-top:30px"><button style="background:rgba(59,130,246,0.2);border:1px solid rgba(59,130,246,0.4);color:#3b82f6;padding:14px;border-radius:12px;cursor:pointer;font-weight:700;font-size:1rem;width:100%" onclick="showRecoveryCodeInput()">🔑 Use Recovery Code</button></div><div style="margin-top:12px"><button style="background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.3);color:#ef4444;padding:10px;border-radius:10px;cursor:pointer;font-size:0.85rem;width:100%" onclick="resetAppFromLockScreen()">🗑️ Reset</button></div>
 
-  <script>
-    async function waitForEthers() {
-      if (typeof ethers === "undefined") {
-        setTimeout(waitForEthers, 200);
-        return;
-      }
-      initApp();
-    }
+    <div style="margin-top:30px">
+      
+    </div>
+  </div>
+</div>
 
-    function initApp() {
-      const progressEl = document.getElementById("progress");
-      const connectBtn = document.getElementById("connect");
-      const donateBtn = document.getElementById("donate");
-      const refundBtn = document.getElementById("refund");
-      const countdownEl = document.getElementById("countdown");
+<!-- Recovery Key Input -->
+<div id="recovery-key-input-modal" class="modal auth-modal">
+  <div class="modal-content auth-content">
+    <div class="modal-header">
+      <div class="modal-title">🔑 Enter Recovery Key</div>
+      <button class="close-btn" onclick="closeRecoveryKeyInput()">✕</button>
+    </div>
+    <p class="auth-subtitle">Enter your 12-word recovery key (separated by spaces or dashes)</p>
+    <div class="input-group">
+      <textarea id="recovery-key-input" placeholder="word1-word2-word3-word4-word5-word6-word7-word8-word9-word10-word11-word12" rows="4" style="width:100%; resize:vertical"></textarea>
+    </div>
+    <div id="recovery-key-error" style="display:none; color:#ef4444; margin-top:10px; font-weight:600">❌ Invalid recovery key</div>
+    <div class="modal-buttons">
+      <button class="modal-btn cancel" onclick="closeRecoveryKeyInput()">Cancel</button>
+      <button class="modal-btn save" onclick="verifyRecoveryKey()">Unlock App</button>
+    </div>
+  </div>
+</div>
 
-      const CONTRACT = "0xb9e95E4cd1d151CDfbe4db004004B976eA4697A4";
-      const USDC = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913";
-      const DEADLINE = 1767225600; // Unix timestamp
-
-      const ABI = [
-        "function donate(uint256 amount)",
-        "function refund()",
-        "function progress() view returns (uint256 raised, uint256 goal, bool unlocked, uint256 timeLeft, uint256 timeUntilWithdraw, bool paused)",
-        "function contributions(address) view returns (uint256)"
-      ];
-
-      let provider, signer, contract, account;
-
-      async function updateProgress() {
-        if (!contract) return;
-        try {
-          const p = await contract.progress();
-          const raised = ethers.utils.formatUnits(p.raised, 6);
-          const goal = ethers.utils.formatUnits(p.goal, 6);
-          progressEl.innerHTML = `Raised: $${raised} / $${goal}`;
-
-          const now = Math.floor(Date.now() / 1000);
-          if (now < DEADLINE) {
-            const timeLeft = DEADLINE - now;
-            const days = Math.floor(timeLeft / 86400);
-            const hours = Math.floor((timeLeft % 86400) / 3600);
-            countdownEl.innerHTML = `Time left: ${days}d ${hours}h`;
-          } else {
-            countdownEl.innerHTML = `Deadline passed`;
-            if (parseFloat(raised) < parseFloat(goal)) {
-              refundBtn.style.display = "block";
-            }
-          }
-        } catch (err) {
-          console.error(err);
-          progressEl.innerHTML = "Error loading progress...";
-        }
-      }
-
-      connectBtn.style.display = "block";
-      progressEl.innerHTML = "Ready. Click Connect.";
-
-      connectBtn.onclick = async () => {
-        if (!window.ethereum) {
-          alert("Please install MetaMask!");
-          return;
-        }
-
-        try {
-          provider = new ethers.providers.Web3Provider(window.ethereum);
-          await provider.send("eth_requestAccounts", []);
-          signer = provider.getSigner();
-          account = await signer.getAddress();
-          contract = new ethers.Contract(CONTRACT, ABI, signer);
-
-          connectBtn.style.display = "none";
-          donateBtn.style.display = "block";
-          progressEl.innerHTML = "Loading data...";
-
-          updateProgress();
-          setInterval(updateProgress, 15000);
-        } catch (err) {
-          console.error(err);
-          alert("Connection failed: " + err.message);
-        }
-      };
-
-      donateBtn.onclick = async () => {
-        const amount = document.getElementById("amount").value;
-        if (!amount || amount < 1) {
-          alert("Minimum donation is 1 USDC");
-          return;
-        }
-
-        try {
-          const usdcContract = new ethers.Contract(
-            USDC,
-            ["function approve(address,uint256)"],
-            signer
-          );
-          const approveTx = await usdcContract.approve(CONTRACT, ethers.utils.parseUnits(amount, 6));
-          await approveTx.wait();
-
-          const donateTx = await contract.donate(ethers.utils.parseUnits(amount, 6));
-          await donateTx.wait();
-
-          alert("Donation successful! NFT minted.");
-          updateProgress();
-        } catch (err) {
-          console.error(err);
-          alert("Transaction failed: " + err.message);
-        }
-      };
-
-      refundBtn.onclick = async () => {
-        try {
-          const tx = await contract.refund();
-          await tx.wait();
-          alert("Refund successful!");
-          updateProgress();
-        } catch (err) {
-          console.error(err);
-          alert("Refund failed: " + err.message);
-        }
-      };
-    }
-
-    waitForEthers();
-  </script>
-</body>
-</html>
+</body></html>
