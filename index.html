@@ -152,12 +152,12 @@
   transform: translateX(26px);
 }
 </style>
-<!-- Firebase SDK V2 - Enhanced Sync -->
+<!-- Firebase SDK V3 - Optimized Sync (No Aggressive Listener) -->
 <script type="module">
   import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
   import { getFirestore, enableIndexedDbPersistence } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
   import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
-  import { doc, setDoc, getDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+  import { doc, setDoc, getDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 
   // Firebase configuration
   const firebaseConfig = {
@@ -175,7 +175,7 @@
   window.db = getFirestore(app);
   window.auth = getAuth(app);
   window.currentUser = null;
-  window.syncInProgress = false;
+  window.isSyncing = false;
 
   enableIndexedDbPersistence(window.db).catch((err) => {
     console.warn('Persistence:', err.code);
@@ -207,7 +207,7 @@
 
     setTimeout(() => {
       statusEl.style.display = 'none';
-    }, 3000);
+    }, 2500);
   }
 
   // Authentication state
@@ -218,11 +218,8 @@
       document.getElementById('login-screen').style.display = 'none';
       document.getElementById('main-app').style.display = 'block';
 
-      // Load data from Firebase (priority over localStorage)
+      // Load data from Firebase
       loadUserData();
-
-      // Set up real-time listener
-      setupRealtimeSync();
     } else {
       console.log('❌ No user logged in');
       window.currentUser = null;
@@ -274,7 +271,7 @@
     try {
       await createUserWithEmailAndPassword(window.auth, email, password);
       console.log('✅ Account created');
-      alert('✅ Account created! You are now signed in.');
+      showSyncStatus('✅ Account created!', 'success');
     } catch (error) {
       console.error('Sign up error:', error);
       if (error.code === 'auth/email-already-in-use') {
@@ -298,19 +295,19 @@
     }
   };
 
-  // Load user data from Firebase
+  // Load user data from Firebase (on login only)
   window.loadUserData = async function() {
     if (!window.currentUser) return;
 
     try {
-      showSyncStatus('📥 Loading your data...', 'info');
+      showSyncStatus('📥 Loading...', 'info');
       const userDoc = await getDoc(doc(window.db, 'users', window.currentUser.uid));
 
       if (userDoc.exists()) {
         const data = userDoc.data();
-        console.log('📊 User data loaded from Firebase');
+        console.log('📊 Loaded from Firebase');
 
-        // Firebase is source of truth - override localStorage
+        // Firebase is source of truth
         window.settings = data.settings || null;
         window.transactions = data.transactions || [];
         window.salaries = data.salaries || {};
@@ -322,17 +319,17 @@
         localStorage.setItem('salaries', JSON.stringify(window.salaries));
         localStorage.setItem('utilities', JSON.stringify(window.utilities));
 
-        showSyncStatus('✅ Data loaded!', 'success');
+        showSyncStatus('✅ Loaded!', 'success');
         checkFirstTimeUser();
       } else {
-        console.log('📝 New user - migrating localStorage data');
-        loadData(); // Load from localStorage
+        console.log('📝 New user - migrating data');
+        loadData();
         await migrateLocalDataToFirebase();
         checkFirstTimeUser();
       }
     } catch (error) {
-      console.error('Error loading data:', error);
-      showSyncStatus('⚠️ Loading from local cache', 'error');
+      console.error('Load error:', error);
+      showSyncStatus('⚠️ Using local data', 'error');
       loadData();
       checkFirstTimeUser();
     }
@@ -352,26 +349,26 @@
       };
 
       await setDoc(doc(window.db, 'users', window.currentUser.uid), userData);
-      console.log('✅ Data migrated to Firebase');
-      showSyncStatus('✅ Data backed up to cloud', 'success');
+      console.log('✅ Migrated to Firebase');
+      showSyncStatus('✅ Backed up!', 'success');
     } catch (error) {
       console.error('Migration error:', error);
     }
   };
 
-  // Save to Firebase (called after every change)
+  // Save to Firebase (instant, no conflicts)
   window.saveToFirebase = async function() {
     if (!window.currentUser) {
-      console.log('⚠️ Not logged in, skipping sync');
+      console.log('⚠️ Not logged in');
       return;
     }
 
-    if (window.syncInProgress) {
-      console.log('⏳ Sync already in progress');
+    if (window.isSyncing) {
+      console.log('⏳ Sync in progress, queued');
       return;
     }
 
-    window.syncInProgress = true;
+    window.isSyncing = true;
 
     try {
       showSyncStatus('💾 Syncing...', 'info');
@@ -385,45 +382,86 @@
       };
 
       await setDoc(doc(window.db, 'users', window.currentUser.uid), userData);
-      console.log('💾 Data synced to Firebase');
-      showSyncStatus('✅ Synced to cloud!', 'success');
+      console.log('💾 Synced to Firebase');
+      showSyncStatus('✅ Synced!', 'success');
     } catch (error) {
       console.error('Sync error:', error);
-      showSyncStatus('❌ Sync failed - saved locally', 'error');
+      showSyncStatus('❌ Sync failed', 'error');
     } finally {
-      window.syncInProgress = false;
+      window.isSyncing = false;
     }
   };
 
-  // Real-time sync listener (optional - syncs changes from other devices)
-  window.setupRealtimeSync = function() {
+  // Manual refresh from Firebase
+  window.refreshFromFirebase = async function() {
     if (!window.currentUser) return;
 
-    const userDocRef = doc(window.db, 'users', window.currentUser.uid);
+    try {
+      showSyncStatus('🔄 Refreshing...', 'info');
+      const userDoc = await getDoc(doc(window.db, 'users', window.currentUser.uid));
 
-    onSnapshot(userDocRef, (doc) => {
-      if (doc.exists() && !window.syncInProgress) {
-        const data = doc.data();
-        const localLastUpdated = window.settings?.lastUpdated || '';
-        const remoteLastUpdated = data.lastUpdated || '';
+      if (userDoc.exists()) {
+        const data = userDoc.data();
 
-        // Only update if remote is newer
-        if (remoteLastUpdated > localLastUpdated) {
-          console.log('🔄 Remote changes detected, updating...');
-          window.settings = data.settings;
-          window.transactions = data.transactions;
-          window.salaries = data.salaries;
-          window.utilities = data.utilities;
+        window.settings = data.settings;
+        window.transactions = data.transactions;
+        window.salaries = data.salaries;
+        window.utilities = data.utilities;
 
-          // Update display
-          updatePeriodDisplay();
-          updateMonthlyDisplay();
+        localStorage.setItem('paySettings', JSON.stringify(window.settings));
+        localStorage.setItem('transactions', JSON.stringify(window.transactions));
+        localStorage.setItem('salaries', JSON.stringify(window.salaries));
+        localStorage.setItem('utilities', JSON.stringify(window.utilities));
 
-          showSyncStatus('🔄 Updated from another device', 'info');
-        }
+        updatePeriodDisplay();
+        updateMonthlyDisplay();
+
+        showSyncStatus('✅ Refreshed!', 'success');
+        console.log('🔄 Refreshed from Firebase');
       }
-    });
+    } catch (error) {
+      console.error('Refresh error:', error);
+      showSyncStatus('❌ Refresh failed', 'error');
+    }
   };
+
+  // Override saveData to auto-sync
+  const originalLoadData = window.loadData;
+  window.loadData = function() {
+    if (originalLoadData) originalLoadData();
+    try {
+      window.transactions = JSON.parse(localStorage.getItem('transactions') || '[]');
+      window.salaries = JSON.parse(localStorage.getItem('salaries') || '{}');
+      window.utilities = JSON.parse(localStorage.getItem('utilities') || '[]');
+      window.settings = JSON.parse(localStorage.getItem('paySettings') || 'null');
+    } catch(e) {
+      console.error('Load error:', e);
+    }
+  };
+
+</script>
+
+<script>
+// Override saveData to always trigger Firebase sync
+(function() {
+  const originalSaveData = window.saveData;
+  window.saveData = function() {
+    // Save to localStorage first
+    try {
+      localStorage.setItem('transactions', JSON.stringify(window.transactions || []));
+      localStorage.setItem('salaries', JSON.stringify(window.salaries || {}));
+      localStorage.setItem('utilities', JSON.stringify(window.utilities || []));
+      localStorage.setItem('paySettings', JSON.stringify(window.settings || null));
+    } catch(e) {
+      console.error('localStorage save error:', e);
+    }
+
+    // Then sync to Firebase
+    if (window.saveToFirebase && window.currentUser) {
+      window.saveToFirebase();
+    }
+  };
+})();
 </script>
 
 </head>
@@ -438,7 +476,7 @@
   <div style="background:rgba(30,30,30,0.95);backdrop-filter:blur(20px);border-radius:24px;padding:40px;max-width:420px;width:90%;border:1px solid rgba(255,255,255,0.1);box-shadow:0 32px 96px rgba(0,0,0,0.7);">
     <div style="text-align:center;margin-bottom:30px;">
       <div style="font-size:5rem;margin-bottom:16px;animation:float 3s ease-in-out infinite;">💰</div>
-      <h2 style="font-size:2rem;font-weight:800;background:linear-gradient(135deg,#fbbf24,#f59e0b);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin:0 0 8px 0;">Expense Tracker</h2>
+      <h2 style="font-size:2rem;font-weight:800;background:linear-gradient(135deg,#fbbf24,#f59e0b);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin:0 0 8px 0;">Expense Tracker</h2>
       <p style="color:rgba(255,255,255,0.6);font-size:0.95rem;margin:0;">Track your finances securely</p>
     </div>
 
@@ -463,7 +501,7 @@
 
     <div style="text-align:center;margin-top:24px;padding-top:24px;border-top:1px solid rgba(255,255,255,0.1);">
       <div style="font-size:0.85rem;color:rgba(255,255,255,0.5);">🔒 Your data is encrypted and secure</div>
-      <div style="font-size:0.75rem;color:rgba(255,255,255,0.4);margin-top:8px;">☁️ Auto-syncs across all your devices</div>
+      <div style="font-size:0.75rem;color:rgba(255,255,255,0.4);margin-top:8px;">☁️ Syncs across all your devices</div>
     </div>
   </div>
 </div>
@@ -474,6 +512,7 @@
 <div class="app-header"><div class="app-logo">💰</div><h1 class="app-title">Expense Tracker</h1></div>
 <div class="container">
 <div class="sync-bar">
+<button class="sync-btn" style="background:linear-gradient(135deg,rgba(139,92,246,.25),rgba(139,92,246,.15));border-color:rgba(139,92,246,.4);box-shadow:0 4px 20px rgba(139,92,246,.2)" onclick="refreshFromFirebase()">🔄 Refresh</button>
 <button class="sync-btn settings" onclick="showSettings()">⚙️ Settings</button>
 <button class="sync-btn insights" onclick="showInsights()">📈 Insights</button>
 <button class="sync-btn analytics" onclick="showAnalytics()">📊 Analytics</button>
@@ -1292,17 +1331,6 @@ document.addEventListener('DOMContentLoaded', function() {
   initNotifications();
 });
 
-
-// Override saveData to always sync to Firebase
-const originalSaveData = window.saveData;
-window.saveData = function() {
-  if (originalSaveData) originalSaveData();
-  localStorage.setItem('transactions',JSON.stringify(window.transactions||[]));
-  localStorage.setItem('salaries',JSON.stringify(window.salaries||{}));
-  localStorage.setItem('utilities',JSON.stringify(window.utilities||[]));
-  localStorage.setItem('paySettings',JSON.stringify(window.settings||null));
-  if(window.saveToFirebase&&window.currentUser){window.saveToFirebase();}
-};
 </script>
 
 <!-- ==================== AUTHENTICATION SYSTEM ==================== -->
