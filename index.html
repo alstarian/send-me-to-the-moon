@@ -156,8 +156,7 @@
 <body>
 
 <!-- ========================================= -->
-<!-- FIREBASE AUTHENTICATION & REAL-TIME SYNC -->
-<!-- No PIN, No localStorage, Firebase ONLY   -->
+<!-- FIREBASE AUTHENTICATION & SYNC           -->
 <!-- ========================================= -->
 
 <div id="firebase-login-screen" style="
@@ -183,7 +182,7 @@
     ">
         <div style="font-size: 64px; margin-bottom: 20px;">💰</div>
         <h2 style="color: white; margin-bottom: 10px;">Expense Tracker</h2>
-        <p style="color: #888; margin-bottom: 30px; font-size: 14px;">Sign in to access your data</p>
+        <p style="color: #888; margin-bottom: 30px; font-size: 14px;">Sign in to sync your data</p>
 
         <input 
             type="email" 
@@ -231,7 +230,6 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-// Enable persistence so login survives refreshes
 setPersistence(auth, browserLocalPersistence);
 
 window.auth = auth;
@@ -240,6 +238,40 @@ window.currentUser = null;
 window.unsubscribe = null;
 
 console.log('🔥 Firebase initialized');
+
+// CRITICAL: Override saveData IMMEDIATELY (before DOMContentLoaded)
+const originalSaveData = window.saveData;
+
+window.saveData = function() {
+  console.log('💾 saveData() called');
+  console.log('  Transactions:', window.transactions?.length || 0);
+  console.log('  Utilities:', window.utilities?.length || 0);
+
+  // Call original saveData if it exists
+  if (originalSaveData && typeof originalSaveData === 'function') {
+    try {
+      originalSaveData();
+    } catch(e) {
+      console.error('Original saveData error:', e);
+    }
+  }
+
+  // FORCE Firebase sync
+  if (window.currentUser && window.saveToFirebase) {
+    console.log('🔄 Syncing to Firebase...');
+    window.saveToFirebase();
+  } else {
+    console.warn('⚠️ Not logged in - cannot sync');
+  }
+};
+
+console.log('✅ saveData() override installed');
+
+// Disable localStorage reads
+Storage.prototype.getItem = function(key) {
+  console.log(`⚠️ Blocked localStorage.getItem('${key}')`);
+  return null;
+};
 
 // Login function
 window.firebaseLogin = async function() {
@@ -262,7 +294,6 @@ window.firebaseLogin = async function() {
     messageDiv.style.display = 'block';
 
     await signInWithEmailAndPassword(auth, email, password);
-    // onAuthStateChanged will handle the rest
 
   } catch (error) {
     console.error('Login error:', error);
@@ -273,7 +304,7 @@ window.firebaseLogin = async function() {
   }
 };
 
-// Load and sync Firebase data
+// Load Firebase data
 async function loadFirebaseData() {
   if (!window.currentUser) return;
 
@@ -284,31 +315,29 @@ async function loadFirebaseData() {
 
     if (docSnap.exists()) {
       const data = docSnap.data();
-      console.log('✅ Data loaded:', data);
+      console.log('✅ Firebase data:', data);
 
-      // Update global variables
       window.settings = data.settings || {startDate: new Date().toISOString().split('T')[0]};
       window.transactions = data.transactions || [];
       window.salaries = data.salaries || {};
       window.utilities = data.utilities || [];
 
-      console.log(`Loaded: ${window.transactions.length} transactions`);
+      console.log(`📊 Loaded: ${window.transactions.length} transactions, ${window.utilities.length} utilities`);
 
-      // Update UI
       setTimeout(() => {
         if (typeof updatePeriodDisplay === 'function') updatePeriodDisplay();
         if (typeof renderTransactions === 'function') renderTransactions();
         if (typeof updateUtilitiesList === 'function') updateUtilitiesList();
+        console.log('✅ UI refreshed');
       }, 100);
 
     } else {
-      console.log('New user - initializing');
+      console.log('📝 New user');
       window.settings = {startDate: new Date().toISOString().split('T')[0]};
       window.transactions = [];
       window.salaries = {};
       window.utilities = [];
 
-      // Create initial document
       await setDoc(docRef, {
         settings: window.settings,
         transactions: [],
@@ -318,7 +347,7 @@ async function loadFirebaseData() {
       });
     }
 
-    // Setup real-time listener
+    // Real-time listener
     window.unsubscribe = onSnapshot(docRef, (snapshot) => {
       if (!snapshot.exists()) return;
 
@@ -345,12 +374,16 @@ async function loadFirebaseData() {
 // Save to Firebase
 window.saveToFirebase = async function() {
   if (!window.currentUser) {
-    console.warn('Not logged in');
+    console.warn('⚠️ Not logged in');
     return;
   }
 
   try {
     console.log('💾 Saving to Firebase...');
+    console.log('  Settings:', window.settings);
+    console.log('  Transactions:', window.transactions?.length || 0);
+    console.log('  Salaries:', Object.keys(window.salaries || {}).length);
+    console.log('  Utilities:', window.utilities?.length || 0);
 
     await setDoc(doc(db, 'users', window.currentUser.uid), {
       settings: window.settings || {},
@@ -360,9 +393,9 @@ window.saveToFirebase = async function() {
       lastUpdated: new Date().toISOString()
     });
 
-    console.log('✅ Saved!');
+    console.log('✅ Saved to Firebase!');
   } catch (error) {
-    console.error('Save error:', error);
+    console.error('❌ Save error:', error);
   }
 };
 
@@ -372,12 +405,11 @@ onAuthStateChanged(auth, async (user) => {
     console.log('✅ Logged in:', user.email);
     window.currentUser = user;
 
-    // Load data and hide login screen
     await loadFirebaseData();
     document.getElementById('firebase-login-screen').style.display = 'none';
 
   } else {
-    console.log('Not logged in');
+    console.log('⚠️ Not logged in');
     window.currentUser = null;
     document.getElementById('firebase-login-screen').style.display = 'flex';
   }
@@ -1249,47 +1281,19 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
 
-<!-- ========================================= -->
-<!-- FIREBASE SYNC WRAPPER                    -->
-<!-- ========================================= -->
-
 <script>
-// Disable localStorage reads
-const origGet = Storage.prototype.getItem;
-Storage.prototype.getItem = function(key) {
-  console.log(`⚠️ Blocked localStorage.getItem('${key}')`);
-  return null;
-};
-
-// Wrap saveData
-window.addEventListener('DOMContentLoaded', function() {
-  const origSave = window.saveData;
-
-  window.saveData = function() {
-    console.log('💾 saveData()');
-
-    if (origSave) {
-      try { origSave(); } catch(e) {}
-    }
-
-    if (window.currentUser && window.saveToFirebase) {
-      window.saveToFirebase();
-    }
-  };
-
-  console.log('✅ Sync wrapper ready');
-});
-
 // Override saveSettings
 window.saveSettings = function() {
+  console.log('⚙️ saveSettings() called');
+
   const newDate = document.getElementById('settings-start-date')?.value;
 
   if (!newDate) {
-    alert('Enter a date');
+    alert('⚠️ Enter a date');
     return;
   }
 
-  if (!confirm('Change pay cycle?')) {
+  if (!confirm('⚠️ Change pay cycle?')) {
     return;
   }
 
@@ -1299,6 +1303,7 @@ window.saveSettings = function() {
 
   console.log('✅ Settings updated:', window.settings);
 
+  // CRITICAL: Call saveData which will trigger Firebase sync
   window.saveData();
 
   if (typeof currentPeriodOffset !== 'undefined') currentPeriodOffset = 0;
@@ -1307,6 +1312,8 @@ window.saveSettings = function() {
 
   alert('✅ Saved!');
 };
+
+console.log('✅ All overrides ready');
 </script>
 
 </body></html>
