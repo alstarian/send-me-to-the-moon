@@ -1204,27 +1204,35 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
 
+// Copy this into your HTML file, before </body>
 <script>
-window.saveSettings = function() {
-  console.log('⚙️ saveSettings()');
-  const newDate = document.getElementById('settings-start-date')?.value;
-  if (!newDate) { alert('⚠️ Enter date'); return; }
-  if (!confirm('Change pay cycle?')) return;
-
-  if (!window.settings) window.settings = {};
-  window.settings.startDate = newDate;
-  window.settings.lastModified = new Date().toISOString();
-
-  console.log('✅ Settings updated:', window.settings);
-  window.saveData();
-
-  if (typeof currentPeriodOffset !== 'undefined') currentPeriodOffset = 0;
-  if (typeof updatePeriodDisplay === 'function') updatePeriodDisplay();
-  if (typeof closeSettings === 'function') closeSettings();
-
-  alert('✅ Saved!');
+// SUPER SAVEDATA - Syncs EVERYTHING automatically
+const originalSaveData = window.saveData;
+window.saveData = function() {
+  console.log('💾 saveData() called');
+  
+  // CRITICAL: Sync local variables to global
+  if (transactions) window.transactions = transactions.slice();
+  if (salaries) window.salaries = { ...salaries };
+  if (utilities) window.utilities = utilities.slice();
+  
+  console.log('  📊 Transactions:', window.transactions?.length || 0);
+  console.log('  📊 Salaries:', Object.keys(window.salaries || {}).length);
+  console.log('  📊 Utilities:', window.utilities?.length || 0);
+  
+  // Call original saveData
+  if (originalSaveData) {
+    try { originalSaveData(); } catch(e) {}
+  }
+  
+  // Firebase sync
+  if (window.currentUser && window.saveToFirebase) {
+    window.saveToFirebase();
+  }
 };
-console.log('✅ saveSettings() override ready');
+
+console.log('🚀 Auto-sync saveData() ready');
 </script>
+
 
 </body></html>
