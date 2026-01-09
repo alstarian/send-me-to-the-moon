@@ -154,6 +154,355 @@
 </style>
 </head>
 <body>
+
+<!-- ========================================= -->
+<!-- FIREBASE AUTHENTICATION SCREEN           -->
+<!-- ========================================= -->
+
+<!-- Firebase Login Screen (Step 1: Before PIN) -->
+<div id="firebase-login-screen" style="
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #1e1e1e 0%, #2d2d2d 100%);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10000;
+">
+    <div style="
+        background: rgba(40, 40, 40, 0.95);
+        padding: 40px;
+        border-radius: 20px;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        max-width: 400px;
+        width: 90%;
+        text-align: center;
+    ">
+        <div style="font-size: 64px; margin-bottom: 20px;">🔐</div>
+        <h2 id="firebase-auth-title" style="color: white; margin-bottom: 10px;">Sign In</h2>
+        <p style="color: #888; margin-bottom: 30px; font-size: 14px;">
+            Cloud sync with Firebase
+        </p>
+
+        <!-- Email Input -->
+        <input 
+            type="email" 
+            id="firebase-email" 
+            placeholder="Email Address" 
+            autocomplete="email"
+            style="
+                width: 100%;
+                padding: 15px;
+                margin: 10px 0;
+                border-radius: 10px;
+                border: 1px solid #444;
+                background: #2a2a2a;
+                color: white;
+                font-size: 16px;
+                box-sizing: border-box;
+            "
+        />
+
+        <!-- Password Input -->
+        <input 
+            type="password" 
+            id="firebase-password" 
+            placeholder="Password (min 6 characters)" 
+            autocomplete="current-password"
+            style="
+                width: 100%;
+                padding: 15px;
+                margin: 10px 0;
+                border-radius: 10px;
+                border: 1px solid #444;
+                background: #2a2a2a;
+                color: white;
+                font-size: 16px;
+                box-sizing: border-box;
+            "
+        />
+
+        <!-- Sign In/Up Button -->
+        <button 
+            id="firebase-auth-btn"
+            onclick="firebaseAuth()" 
+            style="
+                width: 100%;
+                padding: 15px;
+                margin: 20px 0 10px 0;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+                border: none;
+                border-radius: 10px;
+                font-size: 18px;
+                font-weight: bold;
+                cursor: pointer;
+                box-sizing: border-box;
+            "
+        >
+            🔓 Sign In
+        </button>
+
+        <!-- Toggle Sign Up/Sign In -->
+        <p style="color: #888; margin-top: 20px; font-size: 14px;">
+            <span id="toggle-text">Don't have an account?</span>
+            <a href="#" onclick="toggleFirebaseMode(); return false;" style="color: #667eea; text-decoration: none; font-weight: bold;">
+                <span id="toggle-link">Sign Up</span>
+            </a>
+        </p>
+
+        <!-- Error Message -->
+        <div id="firebase-error" style="
+            color: #ff4444;
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 8px;
+            background: rgba(255, 68, 68, 0.1);
+            display: none;
+            font-size: 14px;
+        "></div>
+
+        <!-- Success Message -->
+        <div id="firebase-success" style="
+            color: #44ff44;
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 8px;
+            background: rgba(68, 255, 68, 0.1);
+            display: none;
+            font-size: 14px;
+        "></div>
+    </div>
+</div>
+
+<script type="module">
+// ========================================
+// FIREBASE CONFIGURATION
+// ========================================
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+import { getFirestore, doc, getDoc, setDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCYPC0xBciKW2rYUL2Zn_rONg0o-kDiD0Y",
+  authDomain: "expense-tracker-f8086.firebaseapp.com",
+  projectId: "expense-tracker-f8086",
+  storageBucket: "expense-tracker-f8086.firebasestorage.app",
+  messagingSenderId: "39068524302",
+  appId: "1:39068524302:web:2adcd2ac93d959dbe8d7c6"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+window.auth = auth;
+window.db = db;
+window.currentUser = null;
+window.isSignUpMode = false;
+
+console.log('✅ Firebase initialized');
+
+window.toggleFirebaseMode = function() {
+  window.isSignUpMode = !window.isSignUpMode;
+
+  const title = document.getElementById('firebase-auth-title');
+  const btn = document.getElementById('firebase-auth-btn');
+  const toggleText = document.getElementById('toggle-text');
+  const toggleLink = document.getElementById('toggle-link');
+
+  if (window.isSignUpMode) {
+    title.textContent = 'Create Account';
+    btn.innerHTML = '✨ Sign Up';
+    toggleText.textContent = 'Already have an account?';
+    toggleLink.textContent = 'Sign In';
+  } else {
+    title.textContent = 'Sign In';
+    btn.innerHTML = '🔓 Sign In';
+    toggleText.textContent = "Don't have an account?";
+    toggleLink.textContent = 'Sign Up';
+  }
+
+  document.getElementById('firebase-error').style.display = 'none';
+  document.getElementById('firebase-success').style.display = 'none';
+};
+
+window.firebaseAuth = async function() {
+  const email = document.getElementById('firebase-email').value.trim();
+  const password = document.getElementById('firebase-password').value;
+  const errorDiv = document.getElementById('firebase-error');
+  const successDiv = document.getElementById('firebase-success');
+
+  errorDiv.style.display = 'none';
+  successDiv.style.display = 'none';
+
+  if (!email || !password) {
+    errorDiv.textContent = '⚠️ Please enter email and password';
+    errorDiv.style.display = 'block';
+    return;
+  }
+
+  if (password.length < 6) {
+    errorDiv.textContent = '⚠️ Password must be at least 6 characters';
+    errorDiv.style.display = 'block';
+    return;
+  }
+
+  try {
+    if (window.isSignUpMode) {
+      console.log('Creating new account...');
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      window.currentUser = userCredential.user;
+
+      console.log('✅ Account created:', window.currentUser.email);
+
+      await setDoc(doc(db, 'users', window.currentUser.uid), {
+        settings: {
+          startDate: new Date().toISOString().split('T')[0],
+          lastModified: new Date().toISOString()
+        },
+        transactions: [],
+        salaries: {},
+        utilities: [],
+        lastUpdated: new Date().toISOString()
+      });
+
+      successDiv.textContent = '✅ Account created! Loading app...';
+      successDiv.style.display = 'block';
+
+      setTimeout(() => {
+        document.getElementById('firebase-login-screen').style.display = 'none';
+        document.getElementById('lock-screen').style.display = 'flex';
+      }, 1500);
+
+    } else {
+      console.log('Signing in...');
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      window.currentUser = userCredential.user;
+
+      console.log('✅ Signed in:', window.currentUser.email);
+
+      successDiv.textContent = '✅ Signed in! Loading app...';
+      successDiv.style.display = 'block';
+
+      await loadUserDataFromFirebase();
+
+      setTimeout(() => {
+        document.getElementById('firebase-login-screen').style.display = 'none';
+        document.getElementById('lock-screen').style.display = 'flex';
+      }, 1500);
+    }
+
+  } catch (error) {
+    console.error('Firebase auth error:', error);
+
+    let errorMessage = '❌ ';
+    switch (error.code) {
+      case 'auth/email-already-in-use':
+        errorMessage += 'Email already registered. Try signing in.';
+        break;
+      case 'auth/invalid-email':
+        errorMessage += 'Invalid email address';
+        break;
+      case 'auth/user-not-found':
+        errorMessage += 'No account found. Try signing up.';
+        break;
+      case 'auth/wrong-password':
+        errorMessage += 'Incorrect password';
+        break;
+      case 'auth/network-request-failed':
+        errorMessage += 'Network error. Check your connection.';
+        break;
+      default:
+        errorMessage += error.message;
+    }
+
+    errorDiv.textContent = errorMessage;
+    errorDiv.style.display = 'block';
+  }
+};
+
+window.loadUserDataFromFirebase = async function() {
+  if (!window.currentUser) {
+    console.log('⚠️ No Firebase user');
+    return;
+  }
+
+  try {
+    console.log('📥 Loading data from Firebase...');
+    const docRef = doc(db, 'users', window.currentUser.uid);
+    const docSnap = await getDoc(docRef);
+
+    if (docSnap.exists()) {
+      const data = docSnap.data();
+      console.log('✅ Data loaded from Firebase:', data);
+
+      if (data.settings) {
+        window.settings = data.settings;
+        localStorage.setItem('paySettings', JSON.stringify(data.settings));
+      }
+      if (data.transactions) {
+        window.transactions = data.transactions;
+        localStorage.setItem('transactions', JSON.stringify(data.transactions));
+      }
+      if (data.salaries) {
+        window.salaries = data.salaries;
+        localStorage.setItem('salaries', JSON.stringify(data.salaries));
+      }
+      if (data.utilities) {
+        window.utilities = data.utilities;
+        localStorage.setItem('utilities', JSON.stringify(data.utilities));
+      }
+
+      console.log('✅ Firebase data loaded into app');
+    } else {
+      console.log('No Firebase data found - using local data');
+    }
+  } catch (error) {
+    console.error('Error loading Firebase data:', error);
+  }
+};
+
+window.saveToFirebase = async function() {
+  if (!window.currentUser) {
+    console.log('⚠️ Not logged in - cannot sync to Firebase');
+    return;
+  }
+
+  try {
+    console.log('💾 Saving to Firebase...');
+
+    await setDoc(doc(db, 'users', window.currentUser.uid), {
+      settings: window.settings || {},
+      transactions: window.transactions || [],
+      salaries: window.salaries || {},
+      utilities: window.utilities || [],
+      lastUpdated: new Date().toISOString()
+    });
+
+    console.log('✅ Saved to Firebase!');
+  } catch (error) {
+    console.error('Firebase save error:', error);
+  }
+};
+
+onAuthStateChanged(auth, (user) => {
+  if (user) {
+    console.log('✅ User logged in:', user.email);
+    window.currentUser = user;
+  } else {
+    console.log('⚠️ No user logged in');
+    window.currentUser = null;
+  }
+});
+
+console.log('✅ Firebase authentication ready');
+</script>
+
+
 <div class="app-header"><div class="app-logo">💰</div><h1 class="app-title">Expense Tracker</h1></div>
 <div class="container">
 <div class="sync-bar">
@@ -1038,78 +1387,86 @@ document.addEventListener('DOMContentLoaded', function() {
 </div>
 
 
-<!-- Critical Fix: Make saveData() always sync to Firebase -->
+
+<!-- ========================================= -->
+<!-- CRITICAL: SAVEDATA WRAPPER               -->
+<!-- Makes all data changes sync to Firebase  -->
+<!-- ========================================= -->
+
 <script>
-// Override saveData to ALWAYS trigger Firebase sync
-(function() {
-  // Wait for page to load, then wrap saveData
-  window.addEventListener('DOMContentLoaded', function() {
-    const originalSaveData = window.saveData;
+window.addEventListener('DOMContentLoaded', function() {
+  console.log('🔧 Installing saveData wrapper...');
 
-    window.saveData = function() {
-      console.log('💾 saveData called');
+  const originalSaveData = window.saveData;
 
-      // Call original saveData (localStorage + UI updates)
-      if (originalSaveData) {
-        originalSaveData();
-      } else {
-        // Fallback: save manually
-        try {
-          localStorage.setItem('transactions', JSON.stringify(window.transactions || []));
-          localStorage.setItem('salaries', JSON.stringify(window.salaries || {}));
-          localStorage.setItem('utilities', JSON.stringify(window.utilities || []));
-          localStorage.setItem('paySettings', JSON.stringify(window.settings || null));
-          console.log('✅ Saved to localStorage');
-        } catch(e) {
-          console.error('localStorage error:', e);
-        }
+  window.saveData = function() {
+    console.log('💾 saveData() called');
+
+    if (originalSaveData) {
+      originalSaveData();
+    } else {
+      try {
+        localStorage.setItem('transactions', JSON.stringify(window.transactions || []));
+        localStorage.setItem('salaries', JSON.stringify(window.salaries || {}));
+        localStorage.setItem('utilities', JSON.stringify(window.utilities || []));
+        localStorage.setItem('paySettings', JSON.stringify(window.settings || null));
+        console.log('✅ Saved to localStorage');
+      } catch(e) {
+        console.error('localStorage error:', e);
       }
+    }
 
-      // ALWAYS sync to Firebase if logged in
-      if (window.saveToFirebase && window.currentUser) {
-        console.log('🔄 Triggering Firebase sync...');
-        window.saveToFirebase();
-      } else if (!window.currentUser) {
-        console.log('⚠️ Not logged in to Firebase - local only');
-      }
-    };
+    if (window.saveToFirebase && window.currentUser) {
+      console.log('🔄 Triggering Firebase sync...');
+      window.saveToFirebase();
+    } else if (!window.currentUser) {
+      console.log('⚠️ Not logged in to Firebase - local only');
+    }
+  };
 
-    console.log('✅ saveData wrapper installed');
-  });
-})();
+  console.log('✅ saveData wrapper installed!');
+});
 
-// Fix saveSettings to properly call saveData
 window.saveSettings = function() {
-  console.log('💾 saveSettings called');
+  console.log('⚙️ saveSettings() called');
 
   const newStartDate = document.getElementById('settings-start-date').value;
 
   if (!newStartDate) {
-    alert('Enter a valid start date');
+    alert('⚠️ Please enter a valid start date');
     return;
   }
 
-  if (!confirm('Change pay cycle start date? This recalculates all periods.')) {
+  if (!confirm('⚠️ Change pay cycle start date? This will recalculate all periods.')) {
     return;
   }
 
-  // Update settings
+  if (!window.settings) {
+    window.settings = {};
+  }
+
   window.settings.startDate = newStartDate;
   window.settings.lastModified = new Date().toISOString();
 
   console.log('✅ Settings updated:', window.settings);
 
-  // Save locally AND to Firebase
   window.saveData();
 
-  // Update displays
-  currentPeriodOffset = 0;
-  updatePeriodDisplay();
+  if (typeof currentPeriodOffset !== 'undefined') {
+    currentPeriodOffset = 0;
+  }
+  if (typeof updatePeriodDisplay === 'function') {
+    updatePeriodDisplay();
+  }
 
-  // Close modal
-  closeSettings();
+  if (typeof closeSettings === 'function') {
+    closeSettings();
+  }
 
-  alert('✅ Pay cycle updated!');
+  alert('✅ Pay cycle updated successfully!');
 };
+
+console.log('✅ Firebase sync system ready!');
 </script>
+
 </body></html>
