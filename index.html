@@ -155,9 +155,9 @@
 </head>
 <body>
 
-<!-- ========================================= -->
-<!-- FIREBASE AUTHENTICATION & SYNC           -->
-<!-- ========================================= -->
+<!-- ============================================= -->
+<!-- 🔥 FIREBASE SYNC SYSTEM - NO PIN/PASSWORD   -->
+<!-- ============================================= -->
 
 <div id="firebase-login-screen" style="
     position: fixed;
@@ -213,10 +213,12 @@
 </div>
 
 <script type="module">
+// Firebase imports
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
 import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, setPersistence, browserLocalPersistence } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
 import { getFirestore, doc, getDoc, setDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 
+// Firebase config
 const firebaseConfig = {
   apiKey: "AIzaSyAHgeL8cnjLGegRPvL-VCLbd_PCTo81Xvg",
   authDomain: "expensetracker-650bb.firebaseapp.com",
@@ -230,6 +232,7 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
+// Enable login persistence
 setPersistence(auth, browserLocalPersistence);
 
 window.auth = auth;
@@ -239,20 +242,32 @@ window.unsubscribe = null;
 
 console.log('🔥 Firebase initialized');
 
-// CRITICAL: Override saveData IMMEDIATELY (before DOMContentLoaded)
+// ============================================= 
+// CRITICAL: BLOCK LOCALSTORAGE IMMEDIATELY
+// ============================================= 
+const originalGetItem = Storage.prototype.getItem;
+Storage.prototype.getItem = function(key) {
+  console.log(`⚠️ Blocked localStorage.getItem('${key}')`);
+  return null;
+};
+
+// ============================================= 
+// OVERRIDE SAVEDATA IMMEDIATELY
+// ============================================= 
 const originalSaveData = window.saveData;
 
 window.saveData = function() {
   console.log('💾 saveData() called');
-  console.log('  Transactions:', window.transactions?.length || 0);
-  console.log('  Utilities:', window.utilities?.length || 0);
+  console.log('  📊 Transactions:', window.transactions?.length || 0);
+  console.log('  📊 Utilities:', window.utilities?.length || 0);
+  console.log('  📊 Salaries:', Object.keys(window.salaries || {}).length);
 
-  // Call original saveData if it exists
+  // Call original saveData if it exists (for backward compatibility)
   if (originalSaveData && typeof originalSaveData === 'function') {
     try {
       originalSaveData();
     } catch(e) {
-      console.error('Original saveData error:', e);
+      console.error('⚠️ Original saveData error:', e);
     }
   }
 
@@ -261,19 +276,15 @@ window.saveData = function() {
     console.log('🔄 Syncing to Firebase...');
     window.saveToFirebase();
   } else {
-    console.warn('⚠️ Not logged in - cannot sync');
+    console.warn('⚠️ Not logged in - cannot sync to Firebase');
   }
 };
 
 console.log('✅ saveData() override installed');
 
-// Disable localStorage reads
-Storage.prototype.getItem = function(key) {
-  console.log(`⚠️ Blocked localStorage.getItem('${key}')`);
-  return null;
-};
-
-// Login function
+// ============================================= 
+// LOGIN FUNCTION
+// ============================================= 
 window.firebaseLogin = async function() {
   const email = document.getElementById('firebase-email').value.trim();
   const password = document.getElementById('firebase-password').value;
@@ -304,7 +315,9 @@ window.firebaseLogin = async function() {
   }
 };
 
-// Load Firebase data
+// ============================================= 
+// LOAD DATA FROM FIREBASE
+// ============================================= 
 async function loadFirebaseData() {
   if (!window.currentUser) return;
 
@@ -315,25 +328,27 @@ async function loadFirebaseData() {
 
     if (docSnap.exists()) {
       const data = docSnap.data();
-      console.log('✅ Firebase data:', data);
+      console.log('✅ Firebase data loaded:', data);
 
-      window.settings = data.settings || {startDate: new Date().toISOString().split('T')[0]};
+      // Load into global variables
+      window.settings = data.settings || { startDate: new Date().toISOString().split('T')[0] };
       window.transactions = data.transactions || [];
       window.salaries = data.salaries || {};
       window.utilities = data.utilities || [];
 
       console.log(`📊 Loaded: ${window.transactions.length} transactions, ${window.utilities.length} utilities`);
 
+      // Update UI after a short delay to ensure DOM is ready
       setTimeout(() => {
         if (typeof updatePeriodDisplay === 'function') updatePeriodDisplay();
         if (typeof renderTransactions === 'function') renderTransactions();
         if (typeof updateUtilitiesList === 'function') updateUtilitiesList();
-        console.log('✅ UI refreshed');
-      }, 100);
+        console.log('✅ UI updated');
+      }, 200);
 
     } else {
-      console.log('📝 New user');
-      window.settings = {startDate: new Date().toISOString().split('T')[0]};
+      console.log('📝 New user - creating initial data');
+      window.settings = { startDate: new Date().toISOString().split('T')[0] };
       window.transactions = [];
       window.salaries = {};
       window.utilities = [];
@@ -347,12 +362,12 @@ async function loadFirebaseData() {
       });
     }
 
-    // Real-time listener
+    // Real-time listener for multi-device sync
     window.unsubscribe = onSnapshot(docRef, (snapshot) => {
       if (!snapshot.exists()) return;
 
       const data = snapshot.data();
-      console.log('🔄 Real-time update');
+      console.log('🔄 Real-time update received');
 
       window.settings = data.settings || window.settings;
       window.transactions = data.transactions || [];
@@ -367,14 +382,16 @@ async function loadFirebaseData() {
     console.log('✅ Real-time sync active');
 
   } catch (error) {
-    console.error('Error loading data:', error);
+    console.error('❌ Error loading data:', error);
   }
 }
 
-// Save to Firebase
+// ============================================= 
+// SAVE DATA TO FIREBASE
+// ============================================= 
 window.saveToFirebase = async function() {
   if (!window.currentUser) {
-    console.warn('⚠️ Not logged in');
+    console.warn('⚠️ Not logged in - cannot save');
     return;
   }
 
@@ -393,13 +410,15 @@ window.saveToFirebase = async function() {
       lastUpdated: new Date().toISOString()
     });
 
-    console.log('✅ Saved to Firebase!');
+    console.log('✅ Saved to Firebase successfully!');
   } catch (error) {
-    console.error('❌ Save error:', error);
+    console.error('❌ Firebase save error:', error);
   }
 };
 
-// Auth state listener
+// ============================================= 
+// AUTH STATE LISTENER
+// ============================================= 
 onAuthStateChanged(auth, async (user) => {
   if (user) {
     console.log('✅ Logged in:', user.email);
@@ -1282,18 +1301,20 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
 <script>
-// Override saveSettings
+// ============================================= 
+// OVERRIDE SAVESETTINGS
+// ============================================= 
 window.saveSettings = function() {
   console.log('⚙️ saveSettings() called');
 
   const newDate = document.getElementById('settings-start-date')?.value;
 
   if (!newDate) {
-    alert('⚠️ Enter a date');
+    alert('⚠️ Please enter a valid date');
     return;
   }
 
-  if (!confirm('⚠️ Change pay cycle?')) {
+  if (!confirm('⚠️ Change pay cycle start date? This will recalculate all periods.')) {
     return;
   }
 
@@ -1303,17 +1324,18 @@ window.saveSettings = function() {
 
   console.log('✅ Settings updated:', window.settings);
 
-  // CRITICAL: Call saveData which will trigger Firebase sync
+  // Trigger Firebase sync via saveData
   window.saveData();
 
+  // Update UI
   if (typeof currentPeriodOffset !== 'undefined') currentPeriodOffset = 0;
   if (typeof updatePeriodDisplay === 'function') updatePeriodDisplay();
   if (typeof closeSettings === 'function') closeSettings();
 
-  alert('✅ Saved!');
+  alert('✅ Pay cycle updated and synced!');
 };
 
-console.log('✅ All overrides ready');
+console.log('✅ saveSettings() override ready');
 </script>
 
 </body></html>
