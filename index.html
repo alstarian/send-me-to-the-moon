@@ -156,7 +156,7 @@
 <body>
 
 <!-- ========================================= -->
-<!-- FIREBASE AUTHENTICATION SCREEN           -->
+<!-- FIREBASE LOGIN ONLY (NO PIN)             -->
 <!-- ========================================= -->
 
 <div id="firebase-login-screen" style="
@@ -180,9 +180,9 @@
         width: 90%;
         text-align: center;
     ">
-        <div style="font-size: 64px; margin-bottom: 20px;">🔐</div>
-        <h2 id="firebase-auth-title" style="color: white; margin-bottom: 10px;">Sign In</h2>
-        <p style="color: #888; margin-bottom: 30px; font-size: 14px;">Cloud sync with Firebase</p>
+        <div style="font-size: 64px; margin-bottom: 20px;">💰</div>
+        <h2 id="firebase-auth-title" style="color: white; margin-bottom: 10px;">Expense Tracker</h2>
+        <p style="color: #888; margin-bottom: 30px; font-size: 14px;">Sign in to sync across all devices</p>
 
         <input 
             type="email" 
@@ -195,7 +195,7 @@
         <input 
             type="password" 
             id="firebase-password" 
-            placeholder="Password (min 6 characters)" 
+            placeholder="Password" 
             autocomplete="current-password"
             style="width: 100%; padding: 15px; margin: 10px 0; border-radius: 10px; border: 1px solid #444; background: #2a2a2a; color: white; font-size: 16px; box-sizing: border-box;"
         />
@@ -221,11 +221,8 @@
 </div>
 
 <script type="module">
-// ========================================
-// FIREBASE CONFIGURATION - YOUR PROJECT
-// ========================================
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
 import { getFirestore, doc, getDoc, setDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 
 const firebaseConfig = {
@@ -247,7 +244,7 @@ window.db = db;
 window.currentUser = null;
 window.isSignUpMode = false;
 
-console.log('✅ Firebase initialized - Project: expensetracker-650bb');
+console.log('✅ Firebase initialized');
 
 window.toggleFirebaseMode = function() {
   window.isSignUpMode = !window.isSignUpMode;
@@ -263,7 +260,7 @@ window.toggleFirebaseMode = function() {
     toggleText.textContent = 'Already have an account?';
     toggleLink.textContent = 'Sign In';
   } else {
-    title.textContent = 'Sign In';
+    title.textContent = 'Expense Tracker';
     btn.innerHTML = '🔓 Sign In';
     toggleText.textContent = "Don't have an account?";
     toggleLink.textContent = 'Sign Up';
@@ -296,12 +293,13 @@ window.firebaseAuth = async function() {
 
   try {
     if (window.isSignUpMode) {
-      console.log('Creating new account...');
+      console.log('📝 Creating new account...');
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       window.currentUser = userCredential.user;
 
       console.log('✅ Account created:', window.currentUser.email);
 
+      // Initialize empty data in Firebase
       await setDoc(doc(db, 'users', window.currentUser.uid), {
         settings: {
           startDate: new Date().toISOString().split('T')[0],
@@ -313,34 +311,35 @@ window.firebaseAuth = async function() {
         lastUpdated: new Date().toISOString()
       });
 
-      successDiv.textContent = '✅ Account created! Loading app...';
+      successDiv.textContent = '✅ Account created! Loading...';
       successDiv.style.display = 'block';
 
       setTimeout(() => {
         document.getElementById('firebase-login-screen').style.display = 'none';
-        document.getElementById('lock-screen').style.display = 'flex';
-      }, 1500);
+        // Load app with empty data
+        loadAppFromFirebase();
+      }, 1000);
 
     } else {
-      console.log('Signing in...');
+      console.log('🔓 Signing in...');
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       window.currentUser = userCredential.user;
 
       console.log('✅ Signed in:', window.currentUser.email);
 
-      successDiv.textContent = '✅ Signed in! Loading app...';
+      successDiv.textContent = '✅ Signed in! Loading your data...';
       successDiv.style.display = 'block';
 
-      await loadUserDataFromFirebase();
+      // Load data from Firebase FIRST
+      await loadAppFromFirebase();
 
       setTimeout(() => {
         document.getElementById('firebase-login-screen').style.display = 'none';
-        document.getElementById('lock-screen').style.display = 'flex';
-      }, 1500);
+      }, 1000);
     }
 
   } catch (error) {
-    console.error('Firebase auth error:', error);
+    console.error('❌ Firebase auth error:', error);
 
     let errorMessage = '❌ ';
     switch (error.code) {
@@ -356,8 +355,8 @@ window.firebaseAuth = async function() {
       case 'auth/wrong-password':
         errorMessage += 'Incorrect password';
         break;
-      case 'auth/network-request-failed':
-        errorMessage += 'Network error. Check your connection.';
+      case 'auth/invalid-credential':
+        errorMessage += 'Invalid email or password';
         break;
       default:
         errorMessage += error.message;
@@ -368,81 +367,118 @@ window.firebaseAuth = async function() {
   }
 };
 
-window.loadUserDataFromFirebase = async function() {
+// Load app and data from Firebase
+window.loadAppFromFirebase = async function() {
   if (!window.currentUser) {
-    console.log('⚠️ No Firebase user');
+    console.log('⚠️ No user logged in');
     return;
   }
 
   try {
-    console.log('📥 Loading data from Firebase...');
+    console.log('📥 Loading your data from Firebase...');
     const docRef = doc(db, 'users', window.currentUser.uid);
     const docSnap = await getDoc(docRef);
 
     if (docSnap.exists()) {
       const data = docSnap.data();
-      console.log('✅ Data loaded from Firebase:', data);
+      console.log('✅ Data loaded:', data);
 
-      if (data.settings) {
-        window.settings = data.settings;
-        localStorage.setItem('paySettings', JSON.stringify(data.settings));
+      // Load settings
+      window.settings = data.settings || {
+        startDate: new Date().toISOString().split('T')[0],
+        lastModified: new Date().toISOString()
+      };
+
+      // Load transactions
+      window.transactions = data.transactions || [];
+
+      // Load salaries
+      window.salaries = data.salaries || {};
+
+      // Load utilities
+      window.utilities = data.utilities || [];
+
+      console.log(`✅ Loaded: ${window.transactions.length} transactions, ${window.utilities.length} utilities`);
+
+      // Trigger app to refresh display
+      if (typeof updatePeriodDisplay === 'function') {
+        updatePeriodDisplay();
       }
-      if (data.transactions) {
-        window.transactions = data.transactions;
-        localStorage.setItem('transactions', JSON.stringify(data.transactions));
+      if (typeof renderTransactions === 'function') {
+        renderTransactions();
       }
-      if (data.salaries) {
-        window.salaries = data.salaries;
-        localStorage.setItem('salaries', JSON.stringify(data.salaries));
-      }
-      if (data.utilities) {
-        window.utilities = data.utilities;
-        localStorage.setItem('utilities', JSON.stringify(data.utilities));
+      if (typeof updateUtilitiesList === 'function') {
+        updateUtilitiesList();
       }
 
-      console.log('✅ Firebase data loaded into app');
     } else {
-      console.log('No Firebase data found - using local data');
+      console.log('📝 New user - initializing empty data');
+      window.settings = {
+        startDate: new Date().toISOString().split('T')[0],
+        lastModified: new Date().toISOString()
+      };
+      window.transactions = [];
+      window.salaries = {};
+      window.utilities = [];
     }
   } catch (error) {
-    console.error('Error loading Firebase data:', error);
+    console.error('❌ Error loading data:', error);
   }
 };
 
+// Save to Firebase (called by saveData wrapper)
 window.saveToFirebase = async function() {
   if (!window.currentUser) {
-    console.log('⚠️ Not logged in - cannot sync to Firebase');
+    console.log('⚠️ Not logged in - skipping Firebase sync');
     return;
   }
 
   try {
-    console.log('💾 Saving to Firebase...');
+    console.log('💾 Syncing to Firebase...');
+    console.log('  Transactions:', window.transactions?.length || 0);
+    console.log('  Utilities:', window.utilities?.length || 0);
+    console.log('  Settings:', window.settings);
 
-    await setDoc(doc(db, 'users', window.currentUser.uid), {
+    const userData = {
       settings: window.settings || {},
       transactions: window.transactions || [],
       salaries: window.salaries || {},
       utilities: window.utilities || [],
       lastUpdated: new Date().toISOString()
-    });
+    };
 
-    console.log('✅ Saved to Firebase!');
+    await setDoc(doc(db, 'users', window.currentUser.uid), userData);
+
+    console.log('✅ Synced to Firebase successfully!');
   } catch (error) {
-    console.error('Firebase save error:', error);
+    console.error('❌ Firebase sync error:', error);
   }
 };
 
-onAuthStateChanged(auth, (user) => {
+// Auto-login if already signed in
+onAuthStateChanged(auth, async (user) => {
   if (user) {
-    console.log('✅ User logged in:', user.email);
+    console.log('✅ Auto-login:', user.email);
     window.currentUser = user;
+
+    // Auto-load app if already logged in
+    if (document.getElementById('firebase-login-screen').style.display !== 'none') {
+      await loadAppFromFirebase();
+      document.getElementById('firebase-login-screen').style.display = 'none';
+    }
   } else {
-    console.log('⚠️ No user logged in');
+    console.log('⚠️ Not logged in');
     window.currentUser = null;
   }
 });
 
-console.log('✅ Firebase authentication ready');
+// Sign out function
+window.firebaseSignOut = async function() {
+  await signOut(auth);
+  window.location.reload();
+};
+
+console.log('✅ Firebase ready');
 </script>
 
 
@@ -1286,29 +1322,7 @@ document.addEventListener('DOMContentLoaded', function() {
   <div id="regenerate-recovery-modal" class="modal auth-modal" style="z-index:10001"><div class="modal-content"><div class="modal-header"><div class="modal-title">🔐 Verify PIN</div><button class="close-btn" onclick="closeRegenerateModal()">×</button></div><div class="auth-content"><div class="auth-icon">🔑</div><p class="auth-subtitle">Enter current PIN</p><div class="passcode-input-group"><input type="password" class="passcode-digit" id="verify-1" maxlength="1" inputmode="numeric"><input type="password" class="passcode-digit" id="verify-2" maxlength="1" inputmode="numeric"><input type="password" class="passcode-digit" id="verify-3" maxlength="1" inputmode="numeric"><input type="password" class="passcode-digit" id="verify-4" maxlength="1" inputmode="numeric"><input type="password" class="passcode-digit" id="verify-5" maxlength="1" inputmode="numeric"><input type="password" class="passcode-digit" id="verify-6" maxlength="1" inputmode="numeric"></div><p class="passcode-hint">Current PIN</p><button class="modal-btn save" style="width:100%;margin-top:20px" onclick="verifyPinAndGenerateNew()">✅ Generate</button></div></div></div>
   <div id="new-recovery-code-modal" class="modal auth-modal" style="z-index:10002"><div class="modal-content" style="max-width:550px"><div class="modal-header"><div class="modal-title">✅ New Code!</div></div><div class="auth-content"><div class="auth-icon">🔑</div><p class="auth-subtitle" style="font-size:1.1rem;margin-bottom:20px"><strong>NEW Code:</strong></p><div style="background:rgba(251,191,36,0.15);border:2px solid rgba(251,191,36,0.4);border-radius:16px;padding:30px;margin:20px 0"><div id="new-recovery-display" style="font-size:3rem;font-weight:800;letter-spacing:8px;color:#fbbf24;text-align:center;font-family:monospace">XXXX</div></div><div style="background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.3);border-radius:12px;padding:20px;margin:20px 0"><p style="color:rgba(255,255,255,0.9);font-size:0.95rem;margin:0"><strong style="color:#3b82f6">ℹ️</strong> Old code invalid!</p></div><button class="modal-btn save" style="width:100%;margin-bottom:12px" onclick="emailRecoveryCode()">📧 Email</button><button class="modal-btn cancel" style="width:100%" onclick="closeNewRecoveryModal()">Done</button></div></div></div>
   <!-- Lock Screen -->
-<div id="lock-screen" style="display:none">
-  <div class="lock-container">
-    <div class="lock-header">
-      <div style="font-size:4rem">💰</div>
-      <h1 style="font-size:1.8rem; margin:10px 0">Expense Tracker</h1>
-      <p style="color:rgba(255,255,255,0.6); margin-bottom:40px">Enter your passcode</p>
-    </div>
-    <div class="passcode-input-group">
-      <input type="password" id="unlock-1" maxlength="1" class="passcode-digit" inputmode="numeric" pattern="[0-9]">
-      <input type="password" id="unlock-2" maxlength="1" class="passcode-digit" inputmode="numeric" pattern="[0-9]">
-      <input type="password" id="unlock-3" maxlength="1" class="passcode-digit" inputmode="numeric" pattern="[0-9]">
-      <input type="password" id="unlock-4" maxlength="1" class="passcode-digit" inputmode="numeric" pattern="[0-9]">
-      <input type="password" id="unlock-5" maxlength="1" class="passcode-digit" inputmode="numeric" pattern="[0-9]">
-      <input type="password" id="unlock-6" maxlength="1" class="passcode-digit" inputmode="numeric" pattern="[0-9]">
-    </div>
-    <div id="passcode-error" style="display:none; color:#ef4444; margin-top:20px; font-weight:600">❌ Incorrect passcode</div>
-        <div style="margin-top:30px"><button style="background:rgba(59,130,246,0.2);border:1px solid rgba(59,130,246,0.4);color:#3b82f6;padding:14px;border-radius:12px;cursor:pointer;font-weight:700;font-size:1rem;width:100%" onclick="showRecoveryCodeInput()">🔑 Use Recovery Code</button></div><div style="margin-top:12px"><button style="background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.3);color:#ef4444;padding:10px;border-radius:10px;cursor:pointer;font-size:0.85rem;width:100%" onclick="resetAppFromLockScreen()">🗑️ Reset</button></div>
 
-    <div style="margin-top:30px">
-      
-    </div>
-  </div>
-</div>
 
 <!-- Recovery Key Input -->
 <div id="recovery-key-input-modal" class="modal auth-modal">
@@ -1331,67 +1345,94 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
 
-<script>
-window.addEventListener('DOMContentLoaded', function() {
-  console.log('🔧 Installing saveData wrapper...');
+<!-- ========================================= -->
+<!-- CRITICAL: FORCE FIREBASE SYNC            -->
+<!-- Every change MUST sync immediately       -->
+<!-- ========================================= -->
 
+<script>
+console.log('🔧 Installing aggressive sync wrapper...');
+
+// Wait for page load
+window.addEventListener('DOMContentLoaded', function() {
+
+  // Wrap saveData to ALWAYS force Firebase sync
   const originalSaveData = window.saveData;
 
   window.saveData = function() {
-    console.log('💾 saveData() called');
+    console.log('💾 saveData() triggered');
 
+    // Save to localStorage first (if original function exists)
     if (originalSaveData) {
       originalSaveData();
     } else {
+      // Manual localStorage save
       try {
         localStorage.setItem('transactions', JSON.stringify(window.transactions || []));
         localStorage.setItem('salaries', JSON.stringify(window.salaries || {}));
         localStorage.setItem('utilities', JSON.stringify(window.utilities || []));
         localStorage.setItem('paySettings', JSON.stringify(window.settings || null));
-        console.log('✅ Saved to localStorage');
       } catch(e) {
         console.error('localStorage error:', e);
       }
     }
 
-    if (window.saveToFirebase && window.currentUser) {
-      console.log('🔄 Triggering Firebase sync...');
+    // CRITICAL: Force Firebase sync
+    if (window.currentUser && window.saveToFirebase) {
+      console.log('🔄 FORCE syncing to Firebase...');
       window.saveToFirebase();
+    } else {
+      console.warn('⚠️ No Firebase user - cannot sync!');
     }
   };
 
-  console.log('✅ saveData wrapper installed!');
+  console.log('✅ Aggressive sync wrapper installed');
 });
 
+// Override saveSettings to properly sync
 window.saveSettings = function() {
   console.log('⚙️ saveSettings() called');
 
-  const newStartDate = document.getElementById('settings-start-date').value;
+  const newStartDate = document.getElementById('settings-start-date')?.value;
 
   if (!newStartDate) {
     alert('⚠️ Please enter a valid start date');
     return;
   }
 
-  if (!confirm('⚠️ Change pay cycle start date?')) {
+  if (!confirm('⚠️ Change pay cycle start date? This will recalculate periods.')) {
     return;
   }
 
-  if (!window.settings) window.settings = {};
+  // Ensure settings object exists
+  if (!window.settings) {
+    window.settings = {};
+  }
 
+  // Update settings
   window.settings.startDate = newStartDate;
   window.settings.lastModified = new Date().toISOString();
 
   console.log('✅ Settings updated:', window.settings);
 
+  // FORCE save
   window.saveData();
 
-  if (typeof currentPeriodOffset !== 'undefined') currentPeriodOffset = 0;
-  if (typeof updatePeriodDisplay === 'function') updatePeriodDisplay();
-  if (typeof closeSettings === 'function') closeSettings();
+  // Update UI
+  if (typeof currentPeriodOffset !== 'undefined') {
+    currentPeriodOffset = 0;
+  }
+  if (typeof updatePeriodDisplay === 'function') {
+    updatePeriodDisplay();
+  }
+  if (typeof closeSettings === 'function') {
+    closeSettings();
+  }
 
-  alert('✅ Pay cycle updated!');
+  alert('✅ Settings saved and synced!');
 };
+
+console.log('✅ Sync system ready!');
 </script>
 
 </body></html>
