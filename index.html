@@ -159,7 +159,6 @@
 <!-- FIREBASE AUTHENTICATION SCREEN           -->
 <!-- ========================================= -->
 
-<!-- Firebase Login Screen (Step 1: Before PIN) -->
 <div id="firebase-login-screen" style="
     position: fixed;
     top: 0;
@@ -183,70 +182,32 @@
     ">
         <div style="font-size: 64px; margin-bottom: 20px;">🔐</div>
         <h2 id="firebase-auth-title" style="color: white; margin-bottom: 10px;">Sign In</h2>
-        <p style="color: #888; margin-bottom: 30px; font-size: 14px;">
-            Cloud sync with Firebase
-        </p>
+        <p style="color: #888; margin-bottom: 30px; font-size: 14px;">Cloud sync with Firebase</p>
 
-        <!-- Email Input -->
         <input 
             type="email" 
             id="firebase-email" 
             placeholder="Email Address" 
             autocomplete="email"
-            style="
-                width: 100%;
-                padding: 15px;
-                margin: 10px 0;
-                border-radius: 10px;
-                border: 1px solid #444;
-                background: #2a2a2a;
-                color: white;
-                font-size: 16px;
-                box-sizing: border-box;
-            "
+            style="width: 100%; padding: 15px; margin: 10px 0; border-radius: 10px; border: 1px solid #444; background: #2a2a2a; color: white; font-size: 16px; box-sizing: border-box;"
         />
 
-        <!-- Password Input -->
         <input 
             type="password" 
             id="firebase-password" 
             placeholder="Password (min 6 characters)" 
             autocomplete="current-password"
-            style="
-                width: 100%;
-                padding: 15px;
-                margin: 10px 0;
-                border-radius: 10px;
-                border: 1px solid #444;
-                background: #2a2a2a;
-                color: white;
-                font-size: 16px;
-                box-sizing: border-box;
-            "
+            style="width: 100%; padding: 15px; margin: 10px 0; border-radius: 10px; border: 1px solid #444; background: #2a2a2a; color: white; font-size: 16px; box-sizing: border-box;"
         />
 
-        <!-- Sign In/Up Button -->
         <button 
             id="firebase-auth-btn"
             onclick="firebaseAuth()" 
-            style="
-                width: 100%;
-                padding: 15px;
-                margin: 20px 0 10px 0;
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                color: white;
-                border: none;
-                border-radius: 10px;
-                font-size: 18px;
-                font-weight: bold;
-                cursor: pointer;
-                box-sizing: border-box;
-            "
+            style="width: 100%; padding: 15px; margin: 20px 0 10px 0; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 10px; font-size: 18px; font-weight: bold; cursor: pointer; box-sizing: border-box;"
         >
             🔓 Sign In
         </button>
 
-        <!-- Toggle Sign Up/Sign In -->
         <p style="color: #888; margin-top: 20px; font-size: 14px;">
             <span id="toggle-text">Don't have an account?</span>
             <a href="#" onclick="toggleFirebaseMode(); return false;" style="color: #667eea; text-decoration: none; font-weight: bold;">
@@ -254,45 +215,27 @@
             </a>
         </p>
 
-        <!-- Error Message -->
-        <div id="firebase-error" style="
-            color: #ff4444;
-            margin-top: 15px;
-            padding: 10px;
-            border-radius: 8px;
-            background: rgba(255, 68, 68, 0.1);
-            display: none;
-            font-size: 14px;
-        "></div>
-
-        <!-- Success Message -->
-        <div id="firebase-success" style="
-            color: #44ff44;
-            margin-top: 15px;
-            padding: 10px;
-            border-radius: 8px;
-            background: rgba(68, 255, 68, 0.1);
-            display: none;
-            font-size: 14px;
-        "></div>
+        <div id="firebase-error" style="color: #ff4444; margin-top: 15px; padding: 10px; border-radius: 8px; background: rgba(255, 68, 68, 0.1); display: none; font-size: 14px;"></div>
+        <div id="firebase-success" style="color: #44ff44; margin-top: 15px; padding: 10px; border-radius: 8px; background: rgba(68, 255, 68, 0.1); display: none; font-size: 14px;"></div>
     </div>
 </div>
 
 <script type="module">
 // ========================================
-// FIREBASE CONFIGURATION
+// FIREBASE CONFIGURATION - YOUR PROJECT
 // ========================================
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
 import { getFirestore, doc, getDoc, setDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 
 const firebaseConfig = {
-  apiKey: "AIzaSyCYPC0xBciKW2rYUL2Zn_rONg0o-kDiD0Y",
-  authDomain: "expense-tracker-f8086.firebaseapp.com",
-  projectId: "expense-tracker-f8086",
-  storageBucket: "expense-tracker-f8086.firebasestorage.app",
-  messagingSenderId: "39068524302",
-  appId: "1:39068524302:web:2adcd2ac93d959dbe8d7c6"
+  apiKey: "AIzaSyAHgeL8cnjLGegRPvL-VCLbd_PCTo81Xvg",
+  authDomain: "expensetracker-650bb.firebaseapp.com",
+  projectId: "expensetracker-650bb",
+  storageBucket: "expensetracker-650bb.firebasestorage.app",
+  messagingSenderId: "1049493175328",
+  appId: "1:1049493175328:web:b3ba0b37fa104b3724d045",
+  measurementId: "G-SX14TLQXTS"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -304,7 +247,7 @@ window.db = db;
 window.currentUser = null;
 window.isSignUpMode = false;
 
-console.log('✅ Firebase initialized');
+console.log('✅ Firebase initialized - Project: expensetracker-650bb');
 
 window.toggleFirebaseMode = function() {
   window.isSignUpMode = !window.isSignUpMode;
@@ -1388,11 +1331,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
 
-<!-- ========================================= -->
-<!-- CRITICAL: SAVEDATA WRAPPER               -->
-<!-- Makes all data changes sync to Firebase  -->
-<!-- ========================================= -->
-
 <script>
 window.addEventListener('DOMContentLoaded', function() {
   console.log('🔧 Installing saveData wrapper...');
@@ -1419,8 +1357,6 @@ window.addEventListener('DOMContentLoaded', function() {
     if (window.saveToFirebase && window.currentUser) {
       console.log('🔄 Triggering Firebase sync...');
       window.saveToFirebase();
-    } else if (!window.currentUser) {
-      console.log('⚠️ Not logged in to Firebase - local only');
     }
   };
 
@@ -1437,13 +1373,11 @@ window.saveSettings = function() {
     return;
   }
 
-  if (!confirm('⚠️ Change pay cycle start date? This will recalculate all periods.')) {
+  if (!confirm('⚠️ Change pay cycle start date?')) {
     return;
   }
 
-  if (!window.settings) {
-    window.settings = {};
-  }
+  if (!window.settings) window.settings = {};
 
   window.settings.startDate = newStartDate;
   window.settings.lastModified = new Date().toISOString();
@@ -1452,21 +1386,12 @@ window.saveSettings = function() {
 
   window.saveData();
 
-  if (typeof currentPeriodOffset !== 'undefined') {
-    currentPeriodOffset = 0;
-  }
-  if (typeof updatePeriodDisplay === 'function') {
-    updatePeriodDisplay();
-  }
+  if (typeof currentPeriodOffset !== 'undefined') currentPeriodOffset = 0;
+  if (typeof updatePeriodDisplay === 'function') updatePeriodDisplay();
+  if (typeof closeSettings === 'function') closeSettings();
 
-  if (typeof closeSettings === 'function') {
-    closeSettings();
-  }
-
-  alert('✅ Pay cycle updated successfully!');
+  alert('✅ Pay cycle updated!');
 };
-
-console.log('✅ Firebase sync system ready!');
 </script>
 
 </body></html>
