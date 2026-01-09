@@ -155,9 +155,9 @@
 </head>
 <body>
 
-<!-- ============================================= -->
-<!-- 🔥 FIREBASE SYNC SYSTEM - NO PIN/PASSWORD   -->
-<!-- ============================================= -->
+<!-- ================================================================ -->
+<!-- FIREBASE AUTHENTICATION - NO PIN/PASSCODE SYSTEM                -->
+<!-- ================================================================ -->
 
 <div id="firebase-login-screen" style="
     position: fixed;
@@ -213,12 +213,10 @@
 </div>
 
 <script type="module">
-// Firebase imports
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
 import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, setPersistence, browserLocalPersistence } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
 import { getFirestore, doc, getDoc, setDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 
-// Firebase config
 const firebaseConfig = {
   apiKey: "AIzaSyAHgeL8cnjLGegRPvL-VCLbd_PCTo81Xvg",
   authDomain: "expensetracker-650bb.firebaseapp.com",
@@ -232,7 +230,6 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-// Enable login persistence
 setPersistence(auth, browserLocalPersistence);
 
 window.auth = auth;
@@ -242,49 +239,35 @@ window.unsubscribe = null;
 
 console.log('🔥 Firebase initialized');
 
-// ============================================= 
-// CRITICAL: BLOCK LOCALSTORAGE IMMEDIATELY
-// ============================================= 
-const originalGetItem = Storage.prototype.getItem;
+// BLOCK LOCALSTORAGE COMPLETELY
+const origGetItem = Storage.prototype.getItem;
 Storage.prototype.getItem = function(key) {
   console.log(`⚠️ Blocked localStorage.getItem('${key}')`);
   return null;
 };
 
-// ============================================= 
 // OVERRIDE SAVEDATA IMMEDIATELY
-// ============================================= 
-const originalSaveData = window.saveData;
-
+const origSaveData = window.saveData;
 window.saveData = function() {
   console.log('💾 saveData() called');
   console.log('  📊 Transactions:', window.transactions?.length || 0);
   console.log('  📊 Utilities:', window.utilities?.length || 0);
-  console.log('  📊 Salaries:', Object.keys(window.salaries || {}).length);
 
-  // Call original saveData if it exists (for backward compatibility)
-  if (originalSaveData && typeof originalSaveData === 'function') {
-    try {
-      originalSaveData();
-    } catch(e) {
-      console.error('⚠️ Original saveData error:', e);
-    }
+  if (origSaveData && typeof origSaveData === 'function') {
+    try { origSaveData(); } catch(e) { console.error('⚠️ Original saveData error:', e); }
   }
 
-  // FORCE Firebase sync
   if (window.currentUser && window.saveToFirebase) {
     console.log('🔄 Syncing to Firebase...');
     window.saveToFirebase();
   } else {
-    console.warn('⚠️ Not logged in - cannot sync to Firebase');
+    console.warn('⚠️ Not logged in - cannot sync');
   }
 };
 
 console.log('✅ saveData() override installed');
 
-// ============================================= 
-// LOGIN FUNCTION
-// ============================================= 
+// LOGIN
 window.firebaseLogin = async function() {
   const email = document.getElementById('firebase-email').value.trim();
   const password = document.getElementById('firebase-password').value;
@@ -305,19 +288,16 @@ window.firebaseLogin = async function() {
     messageDiv.style.display = 'block';
 
     await signInWithEmailAndPassword(auth, email, password);
-
   } catch (error) {
     console.error('Login error:', error);
-    messageDiv.textContent = '❌ Invalid email or password';
+    messageDiv.textContent = '❌ Invalid credentials';
     messageDiv.style.background = 'rgba(255,68,68,0.1)';
     messageDiv.style.color = '#ff4444';
     messageDiv.style.display = 'block';
   }
 };
 
-// ============================================= 
-// LOAD DATA FROM FIREBASE
-// ============================================= 
+// LOAD FROM FIREBASE
 async function loadFirebaseData() {
   if (!window.currentUser) return;
 
@@ -328,17 +308,15 @@ async function loadFirebaseData() {
 
     if (docSnap.exists()) {
       const data = docSnap.data();
-      console.log('✅ Firebase data loaded:', data);
+      console.log('✅ Data loaded:', data);
 
-      // Load into global variables
       window.settings = data.settings || { startDate: new Date().toISOString().split('T')[0] };
       window.transactions = data.transactions || [];
       window.salaries = data.salaries || {};
       window.utilities = data.utilities || [];
 
-      console.log(`📊 Loaded: ${window.transactions.length} transactions, ${window.utilities.length} utilities`);
+      console.log(`📊 ${window.transactions.length} transactions, ${window.utilities.length} utilities`);
 
-      // Update UI after a short delay to ensure DOM is ready
       setTimeout(() => {
         if (typeof updatePeriodDisplay === 'function') updatePeriodDisplay();
         if (typeof renderTransactions === 'function') renderTransactions();
@@ -347,7 +325,7 @@ async function loadFirebaseData() {
       }, 200);
 
     } else {
-      console.log('📝 New user - creating initial data');
+      console.log('📝 New user');
       window.settings = { startDate: new Date().toISOString().split('T')[0] };
       window.transactions = [];
       window.salaries = {};
@@ -362,12 +340,11 @@ async function loadFirebaseData() {
       });
     }
 
-    // Real-time listener for multi-device sync
+    // Real-time listener
     window.unsubscribe = onSnapshot(docRef, (snapshot) => {
       if (!snapshot.exists()) return;
-
       const data = snapshot.data();
-      console.log('🔄 Real-time update received');
+      console.log('🔄 Real-time update');
 
       window.settings = data.settings || window.settings;
       window.transactions = data.transactions || [];
@@ -380,18 +357,15 @@ async function loadFirebaseData() {
     });
 
     console.log('✅ Real-time sync active');
-
   } catch (error) {
-    console.error('❌ Error loading data:', error);
+    console.error('❌ Load error:', error);
   }
 }
 
-// ============================================= 
-// SAVE DATA TO FIREBASE
-// ============================================= 
+// SAVE TO FIREBASE
 window.saveToFirebase = async function() {
   if (!window.currentUser) {
-    console.warn('⚠️ Not logged in - cannot save');
+    console.warn('⚠️ Not logged in');
     return;
   }
 
@@ -410,23 +384,19 @@ window.saveToFirebase = async function() {
       lastUpdated: new Date().toISOString()
     });
 
-    console.log('✅ Saved to Firebase successfully!');
+    console.log('✅ Saved to Firebase!');
   } catch (error) {
-    console.error('❌ Firebase save error:', error);
+    console.error('❌ Save error:', error);
   }
 };
 
-// ============================================= 
-// AUTH STATE LISTENER
-// ============================================= 
+// AUTH STATE
 onAuthStateChanged(auth, async (user) => {
   if (user) {
     console.log('✅ Logged in:', user.email);
     window.currentUser = user;
-
     await loadFirebaseData();
     document.getElementById('firebase-login-screen').style.display = 'none';
-
   } else {
     console.log('⚠️ Not logged in');
     window.currentUser = null;
@@ -564,7 +534,16 @@ onAuthStateChanged(auth, async (user) => {
 <div id="edit-modal" class="modal"><div class="modal-content"><div class="modal-header"><div class="modal-title">Edit Expense</div><button class="close-btn" onclick="closeEditModal()">✕</button></div><div class="input-group"><label class="input-label">Category</label><input type="text" id="edit-category" placeholder="e.g., Groceries"></div><div class="input-group"><label class="input-label">Amount</label><input type="number" id="edit-amount" placeholder="0.00" step="0.01"></div><div class="modal-buttons"><button class="modal-btn cancel" onclick="closeEditModal()">Cancel</button><button class="modal-btn save" onclick="saveEdit()">Save Changes</button></div></div></div>
 <div id="analytics-modal" class="modal"><div class="modal-content"><div class="modal-header"><div class="modal-title">Utility Analytics</div><button class="close-btn" onclick="closeAnalytics()">✕</button></div><div id="analytics-body"></div></div></div>
 <div id="insights-modal" class="modal"><div class="modal-content insights-content"><div class="modal-header"><div class="modal-title">Spending Insights 📈</div><button class="close-btn" onclick="closeInsights()">✕</button></div><div id="insights-body" class="insights-body"></div></div></div>
-<script>let transactions=[],salaries={},utilities=[],settings=null,currentPeriodOffset=0,currentMonthOffset=0,editingItem=null,editingType=null,selectedQuickDate=null;function loadData(){try{transactions=JSON.parse(localStorage.getItem('transactions')||'[]'),salaries=JSON.parse(localStorage.getItem('salaries')||'{}'),utilities=JSON.parse(localStorage.getItem('utilities')||'[]'),settings=JSON.parse(localStorage.getItem('paySettings')||'null')}catch(e){console.error('Error loading data:',e),alert('Data loading error. Try clicking Reset.')}}function resetApp(){confirm('⚠️ Delete ALL data and restart setup?')&&(localStorage.clear(),location.reload())}function checkFirstTimeUser(){settings&&settings.startDate?(updatePeriodDisplay(),updateMonthlyDisplay(),renderQuickAddButtons()):showSetupWizard()}function showSetupWizard(){generateQuickDates(),document.getElementById('setup-wizard').classList.add('active')}function generateQuickDates(){const container=document.getElementById('quick-dates'),today=new Date(),dates=[];for(let i=0;i<4;i++){const date=new Date(today);date.setDate(date.getDate()-i*14);const dayOfWeek=date.getDay(),daysToMonday=0===dayOfWeek?-6:1-dayOfWeek;date.setDate(date.getDate()+daysToMonday),dates.push(date)}container.innerHTML=dates.map((date,index)=>{const formatted=date.toISOString().split('T')[0],display=date.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}),label=0===index?' (This Week)':'';return`<button class="quick-date-btn" onclick="selectQuickDate('${formatted}')">${display}${label}</button>`}).join('')}function selectQuickDate(dateStr){selectedQuickDate=dateStr,document.getElementById('setup-start-date').value=dateStr,document.querySelectorAll('.quick-date-btn').forEach(btn=>btn.classList.remove('selected')),event.target.classList.add('selected')}function completeSetup(){let startDate=document.getElementById('setup-start-date').value||selectedQuickDate;startDate?(settings={startDate:startDate,setupComplete:!0,setupDate:(new Date).toISOString()},localStorage.setItem('paySettings',JSON.stringify(settings)),document.getElementById('setup-wizard').classList.remove('active'),currentPeriodOffset=0,updatePeriodDisplay(),updateMonthlyDisplay(),renderQuickAddButtons()):alert('Please select a start date')}function showSettings(){if(!settings||!settings.startDate)return void alert('Complete setup first');const modal=document.getElementById('settings-modal'),dateObj=new Date(settings.startDate+'T00:00:00');document.getElementById('current-start-date').textContent=dateObj.toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}),document.getElementById('settings-start-date').value=settings.startDate,modal.classList.add('active')}function closeSettings(){document.getElementById('settings-modal').classList.remove('active')}function saveSettings(){const newStartDate=document.getElementById('settings-start-date').value;newStartDate?confirm('Change pay cycle start date? This recalculates all periods.')&&(settings.startDate=newStartDate,settings.lastModified=(new Date).toISOString(),localStorage.setItem('paySettings',JSON.stringify(settings)),currentPeriodOffset=0,updatePeriodDisplay(),closeSettings(),alert('✅ Pay cycle updated!')):alert('Enter a valid start date')}document.getElementById('utility-type').addEventListener('change',function(){document.getElementById('custom-utility-group').style.display='Other'===this.value?'block':'none'});function showAnalytics(){const modal=document.getElementById('analytics-modal'),body=document.getElementById('analytics-body'),utilityGroups={};utilities.forEach(util=>{utilityGroups[util.type]||(utilityGroups[util.type]=[]),utilityGroups[util.type].push(util.amount)});const analytics=Object.keys(utilityGroups).map(type=>{const amounts=utilityGroups[type],sum=amounts.reduce((acc,curr)=>acc+curr,0);return{type:type,count:amounts.length,average:sum/amounts.length,total:sum}}).sort((a,b)=>b.average-a.average);if(0===analytics.length)body.innerHTML='<div class="empty-state"><div class="empty-state-icon">📊</div><div>No utility data yet</div></div>';else{const totalAvg=analytics.reduce((sum,item)=>sum+item.average,0);body.innerHTML=`<table class="analytics-table"><thead><tr><th>Utility</th><th>Months</th><th>Total</th><th>Average</th></tr></thead><tbody>${analytics.map(item=>`<tr><td>${item.type}</td><td>${item.count}</td><td>$${item.total.toFixed(2)}</td><td>$${item.average.toFixed(2)}</td></tr>`).join('')}</tbody><tfoot><tr style="border-top:2px solid rgba(255,255,255,.2);font-weight:700"><td>Total Monthly Average</td><td></td><td></td><td style="font-size:1.1rem">$${totalAvg.toFixed(2)}</td></tr></tfoot></table>`}modal.classList.add('active')}function closeAnalytics(){document.getElementById('analytics-modal').classList.remove('active')}function showInsights(){const modal=document.getElementById('insights-modal'),body=document.getElementById('insights-body'),currentPeriod=getPeriod(0),previousPeriod=getPeriod(-1);if(!currentPeriod)return body.innerHTML='<div class="empty-state"><div class="empty-state-icon">📊</div><div>No data available</div></div>',void modal.classList.add('active');const currentExpenses=transactions.filter(t=>{const tDate=new Date(t.date);return tDate.setHours(0,0,0,0),tDate>=currentPeriod.start&&tDate<=currentPeriod.end}),previousExpenses=previousPeriod?transactions.filter(t=>{const tDate=new Date(t.date);return tDate.setHours(0,0,0,0),tDate>=previousPeriod.start&&tDate<=previousPeriod.end}):[],currentCategories=getCategoryBreakdown(currentExpenses),previousTotal=previousExpenses.reduce((sum,t)=>sum+t.amount,0),currentTotal=currentExpenses.reduce((sum,t)=>sum+t.amount,0),currentSalary=salaries[currentPeriod.key]||0,previousSalary=previousPeriod?salaries[previousPeriod.key]||0:0,currentSavings=currentSalary-currentTotal,previousSavings=previousSalary-previousTotal,allTimeStats=calculateAllTimeStats();let html='';if(html+=`<div class="insight-section"><div class="insight-title">💰 This Pay Period</div>${currentCategories.length>0?`<div class="category-breakdown">${currentCategories.slice(0,3).map(cat=>`<div class="category-item"><span class="category-name">${cat.category}</span><span class="category-amount">$${cat.amount.toFixed(2)}</span></div>`).join('')}</div>`:'<p style="color:rgba(255,255,255,.5);text-align:center">No expenses yet this period</p>'}</div>`,previousPeriod){const expenseChange=currentTotal-previousTotal,expenseChangePercent=previousTotal>0?expenseChange/previousTotal*100:0,savingsChange=currentSavings-previousSavings;html+=`<div class="insight-section"><div class="insight-title">📊 vs Last Period</div><div class="insight-card"><span class="insight-label">Total Expenses</span><div><span class="insight-value">$${currentTotal.toFixed(0)}</span>${Math.abs(expenseChangePercent)>0?`<span class="insight-trend ${expenseChange>0?'up':'down'}">${expenseChange>0?'↑':'↓'} ${Math.abs(expenseChangePercent).toFixed(0)}%</span>`:''}</div></div><div class="insight-card"><span class="insight-label">Savings Change</span><div><span class="insight-value" style="color:${savingsChange>=0?'#10b981':'#ef4444'}">${savingsChange>=0?'+':''}$${savingsChange.toFixed(0)}</span></div></div></div>`}html+=`<div class="insight-section"><div class="insight-title">🎯 All-Time Stats</div><div class="stat-grid"><div class="stat-card"><div class="stat-label">Periods Tracked</div><div class="stat-value">${allTimeStats.periodsTracked}</div></div><div class="stat-card"><div class="stat-label">Avg Savings</div><div class="stat-value" style="color:${allTimeStats.avgSavings>=0?'#10b981':'#ef4444'}">$${allTimeStats.avgSavings.toFixed(0)}</div></div><div class="stat-card"><div class="stat-label">Best Period</div><div class="stat-value" style="color:#fbbf24;font-size:1.2rem">$${allTimeStats.bestSavings.toFixed(0)}</div></div><div class="stat-card"><div class="stat-label">Total Saved</div><div class="stat-value" style="color:${allTimeStats.totalSavings>=0?'#10b981':'#ef4444'}">$${allTimeStats.totalSavings.toFixed(0)}</div></div></div></div>`,allTimeStats.topCategories.length>0&&(html+=`<div class="insight-section"><div class="insight-title">🏆 Top Spending Categories</div><div class="category-breakdown">${allTimeStats.topCategories.slice(0,5).map((cat,idx)=>`<div class="category-item"><span class="category-name">${idx+1}. ${cat.category}</span><span class="category-amount">$${cat.total.toFixed(0)}</span></div>`).join('')}</div></div>`),body.innerHTML=html,modal.classList.add('active')}function closeInsights(){document.getElementById('insights-modal').classList.remove('active')}function getCategoryBreakdown(expenses){const categories={};return expenses.forEach(exp=>{categories[exp.category]||(categories[exp.category]=0),categories[exp.category]+=exp.amount}),Object.keys(categories).map(cat=>({category:cat,amount:categories[cat]})).sort((a,b)=>b.amount-a.amount)}function calculateAllTimeStats(){if(!settings||!settings.startDate)return{periodsTracked:0,avgSavings:0,bestSavings:0,totalSavings:0,topCategories:[]};const today=new Date;today.setHours(0,0,0,0);const startDate=new Date(settings.startDate+'T00:00:00');startDate.setHours(0,0,0,0);const daysSinceStart=Math.floor((today-startDate)/864e5),totalPeriods=Math.floor(daysSinceStart/14)+1;let periodsWithData=0,totalSavings=0,bestSavings=-Infinity;const allCategories={};for(let i=0;i<totalPeriods;i++){const periodStart=new Date(startDate);periodStart.setDate(periodStart.getDate()+14*i);const periodEnd=new Date(periodStart);periodEnd.setDate(periodEnd.getDate()+13),periodEnd.setHours(23,59,59,999);const periodKey=`period-${periodStart.getFullYear()}-${String(periodStart.getMonth()+1).padStart(2,'0')}-${String(periodStart.getDate()).padStart(2,'0')}`,salary=salaries[periodKey]||0,periodExpenses=transactions.filter(t=>{const tDate=new Date(t.date);return tDate.setHours(0,0,0,0),tDate>=periodStart&&tDate<=periodEnd});if(salary>0||periodExpenses.length>0){periodsWithData++;const expenseTotal=periodExpenses.reduce((sum,t)=>sum+t.amount,0),savings=salary-expenseTotal;totalSavings+=savings,savings>bestSavings&&(bestSavings=savings),periodExpenses.forEach(exp=>{allCategories[exp.category]||(allCategories[exp.category]=0),allCategories[exp.category]+=exp.amount})}}const topCategories=Object.keys(allCategories).map(cat=>({category:cat,total:allCategories[cat]})).sort((a,b)=>b.total-a.total);return{periodsTracked:periodsWithData,avgSavings:periodsWithData>0?totalSavings/periodsWithData:0,bestSavings:-Infinity===bestSavings?0:bestSavings,totalSavings:totalSavings,topCategories:topCategories}}function getTopCategories(limit=5){if(0===transactions.length)return[];const categoryFrequency={};return transactions.forEach(t=>{const cat=t.category.trim();cat&&(categoryFrequency[cat]=(categoryFrequency[cat]||0)+1)}),Object.keys(categoryFrequency).map(cat=>({category:cat,count:categoryFrequency[cat]})).sort((a,b)=>b.count-a.count).slice(0,limit).map(item=>item.category)}function renderQuickAddButtons(){const container=document.getElementById('quick-add-buttons'),topCategories=getTopCategories(5);if(0===topCategories.length)return void(container.innerHTML='<div class="quick-add-empty">Add some expenses to see quick categories</div>');const categoryEmojis={Groceries:'🛒',Gas:'⛽',Coffee:'☕',Food:'🍔',Restaurant:'🍽️',Transport:'🚗',Shopping:'🛍️',Entertainment:'🎬',Bills:'📄',Rent:'🏠',Utilities:'💡',Health:'⚕️',Gym:'💪',Subscription:'📱'};container.innerHTML=topCategories.map(category=>{let emoji='';const categoryLower=category.toLowerCase();for(const[key,value]of Object.entries(categoryEmojis))if(categoryLower.includes(key.toLowerCase())){emoji=value;break}return`<button class="quick-add-btn" onclick="quickAddCategory('${category.replace(/'/g,"\'")}')"> ${emoji?emoji+' ':''}${category}</button>`}).join('')}function quickAddCategory(category){document.getElementById('category-input').value=category;const amountInput=document.getElementById('amount-input');amountInput.focus(),amountInput.select();const categoryInput=document.getElementById('category-input');categoryInput.style.background='rgba(251,191,36,.15)',setTimeout(()=>{categoryInput.style.background=''},500)}function openEditModal(id,type){editingType=type,'expense'===type?(editingItem=transactions.find(t=>t.id===id),editingItem&&(document.getElementById('edit-category').value=editingItem.category,document.getElementById('edit-amount').value=editingItem.amount,document.querySelector('#edit-modal .modal-title').textContent='Edit Expense')):'utility'===type&&(editingItem=utilities.find(u=>u.id===id),editingItem&&(document.getElementById('edit-category').value=editingItem.type,document.getElementById('edit-amount').value=editingItem.amount,document.querySelector('#edit-modal .modal-title').textContent='Edit Utility')),document.getElementById('edit-modal').classList.add('active')}function closeEditModal(){document.getElementById('edit-modal').classList.remove('active'),editingItem=null,editingType=null}function saveEdit(){if(!editingItem)return;const newCategory=document.getElementById('edit-category').value.trim(),newAmount=parseFloat(document.getElementById('edit-amount').value);if(!newCategory||!newAmount||newAmount<=0)return void alert('Enter valid category and amount');if('expense'===editingType){const index=transactions.findIndex(t=>t.id===editingItem.id);-1!==index&&(transactions[index].category=newCategory,transactions[index].amount=newAmount,localStorage.setItem('transactions',JSON.stringify(transactions)),updatePeriodDisplay(),renderQuickAddButtons())}else if('utility'===editingType){const index=utilities.findIndex(u=>u.id===editingItem.id);-1!==index&&(utilities[index].type=newCategory,utilities[index].amount=newAmount,localStorage.setItem('utilities',JSON.stringify(utilities)),updateMonthlyDisplay())}closeEditModal()}window.onclick=function(event){event.target===document.getElementById('analytics-modal')&&closeAnalytics(),event.target===document.getElementById('insights-modal')&&closeInsights(),event.target===document.getElementById('edit-modal')&&closeEditModal(),event.target===document.getElementById('settings-modal')&&closeSettings()};function exportData(){const data={transactions:transactions,salaries:salaries,utilities:utilities,settings:settings,exportDate:(new Date).toISOString(),version:'3.0'},blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),link=document.createElement('a');link.href=url,link.download=`expense-tracker-${(new Date).toISOString().split('T')[0]}.json`,link.click(),URL.revokeObjectURL(url),alert('✅ Data exported!')}function importData(event){const file=event.target.files[0];if(!file)return;const reader=new FileReader;reader.onload=function(e){try{const imported=JSON.parse(e.target.result);confirm('Import data? This replaces current data.')&&(transactions=imported.transactions||[],salaries=imported.salaries||{},utilities=imported.utilities||[],settings=imported.settings||null,currentPeriodOffset=0,localStorage.setItem('transactions',JSON.stringify(transactions)),localStorage.setItem('salaries',JSON.stringify(salaries)),localStorage.setItem('utilities',JSON.stringify(utilities)),settings&&localStorage.setItem('paySettings',JSON.stringify(settings)),updatePeriodDisplay(),updateMonthlyDisplay(),renderQuickAddButtons(),alert('✅ Data imported!'))}catch(error){alert('❌ Invalid file')}},reader.readAsText(file),event.target.value=''}function changePeriod(direction){currentPeriodOffset+=direction,updatePeriodDisplay()}function jumpToCurrent(){currentPeriodOffset=0,updatePeriodDisplay()}function getPeriod(offset=0){try{if(!settings||!settings.startDate)return null;const today=new Date;today.setHours(0,0,0,0);const startDate=new Date(settings.startDate+'T00:00:00');if(isNaN(startDate.getTime()))return alert('Invalid start date. Reset app.'),null;startDate.setHours(0,0,0,0);const millisDiff=today.getTime()-startDate.getTime(),daysDiff=Math.floor(millisDiff/864e5),currentPeriodNum=Math.floor(daysDiff/14),targetPeriod=currentPeriodNum+offset,periodStart=new Date(startDate);periodStart.setDate(periodStart.getDate()+14*targetPeriod);const periodEnd=new Date(periodStart);return periodEnd.setDate(periodEnd.getDate()+13),periodEnd.setHours(23,59,59,999),{start:periodStart,end:periodEnd,key:`period-${periodStart.getFullYear()}-${String(periodStart.getMonth()+1).padStart(2,'0')}-${String(periodStart.getDate()).padStart(2,'0')}`,periodNum:targetPeriod}}catch(error){return console.error('Error in getPeriod:',error),null}}function getMonth(offset=0){const today=new Date,month=new Date(today.getFullYear(),today.getMonth()+offset,1);return{year:month.getFullYear(),month:month.getMonth(),key:`${month.getFullYear()}-${String(month.getMonth()+1).padStart(2,'0')}`,display:month.toLocaleDateString('en-US',{month:'long',year:'numeric'})}}function formatDateShort(date){return date.toLocaleDateString('en-US',{month:'short',day:'numeric'})}function changeMonth(direction){currentMonthOffset+=direction,updateMonthlyDisplay()}function calculateCarryForward(upToPeriodNum){if(!settings||!settings.startDate)return 0;if(upToPeriodNum<=0)return 0;let cumulativeSavings=0;const startDate=new Date(settings.startDate+'T00:00:00');startDate.setHours(0,0,0,0);for(let i=0;i<upToPeriodNum;i++){const periodStart=new Date(startDate);periodStart.setDate(periodStart.getDate()+14*i);const periodEnd=new Date(periodStart);periodEnd.setDate(periodEnd.getDate()+13),periodEnd.setHours(23,59,59,999);const periodKey=`period-${periodStart.getFullYear()}-${String(periodStart.getMonth()+1).padStart(2,'0')}-${String(periodStart.getDate()).padStart(2,'0')}`,salary=salaries[periodKey]||0,periodExpenses=transactions.filter(t=>{const tDate=new Date(t.date);return tDate.setHours(0,0,0,0),tDate>=periodStart&&tDate<=periodEnd}),totalExpenses=periodExpenses.reduce((sum,t)=>sum+t.amount,0);cumulativeSavings+=salary-totalExpenses}return cumulativeSavings}function updatePeriodDisplay(){const period=getPeriod(currentPeriodOffset);if(!period)return;const pane=document.getElementById('pane-period'),star=document.getElementById('star-current'),dateRange=`${formatDateShort(period.start)} - ${formatDateShort(period.end)}`,isCurrent=0===currentPeriodOffset;document.getElementById('period-dates').textContent=isCurrent?`${dateRange} (CURRENT)`:dateRange,isCurrent?(star.classList.add('active'),pane.classList.add('current')):(star.classList.remove('active'),pane.classList.remove('current'));const salary=salaries[period.key]||0;document.getElementById('salary-input').value=salary||'';const periodExpenses=transactions.filter(t=>{const tDate=new Date(t.date);return tDate.setHours(0,0,0,0),tDate>=period.start&&tDate<=period.end}),totalExpenses=periodExpenses.reduce((sum,t)=>sum+t.amount,0),thisPeriodSavings=salary-totalExpenses,carryForward=calculateCarryForward(period.periodNum),totalCumulativeSavings=carryForward+thisPeriodSavings;document.getElementById('salary-display').textContent=`$${salary.toFixed(0)}`,document.getElementById('expenses-display').textContent=`$${totalExpenses.toFixed(0)}`;const savingsEl=document.getElementById('savings-display');savingsEl.textContent=`$${thisPeriodSavings.toFixed(0)}`,savingsEl.className='summary-value '+(thisPeriodSavings>=0?'positive':'negative');const carryForwardEl=document.getElementById('carry-forward-display');carryForwardEl.textContent=`$${carryForward.toFixed(0)}`,carryForwardEl.className='summary-value info '+(carryForward>=0?'positive':'negative');const totalSavingsEl=document.getElementById('total-savings-display');totalSavingsEl.textContent=`$${totalCumulativeSavings.toFixed(0)}`,totalSavingsEl.className='summary-value '+(totalCumulativeSavings>=0?'positive':'negative'),renderExpenses(periodExpenses)}function updateMonthlyDisplay(){const month=getMonth(currentMonthOffset);document.getElementById('month-display').textContent=month.display;const monthUtilities=utilities.filter(u=>u.month===month.key),total=monthUtilities.reduce((sum,u)=>sum+u.amount,0);document.getElementById('monthly-total').textContent=`$${total.toFixed(0)}`,renderUtilities(monthUtilities)}function renderExpenses(expenses){const listEl=document.getElementById('expenses-list');if(0===expenses.length)return void(listEl.innerHTML='<div class="empty-state"><div class="empty-state-icon">📊</div><div>No expenses yet</div></div>');listEl.innerHTML=expenses.slice().reverse().map(exp=>`<div class="expense-item-wrapper"><div class="expense-item" data-expense-id="${exp.id}"><div class="expense-info"><div class="expense-desc">${exp.category}</div><div class="expense-cat">${new Date(exp.date).toLocaleDateString()}</div></div><div class="expense-amount">$${exp.amount.toFixed(2)}</div></div><div class="swipe-actions"><button class="action-btn edit"><span class="action-icon">✏️</span><span>Edit</span></button><button class="action-btn delete"><span class="action-icon">🗑️</span><span>Delete</span></button></div></div>`).join(''),listEl.querySelectorAll('.expense-item').forEach(item=>setupSwipeActions(item,'expense'))}function renderUtilities(utilityList){const listEl=document.getElementById('utilities-list');if(0===utilityList.length)return void(listEl.innerHTML='<div class="empty-state"><div class="empty-state-icon">💡</div><div>No utilities yet</div></div>');listEl.innerHTML=utilityList.map(util=>`<div class="expense-item-wrapper"><div class="expense-item" data-utility-id="${util.id}"><div class="expense-info"><div class="expense-desc">${util.type}</div><div class="expense-cat">${util.month}</div></div><div class="expense-amount">$${util.amount.toFixed(2)}</div></div><div class="swipe-actions"><button class="action-btn edit"><span class="action-icon">✏️</span><span>Edit</span></button><button class="action-btn delete"><span class="action-icon">🗑️</span><span>Delete</span></button></div></div>`).join(''),listEl.querySelectorAll('.expense-item').forEach(item=>setupSwipeActions(item,'utility'))}function setupSwipeActions(item,type){let startX=0,currentX=0,isSwiping=!1;const swipeThreshold=60,wrapper=item.closest('.expense-item-wrapper'),editBtn=wrapper.querySelector('.action-btn.edit'),deleteBtn=wrapper.querySelector('.action-btn.delete');item.addEventListener('touchstart',e=>{startX=e.touches[0].clientX,isSwiping=!1,item.classList.remove('transitioning')},{passive:!0}),item.addEventListener('touchmove',e=>{if(!startX)return;currentX=e.touches[0].clientX;const diff=startX-currentX;Math.abs(diff)>5&&(isSwiping=!0),diff>0&&diff<160?item.style.transform=`translate3d(-${diff}px, 0, 0)`:diff<=0&&(item.style.transform='translate3d(0, 0, 0)')},{passive:!0}),item.addEventListener('touchend',e=>{if(!startX)return;const diff=startX-currentX;item.classList.add('transitioning'),isSwiping&&diff>swipeThreshold?(item.classList.add('swiped'),item.style.transform=''):(item.classList.remove('swiped'),item.style.transform=''),startX=0,currentX=0,isSwiping=!1},{passive:!0}),editBtn.addEventListener('click',e=>{e.stopPropagation();const id='expense'===type?parseInt(item.dataset.expenseId):parseInt(item.dataset.utilityId);openEditModal(id,type),item.classList.remove('swiped')}),deleteBtn.addEventListener('click',e=>{e.stopPropagation();const id='expense'===type?parseInt(item.dataset.expenseId):parseInt(item.dataset.utilityId);if(confirm('Delete this '+type+'?'))if('expense'===type){const index=transactions.findIndex(t=>t.id===id);-1!==index&&(transactions.splice(index,1),localStorage.setItem('transactions',JSON.stringify(transactions)),updatePeriodDisplay(),renderQuickAddButtons())}else{const index=utilities.findIndex(u=>u.id===id);-1!==index&&(utilities.splice(index,1),localStorage.setItem('utilities',JSON.stringify(utilities)),updateMonthlyDisplay())}}),document.addEventListener('click',e=>{wrapper.contains(e.target)||item.classList.remove('swiped')})}function addExpense(){const period=getPeriod(currentPeriodOffset);if(!period)return;const category=document.getElementById('category-input').value.trim(),amount=parseFloat(document.getElementById('amount-input').value);if(!category||!amount||amount<=0)return void alert('Enter both category and amount');const transaction={id:Date.now(),category:category,amount:amount,date:period.start.toISOString()};transactions.push(transaction),localStorage.setItem('transactions',JSON.stringify(transactions)),document.getElementById('category-input').value='',document.getElementById('amount-input').value='',updatePeriodDisplay(),renderQuickAddButtons()}function addUtility(){let type=document.getElementById('utility-type').value;if(!type)return void alert('Select a utility type');if('Other'===type&&(type=document.getElementById('custom-utility').value.trim(),!type))return void alert('Enter a custom utility name');const amount=parseFloat(document.getElementById('utility-amount').value);if(!amount||amount<=0)return void alert('Enter an amount');const month=getMonth(currentMonthOffset),utility={id:Date.now(),type:type,amount:amount,month:month.key};utilities.push(utility),localStorage.setItem('utilities',JSON.stringify(utilities)),document.getElementById('utility-type').value='',document.getElementById('custom-utility').value='',document.getElementById('utility-amount').value='',document.getElementById('custom-utility-group').style.display='none',updateMonthlyDisplay()}document.getElementById('salary-input').addEventListener('change',function(){const period=getPeriod(currentPeriodOffset);period&&(salaries[period.key]=parseFloat(this.value)||0,localStorage.setItem('salaries',JSON.stringify(salaries)),updatePeriodDisplay())}),document.getElementById('amount-input').addEventListener('keypress',function(e){'Enter'===e.key&&addExpense()}),document.getElementById('utility-amount').addEventListener('keypress',function(e){'Enter'===e.key&&addUtility()}),loadData(),checkFirstTimeUser();
+<script>let transactions=[],salaries={},utilities=[],settings=null,currentPeriodOffset=0,currentMonthOffset=0,editingItem=null,editingType=null,selectedQuickDate=null;function loadData(){try{transactions=JSON.parse(localStorage.getItem('transactions')||'[]'),salaries=JSON.parse(localStorage.getItem('salaries')||'{}'),utilities=JSON.parse(localStorage.getItem('utilities')||'[]'),settings=JSON.parse(localStorage.getItem('paySettings')||'null')}catch(e){console.error('Error loading data:',e),alert('Data loading error. Try clicking Reset.')}}function resetApp(){confirm('⚠️ Delete ALL data and restart setup?')&&(localStorage.clear(),location.reload())}function checkFirstTimeUser() {
+  console.log('🔧 checkFirstTimeUser() - Firebase only mode');
+  if (settings && settings.startDate) {
+    updatePeriodDisplay();
+    updateMonthlyDisplay();
+    renderQuickAddButtons();
+  } else {
+    showSetupWizard();
+  }
+}function showSetupWizard(){generateQuickDates(),document.getElementById('setup-wizard').classList.add('active')}function generateQuickDates(){const container=document.getElementById('quick-dates'),today=new Date(),dates=[];for(let i=0;i<4;i++){const date=new Date(today);date.setDate(date.getDate()-i*14);const dayOfWeek=date.getDay(),daysToMonday=0===dayOfWeek?-6:1-dayOfWeek;date.setDate(date.getDate()+daysToMonday),dates.push(date)}container.innerHTML=dates.map((date,index)=>{const formatted=date.toISOString().split('T')[0],display=date.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}),label=0===index?' (This Week)':'';return`<button class="quick-date-btn" onclick="selectQuickDate('${formatted}')">${display}${label}</button>`}).join('')}function selectQuickDate(dateStr){selectedQuickDate=dateStr,document.getElementById('setup-start-date').value=dateStr,document.querySelectorAll('.quick-date-btn').forEach(btn=>btn.classList.remove('selected')),event.target.classList.add('selected')}function completeSetup(){let startDate=document.getElementById('setup-start-date').value||selectedQuickDate;startDate?(settings={startDate:startDate,setupComplete:!0,setupDate:(new Date).toISOString()},localStorage.setItem('paySettings',JSON.stringify(settings)),document.getElementById('setup-wizard').classList.remove('active'),currentPeriodOffset=0,updatePeriodDisplay(),updateMonthlyDisplay(),renderQuickAddButtons()):alert('Please select a start date')}function showSettings(){if(!settings||!settings.startDate)return void alert('Complete setup first');const modal=document.getElementById('settings-modal'),dateObj=new Date(settings.startDate+'T00:00:00');document.getElementById('current-start-date').textContent=dateObj.toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}),document.getElementById('settings-start-date').value=settings.startDate,modal.classList.add('active')}function closeSettings(){document.getElementById('settings-modal').classList.remove('active')}function saveSettings(){const newStartDate=document.getElementById('settings-start-date').value;newStartDate?confirm('Change pay cycle start date? This recalculates all periods.')&&(settings.startDate=newStartDate,settings.lastModified=(new Date).toISOString(),localStorage.setItem('paySettings',JSON.stringify(settings)),currentPeriodOffset=0,updatePeriodDisplay(),closeSettings(),alert('✅ Pay cycle updated!')):alert('Enter a valid start date')}document.getElementById('utility-type').addEventListener('change',function(){document.getElementById('custom-utility-group').style.display='Other'===this.value?'block':'none'});function showAnalytics(){const modal=document.getElementById('analytics-modal'),body=document.getElementById('analytics-body'),utilityGroups={};utilities.forEach(util=>{utilityGroups[util.type]||(utilityGroups[util.type]=[]),utilityGroups[util.type].push(util.amount)});const analytics=Object.keys(utilityGroups).map(type=>{const amounts=utilityGroups[type],sum=amounts.reduce((acc,curr)=>acc+curr,0);return{type:type,count:amounts.length,average:sum/amounts.length,total:sum}}).sort((a,b)=>b.average-a.average);if(0===analytics.length)body.innerHTML='<div class="empty-state"><div class="empty-state-icon">📊</div><div>No utility data yet</div></div>';else{const totalAvg=analytics.reduce((sum,item)=>sum+item.average,0);body.innerHTML=`<table class="analytics-table"><thead><tr><th>Utility</th><th>Months</th><th>Total</th><th>Average</th></tr></thead><tbody>${analytics.map(item=>`<tr><td>${item.type}</td><td>${item.count}</td><td>$${item.total.toFixed(2)}</td><td>$${item.average.toFixed(2)}</td></tr>`).join('')}</tbody><tfoot><tr style="border-top:2px solid rgba(255,255,255,.2);font-weight:700"><td>Total Monthly Average</td><td></td><td></td><td style="font-size:1.1rem">$${totalAvg.toFixed(2)}</td></tr></tfoot></table>`}modal.classList.add('active')}function closeAnalytics(){document.getElementById('analytics-modal').classList.remove('active')}function showInsights(){const modal=document.getElementById('insights-modal'),body=document.getElementById('insights-body'),currentPeriod=getPeriod(0),previousPeriod=getPeriod(-1);if(!currentPeriod)return body.innerHTML='<div class="empty-state"><div class="empty-state-icon">📊</div><div>No data available</div></div>',void modal.classList.add('active');const currentExpenses=transactions.filter(t=>{const tDate=new Date(t.date);return tDate.setHours(0,0,0,0),tDate>=currentPeriod.start&&tDate<=currentPeriod.end}),previousExpenses=previousPeriod?transactions.filter(t=>{const tDate=new Date(t.date);return tDate.setHours(0,0,0,0),tDate>=previousPeriod.start&&tDate<=previousPeriod.end}):[],currentCategories=getCategoryBreakdown(currentExpenses),previousTotal=previousExpenses.reduce((sum,t)=>sum+t.amount,0),currentTotal=currentExpenses.reduce((sum,t)=>sum+t.amount,0),currentSalary=salaries[currentPeriod.key]||0,previousSalary=previousPeriod?salaries[previousPeriod.key]||0:0,currentSavings=currentSalary-currentTotal,previousSavings=previousSalary-previousTotal,allTimeStats=calculateAllTimeStats();let html='';if(html+=`<div class="insight-section"><div class="insight-title">💰 This Pay Period</div>${currentCategories.length>0?`<div class="category-breakdown">${currentCategories.slice(0,3).map(cat=>`<div class="category-item"><span class="category-name">${cat.category}</span><span class="category-amount">$${cat.amount.toFixed(2)}</span></div>`).join('')}</div>`:'<p style="color:rgba(255,255,255,.5);text-align:center">No expenses yet this period</p>'}</div>`,previousPeriod){const expenseChange=currentTotal-previousTotal,expenseChangePercent=previousTotal>0?expenseChange/previousTotal*100:0,savingsChange=currentSavings-previousSavings;html+=`<div class="insight-section"><div class="insight-title">📊 vs Last Period</div><div class="insight-card"><span class="insight-label">Total Expenses</span><div><span class="insight-value">$${currentTotal.toFixed(0)}</span>${Math.abs(expenseChangePercent)>0?`<span class="insight-trend ${expenseChange>0?'up':'down'}">${expenseChange>0?'↑':'↓'} ${Math.abs(expenseChangePercent).toFixed(0)}%</span>`:''}</div></div><div class="insight-card"><span class="insight-label">Savings Change</span><div><span class="insight-value" style="color:${savingsChange>=0?'#10b981':'#ef4444'}">${savingsChange>=0?'+':''}$${savingsChange.toFixed(0)}</span></div></div></div>`}html+=`<div class="insight-section"><div class="insight-title">🎯 All-Time Stats</div><div class="stat-grid"><div class="stat-card"><div class="stat-label">Periods Tracked</div><div class="stat-value">${allTimeStats.periodsTracked}</div></div><div class="stat-card"><div class="stat-label">Avg Savings</div><div class="stat-value" style="color:${allTimeStats.avgSavings>=0?'#10b981':'#ef4444'}">$${allTimeStats.avgSavings.toFixed(0)}</div></div><div class="stat-card"><div class="stat-label">Best Period</div><div class="stat-value" style="color:#fbbf24;font-size:1.2rem">$${allTimeStats.bestSavings.toFixed(0)}</div></div><div class="stat-card"><div class="stat-label">Total Saved</div><div class="stat-value" style="color:${allTimeStats.totalSavings>=0?'#10b981':'#ef4444'}">$${allTimeStats.totalSavings.toFixed(0)}</div></div></div></div>`,allTimeStats.topCategories.length>0&&(html+=`<div class="insight-section"><div class="insight-title">🏆 Top Spending Categories</div><div class="category-breakdown">${allTimeStats.topCategories.slice(0,5).map((cat,idx)=>`<div class="category-item"><span class="category-name">${idx+1}. ${cat.category}</span><span class="category-amount">$${cat.total.toFixed(0)}</span></div>`).join('')}</div></div>`),body.innerHTML=html,modal.classList.add('active')}function closeInsights(){document.getElementById('insights-modal').classList.remove('active')}function getCategoryBreakdown(expenses){const categories={};return expenses.forEach(exp=>{categories[exp.category]||(categories[exp.category]=0),categories[exp.category]+=exp.amount}),Object.keys(categories).map(cat=>({category:cat,amount:categories[cat]})).sort((a,b)=>b.amount-a.amount)}function calculateAllTimeStats(){if(!settings||!settings.startDate)return{periodsTracked:0,avgSavings:0,bestSavings:0,totalSavings:0,topCategories:[]};const today=new Date;today.setHours(0,0,0,0);const startDate=new Date(settings.startDate+'T00:00:00');startDate.setHours(0,0,0,0);const daysSinceStart=Math.floor((today-startDate)/864e5),totalPeriods=Math.floor(daysSinceStart/14)+1;let periodsWithData=0,totalSavings=0,bestSavings=-Infinity;const allCategories={};for(let i=0;i<totalPeriods;i++){const periodStart=new Date(startDate);periodStart.setDate(periodStart.getDate()+14*i);const periodEnd=new Date(periodStart);periodEnd.setDate(periodEnd.getDate()+13),periodEnd.setHours(23,59,59,999);const periodKey=`period-${periodStart.getFullYear()}-${String(periodStart.getMonth()+1).padStart(2,'0')}-${String(periodStart.getDate()).padStart(2,'0')}`,salary=salaries[periodKey]||0,periodExpenses=transactions.filter(t=>{const tDate=new Date(t.date);return tDate.setHours(0,0,0,0),tDate>=periodStart&&tDate<=periodEnd});if(salary>0||periodExpenses.length>0){periodsWithData++;const expenseTotal=periodExpenses.reduce((sum,t)=>sum+t.amount,0),savings=salary-expenseTotal;totalSavings+=savings,savings>bestSavings&&(bestSavings=savings),periodExpenses.forEach(exp=>{allCategories[exp.category]||(allCategories[exp.category]=0),allCategories[exp.category]+=exp.amount})}}const topCategories=Object.keys(allCategories).map(cat=>({category:cat,total:allCategories[cat]})).sort((a,b)=>b.total-a.total);return{periodsTracked:periodsWithData,avgSavings:periodsWithData>0?totalSavings/periodsWithData:0,bestSavings:-Infinity===bestSavings?0:bestSavings,totalSavings:totalSavings,topCategories:topCategories}}function getTopCategories(limit=5){if(0===transactions.length)return[];const categoryFrequency={};return transactions.forEach(t=>{const cat=t.category.trim();cat&&(categoryFrequency[cat]=(categoryFrequency[cat]||0)+1)}),Object.keys(categoryFrequency).map(cat=>({category:cat,count:categoryFrequency[cat]})).sort((a,b)=>b.count-a.count).slice(0,limit).map(item=>item.category)}function renderQuickAddButtons(){const container=document.getElementById('quick-add-buttons'),topCategories=getTopCategories(5);if(0===topCategories.length)return void(container.innerHTML='<div class="quick-add-empty">Add some expenses to see quick categories</div>');const categoryEmojis={Groceries:'🛒',Gas:'⛽',Coffee:'☕',Food:'🍔',Restaurant:'🍽️',Transport:'🚗',Shopping:'🛍️',Entertainment:'🎬',Bills:'📄',Rent:'🏠',Utilities:'💡',Health:'⚕️',Gym:'💪',Subscription:'📱'};container.innerHTML=topCategories.map(category=>{let emoji='';const categoryLower=category.toLowerCase();for(const[key,value]of Object.entries(categoryEmojis))if(categoryLower.includes(key.toLowerCase())){emoji=value;break}return`<button class="quick-add-btn" onclick="quickAddCategory('${category.replace(/'/g,"\'")}')"> ${emoji?emoji+' ':''}${category}</button>`}).join('')}function quickAddCategory(category){document.getElementById('category-input').value=category;const amountInput=document.getElementById('amount-input');amountInput.focus(),amountInput.select();const categoryInput=document.getElementById('category-input');categoryInput.style.background='rgba(251,191,36,.15)',setTimeout(()=>{categoryInput.style.background=''},500)}function openEditModal(id,type){editingType=type,'expense'===type?(editingItem=transactions.find(t=>t.id===id),editingItem&&(document.getElementById('edit-category').value=editingItem.category,document.getElementById('edit-amount').value=editingItem.amount,document.querySelector('#edit-modal .modal-title').textContent='Edit Expense')):'utility'===type&&(editingItem=utilities.find(u=>u.id===id),editingItem&&(document.getElementById('edit-category').value=editingItem.type,document.getElementById('edit-amount').value=editingItem.amount,document.querySelector('#edit-modal .modal-title').textContent='Edit Utility')),document.getElementById('edit-modal').classList.add('active')}function closeEditModal(){document.getElementById('edit-modal').classList.remove('active'),editingItem=null,editingType=null}function saveEdit(){if(!editingItem)return;const newCategory=document.getElementById('edit-category').value.trim(),newAmount=parseFloat(document.getElementById('edit-amount').value);if(!newCategory||!newAmount||newAmount<=0)return void alert('Enter valid category and amount');if('expense'===editingType){const index=transactions.findIndex(t=>t.id===editingItem.id);-1!==index&&(transactions[index].category=newCategory,transactions[index].amount=newAmount,localStorage.setItem('transactions',JSON.stringify(transactions)),updatePeriodDisplay(),renderQuickAddButtons())}else if('utility'===editingType){const index=utilities.findIndex(u=>u.id===editingItem.id);-1!==index&&(utilities[index].type=newCategory,utilities[index].amount=newAmount,localStorage.setItem('utilities',JSON.stringify(utilities)),updateMonthlyDisplay())}closeEditModal()}window.onclick=function(event){event.target===document.getElementById('analytics-modal')&&closeAnalytics(),event.target===document.getElementById('insights-modal')&&closeInsights(),event.target===document.getElementById('edit-modal')&&closeEditModal(),event.target===document.getElementById('settings-modal')&&closeSettings()};function exportData(){const data={transactions:transactions,salaries:salaries,utilities:utilities,settings:settings,exportDate:(new Date).toISOString(),version:'3.0'},blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),link=document.createElement('a');link.href=url,link.download=`expense-tracker-${(new Date).toISOString().split('T')[0]}.json`,link.click(),URL.revokeObjectURL(url),alert('✅ Data exported!')}function importData(event){const file=event.target.files[0];if(!file)return;const reader=new FileReader;reader.onload=function(e){try{const imported=JSON.parse(e.target.result);confirm('Import data? This replaces current data.')&&(transactions=imported.transactions||[],salaries=imported.salaries||{},utilities=imported.utilities||[],settings=imported.settings||null,currentPeriodOffset=0,localStorage.setItem('transactions',JSON.stringify(transactions)),localStorage.setItem('salaries',JSON.stringify(salaries)),localStorage.setItem('utilities',JSON.stringify(utilities)),settings&&localStorage.setItem('paySettings',JSON.stringify(settings)),updatePeriodDisplay(),updateMonthlyDisplay(),renderQuickAddButtons(),alert('✅ Data imported!'))}catch(error){alert('❌ Invalid file')}},reader.readAsText(file),event.target.value=''}function changePeriod(direction){currentPeriodOffset+=direction,updatePeriodDisplay()}function jumpToCurrent(){currentPeriodOffset=0,updatePeriodDisplay()}function getPeriod(offset=0){try{if(!settings||!settings.startDate)return null;const today=new Date;today.setHours(0,0,0,0);const startDate=new Date(settings.startDate+'T00:00:00');if(isNaN(startDate.getTime()))return alert('Invalid start date. Reset app.'),null;startDate.setHours(0,0,0,0);const millisDiff=today.getTime()-startDate.getTime(),daysDiff=Math.floor(millisDiff/864e5),currentPeriodNum=Math.floor(daysDiff/14),targetPeriod=currentPeriodNum+offset,periodStart=new Date(startDate);periodStart.setDate(periodStart.getDate()+14*targetPeriod);const periodEnd=new Date(periodStart);return periodEnd.setDate(periodEnd.getDate()+13),periodEnd.setHours(23,59,59,999),{start:periodStart,end:periodEnd,key:`period-${periodStart.getFullYear()}-${String(periodStart.getMonth()+1).padStart(2,'0')}-${String(periodStart.getDate()).padStart(2,'0')}`,periodNum:targetPeriod}}catch(error){return console.error('Error in getPeriod:',error),null}}function getMonth(offset=0){const today=new Date,month=new Date(today.getFullYear(),today.getMonth()+offset,1);return{year:month.getFullYear(),month:month.getMonth(),key:`${month.getFullYear()}-${String(month.getMonth()+1).padStart(2,'0')}`,display:month.toLocaleDateString('en-US',{month:'long',year:'numeric'})}}function formatDateShort(date){return date.toLocaleDateString('en-US',{month:'short',day:'numeric'})}function changeMonth(direction){currentMonthOffset+=direction,updateMonthlyDisplay()}function calculateCarryForward(upToPeriodNum){if(!settings||!settings.startDate)return 0;if(upToPeriodNum<=0)return 0;let cumulativeSavings=0;const startDate=new Date(settings.startDate+'T00:00:00');startDate.setHours(0,0,0,0);for(let i=0;i<upToPeriodNum;i++){const periodStart=new Date(startDate);periodStart.setDate(periodStart.getDate()+14*i);const periodEnd=new Date(periodStart);periodEnd.setDate(periodEnd.getDate()+13),periodEnd.setHours(23,59,59,999);const periodKey=`period-${periodStart.getFullYear()}-${String(periodStart.getMonth()+1).padStart(2,'0')}-${String(periodStart.getDate()).padStart(2,'0')}`,salary=salaries[periodKey]||0,periodExpenses=transactions.filter(t=>{const tDate=new Date(t.date);return tDate.setHours(0,0,0,0),tDate>=periodStart&&tDate<=periodEnd}),totalExpenses=periodExpenses.reduce((sum,t)=>sum+t.amount,0);cumulativeSavings+=salary-totalExpenses}return cumulativeSavings}function updatePeriodDisplay(){const period=getPeriod(currentPeriodOffset);if(!period)return;const pane=document.getElementById('pane-period'),star=document.getElementById('star-current'),dateRange=`${formatDateShort(period.start)} - ${formatDateShort(period.end)}`,isCurrent=0===currentPeriodOffset;document.getElementById('period-dates').textContent=isCurrent?`${dateRange} (CURRENT)`:dateRange,isCurrent?(star.classList.add('active'),pane.classList.add('current')):(star.classList.remove('active'),pane.classList.remove('current'));const salary=salaries[period.key]||0;document.getElementById('salary-input').value=salary||'';const periodExpenses=transactions.filter(t=>{const tDate=new Date(t.date);return tDate.setHours(0,0,0,0),tDate>=period.start&&tDate<=period.end}),totalExpenses=periodExpenses.reduce((sum,t)=>sum+t.amount,0),thisPeriodSavings=salary-totalExpenses,carryForward=calculateCarryForward(period.periodNum),totalCumulativeSavings=carryForward+thisPeriodSavings;document.getElementById('salary-display').textContent=`$${salary.toFixed(0)}`,document.getElementById('expenses-display').textContent=`$${totalExpenses.toFixed(0)}`;const savingsEl=document.getElementById('savings-display');savingsEl.textContent=`$${thisPeriodSavings.toFixed(0)}`,savingsEl.className='summary-value '+(thisPeriodSavings>=0?'positive':'negative');const carryForwardEl=document.getElementById('carry-forward-display');carryForwardEl.textContent=`$${carryForward.toFixed(0)}`,carryForwardEl.className='summary-value info '+(carryForward>=0?'positive':'negative');const totalSavingsEl=document.getElementById('total-savings-display');totalSavingsEl.textContent=`$${totalCumulativeSavings.toFixed(0)}`,totalSavingsEl.className='summary-value '+(totalCumulativeSavings>=0?'positive':'negative'),renderExpenses(periodExpenses)}function updateMonthlyDisplay(){const month=getMonth(currentMonthOffset);document.getElementById('month-display').textContent=month.display;const monthUtilities=utilities.filter(u=>u.month===month.key),total=monthUtilities.reduce((sum,u)=>sum+u.amount,0);document.getElementById('monthly-total').textContent=`$${total.toFixed(0)}`,renderUtilities(monthUtilities)}function renderExpenses(expenses){const listEl=document.getElementById('expenses-list');if(0===expenses.length)return void(listEl.innerHTML='<div class="empty-state"><div class="empty-state-icon">📊</div><div>No expenses yet</div></div>');listEl.innerHTML=expenses.slice().reverse().map(exp=>`<div class="expense-item-wrapper"><div class="expense-item" data-expense-id="${exp.id}"><div class="expense-info"><div class="expense-desc">${exp.category}</div><div class="expense-cat">${new Date(exp.date).toLocaleDateString()}</div></div><div class="expense-amount">$${exp.amount.toFixed(2)}</div></div><div class="swipe-actions"><button class="action-btn edit"><span class="action-icon">✏️</span><span>Edit</span></button><button class="action-btn delete"><span class="action-icon">🗑️</span><span>Delete</span></button></div></div>`).join(''),listEl.querySelectorAll('.expense-item').forEach(item=>setupSwipeActions(item,'expense'))}function renderUtilities(utilityList){const listEl=document.getElementById('utilities-list');if(0===utilityList.length)return void(listEl.innerHTML='<div class="empty-state"><div class="empty-state-icon">💡</div><div>No utilities yet</div></div>');listEl.innerHTML=utilityList.map(util=>`<div class="expense-item-wrapper"><div class="expense-item" data-utility-id="${util.id}"><div class="expense-info"><div class="expense-desc">${util.type}</div><div class="expense-cat">${util.month}</div></div><div class="expense-amount">$${util.amount.toFixed(2)}</div></div><div class="swipe-actions"><button class="action-btn edit"><span class="action-icon">✏️</span><span>Edit</span></button><button class="action-btn delete"><span class="action-icon">🗑️</span><span>Delete</span></button></div></div>`).join(''),listEl.querySelectorAll('.expense-item').forEach(item=>setupSwipeActions(item,'utility'))}function setupSwipeActions(item,type){let startX=0,currentX=0,isSwiping=!1;const swipeThreshold=60,wrapper=item.closest('.expense-item-wrapper'),editBtn=wrapper.querySelector('.action-btn.edit'),deleteBtn=wrapper.querySelector('.action-btn.delete');item.addEventListener('touchstart',e=>{startX=e.touches[0].clientX,isSwiping=!1,item.classList.remove('transitioning')},{passive:!0}),item.addEventListener('touchmove',e=>{if(!startX)return;currentX=e.touches[0].clientX;const diff=startX-currentX;Math.abs(diff)>5&&(isSwiping=!0),diff>0&&diff<160?item.style.transform=`translate3d(-${diff}px, 0, 0)`:diff<=0&&(item.style.transform='translate3d(0, 0, 0)')},{passive:!0}),item.addEventListener('touchend',e=>{if(!startX)return;const diff=startX-currentX;item.classList.add('transitioning'),isSwiping&&diff>swipeThreshold?(item.classList.add('swiped'),item.style.transform=''):(item.classList.remove('swiped'),item.style.transform=''),startX=0,currentX=0,isSwiping=!1},{passive:!0}),editBtn.addEventListener('click',e=>{e.stopPropagation();const id='expense'===type?parseInt(item.dataset.expenseId):parseInt(item.dataset.utilityId);openEditModal(id,type),item.classList.remove('swiped')}),deleteBtn.addEventListener('click',e=>{e.stopPropagation();const id='expense'===type?parseInt(item.dataset.expenseId):parseInt(item.dataset.utilityId);if(confirm('Delete this '+type+'?'))if('expense'===type){const index=transactions.findIndex(t=>t.id===id);-1!==index&&(transactions.splice(index,1),localStorage.setItem('transactions',JSON.stringify(transactions)),updatePeriodDisplay(),renderQuickAddButtons())}else{const index=utilities.findIndex(u=>u.id===id);-1!==index&&(utilities.splice(index,1),localStorage.setItem('utilities',JSON.stringify(utilities)),updateMonthlyDisplay())}}),document.addEventListener('click',e=>{wrapper.contains(e.target)||item.classList.remove('swiped')})}function addExpense(){const period=getPeriod(currentPeriodOffset);if(!period)return;const category=document.getElementById('category-input').value.trim(),amount=parseFloat(document.getElementById('amount-input').value);if(!category||!amount||amount<=0)return void alert('Enter both category and amount');const transaction={id:Date.now(),category:category,amount:amount,date:period.start.toISOString()};transactions.push(transaction),localStorage.setItem('transactions',JSON.stringify(transactions)),document.getElementById('category-input').value='',document.getElementById('amount-input').value='',updatePeriodDisplay(),renderQuickAddButtons()}function addUtility(){let type=document.getElementById('utility-type').value;if(!type)return void alert('Select a utility type');if('Other'===type&&(type=document.getElementById('custom-utility').value.trim(),!type))return void alert('Enter a custom utility name');const amount=parseFloat(document.getElementById('utility-amount').value);if(!amount||amount<=0)return void alert('Enter an amount');const month=getMonth(currentMonthOffset),utility={id:Date.now(),type:type,amount:amount,month:month.key};utilities.push(utility),localStorage.setItem('utilities',JSON.stringify(utilities)),document.getElementById('utility-type').value='',document.getElementById('custom-utility').value='',document.getElementById('utility-amount').value='',document.getElementById('custom-utility-group').style.display='none',updateMonthlyDisplay()}document.getElementById('salary-input').addEventListener('change',function(){const period=getPeriod(currentPeriodOffset);period&&(salaries[period.key]=parseFloat(this.value)||0,localStorage.setItem('salaries',JSON.stringify(salaries)),updatePeriodDisplay())}),document.getElementById('amount-input').addEventListener('keypress',function(e){'Enter'===e.key&&addExpense()}),document.getElementById('utility-amount').addEventListener('keypress',function(e){'Enter'===e.key&&addUtility()}),loadData(),checkFirstTimeUser();
 
 // ==================== AUTHENTICATION SYSTEM ====================
 
@@ -693,57 +672,7 @@ function resetActivityTimer() {
 }
 
 
-function changePasscodeSettings() {
-  const currentPass = document.getElementById('current-passcode-settings').value;
-  const newPass = document.getElementById('new-passcode-settings').value;
-  const confirmPass = document.getElementById('confirm-passcode-settings').value;
 
-  if (!currentPass || !newPass || !confirmPass) {
-    alert('❌ Please fill in all fields');
-    return;
-  }
-
-  if (currentPass.length !== 6 || newPass.length !== 6 || confirmPass.length !== 6) {
-    alert('❌ Passcode must be exactly 6 digits');
-    return;
-  }
-
-  if (!/^\d{6}$/.test(currentPass) || !/^\d{6}$/.test(newPass)) {
-    alert('❌ Passcode must contain only numbers');
-    return;
-  }
-
-  if (hashCode(currentPass) !== authSettings.passcodeHash) {
-    alert('❌ Current passcode is incorrect');
-    document.getElementById('current-passcode-settings').value = '';
-    return;
-  }
-
-  if (newPass !== confirmPass) {
-    alert('❌ New passcode and confirmation do not match');
-    document.getElementById('new-passcode-settings').value = '';
-    document.getElementById('confirm-passcode-settings').value = '';
-    return;
-  }
-
-  if (newPass === currentPass) {
-    alert('❌ New passcode must be different from current passcode');
-    return;
-  }
-
-  authSettings.passcodeHash = hashCode(newPass);
-  localStorage.setItem('authSettings', JSON.stringify(authSettings));
-
-  document.getElementById('current-passcode-settings').value = '';
-  document.getElementById('new-passcode-settings').value = '';
-  document.getElementById('confirm-passcode-settings').value = '';
-
-  alert('✅ Passcode updated successfully!');
-
-  if (navigator.vibrate) {
-    navigator.vibrate([50, 30, 50]);
-  }
-}
 
 function trackActivity() {
   if (!authSettings.isLocked) resetActivityTimer();
@@ -787,15 +716,7 @@ function confirmDataReset() {
   }
 }
 
-function checkAuthSetup() {
-  loadAuthSettings();
-  if (!authSettings.passcodeHash) {
-    for (let i = 1; i <= 6; i++) document.getElementById(`setup-${i}`).value = '';
-    document.getElementById('passcode-setup-modal').classList.add('active');
-  } else {
-    lockApp();
-  }
-}
+
 
 
 function emailRecoveryCode() {
@@ -843,20 +764,7 @@ function setupRecoveryCodeInputs() {
     });
   }
 }
-function verifyRecoveryCode() {
-  let code = '';
-  for (let i = 1; i <= 4; i++) { code += document.getElementById('recovery-' + i).value; }
-  if (code.length !== 4) { alert('❌ Enter complete code'); return; }
-  if (hashCode(code) === authSettings.recoveryCode) {
-    document.getElementById('recovery-input-modal').classList.remove('active');
-    document.getElementById('new-pin-modal').classList.add('active');
-    setupPasscodeInputs('newpin');
-  } else {
-    alert('❌ Incorrect code');
-    for (let i = 1; i <= 4; i++) { document.getElementById('recovery-' + i).value = ''; }
-    document.getElementById('recovery-1').focus();
-  }
-}
+
 function saveNewPinAfterRecovery() {
   let pin = '';
   for (let i = 1; i <= 6; i++) { pin += document.getElementById('newpin-' + i).value; }
@@ -874,11 +782,7 @@ function resetAppFromLockScreen() {
     if (confirm('Final confirmation?')) { localStorage.clear(); location.reload(); }
   }
 }
-function showRegenerateRecoveryCode() {
-  document.getElementById('regenerate-recovery-modal').classList.add('active');
-  setupPasscodeInputs('verify');
-  setTimeout(() => { document.getElementById('verify-1')?.focus(); }, 100);
-}
+
 function closeRegenerateModal() {
   document.getElementById('regenerate-recovery-modal').classList.remove('active');
   for (let i = 1; i <= 6; i++) {
@@ -1301,40 +1205,25 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
 <script>
-// ============================================= 
-// OVERRIDE SAVESETTINGS
-// ============================================= 
 window.saveSettings = function() {
-  console.log('⚙️ saveSettings() called');
-
+  console.log('⚙️ saveSettings()');
   const newDate = document.getElementById('settings-start-date')?.value;
-
-  if (!newDate) {
-    alert('⚠️ Please enter a valid date');
-    return;
-  }
-
-  if (!confirm('⚠️ Change pay cycle start date? This will recalculate all periods.')) {
-    return;
-  }
+  if (!newDate) { alert('⚠️ Enter date'); return; }
+  if (!confirm('Change pay cycle?')) return;
 
   if (!window.settings) window.settings = {};
   window.settings.startDate = newDate;
   window.settings.lastModified = new Date().toISOString();
 
   console.log('✅ Settings updated:', window.settings);
-
-  // Trigger Firebase sync via saveData
   window.saveData();
 
-  // Update UI
   if (typeof currentPeriodOffset !== 'undefined') currentPeriodOffset = 0;
   if (typeof updatePeriodDisplay === 'function') updatePeriodDisplay();
   if (typeof closeSettings === 'function') closeSettings();
 
-  alert('✅ Pay cycle updated and synced!');
+  alert('✅ Saved!');
 };
-
 console.log('✅ saveSettings() override ready');
 </script>
 
