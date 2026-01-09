@@ -397,6 +397,14 @@ onAuthStateChanged(auth, async (user) => {
     window.currentUser = user;
     await loadFirebaseData();
     document.getElementById('firebase-login-screen').style.display = 'none';
+    
+    // FIX: Check for setup wizard ONLY AFTER data loads
+    checkFirstTimeUser();
+    
+    // Safety: If wizard showed prematurely, hide it if settings now exist
+    if (window.settings && window.settings.startDate) {
+      document.getElementById('setup-wizard').classList.remove('active');
+    }
   } else {
     console.log('⚠️ Not logged in');
     window.currentUser = null;
