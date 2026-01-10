@@ -981,6 +981,7 @@ console.log('🚀 Auto-sync saveData() ready');
 // =============================================
 // SWIPE GESTURES FOR EXPENSES AND UTILITY PANELS
 // =============================================
+// Subtle animation version
 
 let swipeState = {
   startX: 0,
@@ -1052,13 +1053,14 @@ function handleSwipeMove(e, type) {
   if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 5) {
     e.preventDefault(); // Prevent scroll on horizontal swipe
 
-    // Visual feedback during swipe
-    const moveAmount = Math.min(Math.abs(deltaX) / 4, 40);
+    // SUBTLE: Reduced movement (1/8 instead of 1/4)
+    const moveAmount = Math.min(Math.abs(deltaX) / 8, 15);
     const direction = deltaX > 0 ? moveAmount : -moveAmount;
     swipeState.element.style.transform = `translateX(${direction}px)`;
     
-    const opacity = 1 - (Math.abs(deltaX) / 400);
-    swipeState.element.style.opacity = Math.max(opacity, 0.8);
+    // SUBTLE: Less opacity change
+    const opacity = 1 - (Math.abs(deltaX) / 600);
+    swipeState.element.style.opacity = Math.max(opacity, 0.95);
   }
 }
 
@@ -1094,13 +1096,13 @@ function handleSwipeEnd(e, type) {
       navigator.vibrate([30, 20, 30]);
     }
   } else {
-    // Reset position if threshold not met
-    swipeState.element.style.transition = 'transform 0.3s ease-out, opacity 0.3s ease-out';
+    // SUBTLE: Smoother reset
+    swipeState.element.style.transition = 'transform 0.25s ease-out, opacity 0.25s ease-out';
     swipeState.element.style.transform = 'translateX(0)';
     swipeState.element.style.opacity = '1';
     setTimeout(() => {
       swipeState.element.style.transition = '';
-    }, 300);
+    }, 250);
   }
 
   // Reset state
@@ -1112,47 +1114,47 @@ function handleSwipeEnd(e, type) {
 }
 
 function showSwipeFeedback(element, direction) {
-  // Create visual feedback indicator
+  // SUBTLE: Smaller, softer feedback icon
   const indicator = document.createElement('div');
   indicator.className = 'swipe-indicator';
-  indicator.innerHTML = direction === 'left' ? '👉' : '👈';
+  indicator.innerHTML = direction === 'left' ? '→' : '←';
   indicator.style.cssText = `
     position: absolute;
     top: 50%;
-    ${direction === 'left' ? 'left: 30px' : 'right: 30px'};
+    ${direction === 'left' ? 'left: 20px' : 'right: 20px'};
     transform: translateY(-50%);
-    font-size: 4rem;
-    color: rgba(251, 191, 36, 0.9);
-    font-weight: 900;
+    font-size: 2.5rem;
+    color: rgba(251, 191, 36, 0.7);
+    font-weight: 700;
     z-index: 100;
     pointer-events: none;
-    text-shadow: 0 0 20px rgba(251, 191, 36, 0.5);
-    animation: swipeIndicator 0.6s ease-out;
+    text-shadow: 0 0 10px rgba(251, 191, 36, 0.3);
+    animation: swipeIndicator 0.4s ease-out;
   `;
 
   element.style.position = 'relative';
   element.appendChild(indicator);
 
-  // Animate panel transition
-  element.style.transition = 'transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.5s ease';
+  // SUBTLE: Much gentler panel animation
+  element.style.transition = 'transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 0.4s ease';
   if (direction === 'left') {
-    element.style.transform = 'translateX(120px) scale(0.97)';
+    element.style.transform = 'translateX(40px) scale(0.99)';
   } else {
-    element.style.transform = 'translateX(-120px) scale(0.97)';
+    element.style.transform = 'translateX(-40px) scale(0.99)';
   }
-  element.style.opacity = '0.5';
+  element.style.opacity = '0.92';
 
   setTimeout(() => {
     element.style.transform = 'translateX(0) scale(1)';
     element.style.opacity = '1';
-  }, 180);
+  }, 120);
 
   setTimeout(() => {
     if (indicator.parentNode) {
       indicator.remove();
     }
     element.style.transition = '';
-  }, 700);
+  }, 500);
 }
 
 // Initialize swipe gestures when DOM loads
@@ -1160,6 +1162,7 @@ window.addEventListener('DOMContentLoaded', () => {
   initSwipeGestures();
 });
 </script>
+
 
 
 </body></html>
