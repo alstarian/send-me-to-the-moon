@@ -838,9 +838,29 @@ function updateMonthlyDisplay() {
 
 function renderExpenses(expenses) {
   const listEl = document.getElementById('expenses-list');
-  if (0 === expenses.length) return void (listEl.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📊</div><div>No expenses yet</div></div>');
-  listEl.innerHTML = expenses.slice().reverse().map(exp => `<div class="expense-item-wrapper"><div class="expense-item" data-expense-id="${exp.id}"><div class="expense-info"><div class="expense-desc">${exp.category}</div><div class="expense-cat">${new Date(exp.date).toLocaleDateString()}</div></div><div class="expense-amount">$${exp.amount.toFixed(2)}</div></div><div class="swipe-actions"><button class="action-btn edit"><span class="action-icon">✏️</span><span>Edit</span></button><button class="action-btn delete"><span class="action-icon">🗑️</span><span>Delete</span></button></div></div>`).join(''), listEl.querySelectorAll('.expense-item').forEach(item => setupSwipeActions(item, 'expense'))
+  if (expenses.length === 0) {
+    listEl.innerHTML = `<div class="empty-state"><div class="empty-state-icon">📊</div><div>No expenses yet</div></div>`;
+    return;
+  }
+  listEl.innerHTML = expenses.slice().reverse().map(exp => `
+    <div class="expense-item-wrapper">
+      <div class="expense-item" data-expense-id="${exp.id}">
+        <div class="expense-info">
+          <div class="expense-desc">${exp.category}</div>
+          <div class="expense-cat">${new Date(exp.date).toLocaleDateString()}</div>
+        </div>
+        <div class="expense-amount">$${exp.amount.toFixed(2)}</div>
+      </div>
+      <div class="swipe-actions">
+        <button class="action-btn edit"><span class="action-icon">✏️</span><span>Edit</span></button>
+        <button class="action-btn delete"><span class="action-icon">🗑️</span><span>Delete</span></button>
+      </div>
+    </div>
+  `).join('');
+  // ✅ ADD THIS LINE BELOW (before the closing })
+  listEl.querySelectorAll('.expense-item').forEach(item => setupSwipeActions(item, 'expense'));
 }
+
 
 function renderUtilities(utilityList) {
   const listEl = document.getElementById('utilities-list');
