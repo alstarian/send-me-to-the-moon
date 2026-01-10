@@ -849,27 +849,82 @@ function renderUtilities(utilityList) {
 }
 
 function setupSwipeActions(item, type) {
-  let startX = 0, currentX = 0, isSwiping = !1;
-  const swipeThreshold = 60, wrapper = item.closest('.expense-item-wrapper'), editBtn = wrapper.querySelector('.action-btn.edit'), deleteBtn = wrapper.querySelector('.action-btn.delete');
-  item.addEventListener('touchstart', e => { startX = e.touches[0].clientX, isSwiping = !1, item.classList.remove('transitioning') }, { passive: !0 }), item.addEventListener('touchmove', e => {
-    if (!startX) return; currentX = e.touches[0].clientX;
-    const diff = startX - currentX; Math.abs(diff) > 5 && (isSwiping = !0), diff > 0 && diff < 160 ? item.style.transform = `translate3d(-${diff}px, 0, 0)` : diff <= 0 && (item.style.transform = 'translate3d(0, 0, 0)')
-  }, { passive: !0 }), item.addEventListener('touchend', e => {
-    if (!startX) return; const diff = startX - currentX;
-    item.classList.add('transitioning'), isSwiping && diff > swipeThreshold ? (item.classList.add('swiped'), item.style.transform = '') : (item.classList.remove('swiped'), item.style.transform = ''), startX = 0, currentX = 0, isSwiping = !1
-  }, { passive: !0 }), editBtn.addEventListener('click', e => {
-    e.stopPropagation(); const id = 'expense' === type ? parseInt(item.dataset.expenseId) : parseInt(item.dataset.utilityId);
-    openEditModal(id, type), item.classList.remove('swiped')
-  }), deleteBtn.addEventListener('click', e => {
-    e.stopPropagation(); const id = 'expense' === type ? parseInt(item.dataset.expenseId) : parseInt(item.dataset.utilityId);
-    if (confirm('Delete this ' + type + '?')) if ('expense' === type) {
-      const index = window.transactions.findIndex(t => t.id === id);
-      if (-1 !== index) window.transactions.splice(index, 1), updatePeriodDisplay(), renderQuickAddButtons(), window.saveData()
-    } else {
-      const index = window.utilities.findIndex(u => u.id === id);
-      if (-1 !== index) window.utilities.splice(index, 1), updateMonthlyDisplay(), window.saveData()
+  let startX = 0, currentX = 0, isSwiping = false;
+  const swipeThreshold = 60;
+  const wrapper = item.closest('.expense-item-wrapper');
+  const actionsDiv = wrapper.querySelector('.swipe-actions');
+  const editBtn = actionsDiv.querySelector('.action-btn.edit');
+  const deleteBtn = actionsDiv.querySelector('.action-btn.delete');
+  
+  item.addEventListener('touchstart', e => {
+    startX = e.touches[0].clientX;
+    isSwiping = false;
+    item.classList.remove('transitioning');
+  }, { passive: true });
+  
+  item.addEventListener('touchmove', e => {
+    if (!startX) return;
+    currentX = e.touches[0].clientX;
+    const diff = startX - currentX;
+    if (Math.abs(diff) > 5) isSwiping = true;
+    if (diff > 0 && diff < 160) {
+      item.style.transform = `translate3d(-${diff}px, 0, 0)`;
+    } else if (diff <= 0) {
+      item.style.transform = 'translate3d(0, 0, 0)';
     }
-  }), document.addEventListener('click', e => { wrapper.contains(e.target) || item.classList.remove('swiped') })
+  }, { passive: true });
+  
+  item.addEventListener('touchend', e => {
+    if (!startX) return;
+    const diff = startX - currentX;
+    item.classList.add('transitioning');
+    if (isSwiping && diff > swipeThreshold) {
+      item.classList.add('swiped');
+      item.style.transform = '';
+    } else {
+      item.classList.remove('swiped');
+      item.style.transform = '';
+    }
+    startX = 0;
+    currentX = 0;
+    isSwiping = false;
+  }, { passive: true });
+  
+  editBtn.addEventListener('click', e => {
+    e.stopPropagation();
+    const id = type === 'expense' ? parseInt(item.dataset.expenseId) : parseInt(item.dataset.utilityId);
+    openEditModal(id, type);
+    item.classList.remove('swiped');
+  });
+  
+  deleteBtn.addEventListener('click', e => {
+    e.stopPropagation();
+    const id = type === 'expense' ? parseInt(item.dataset.expenseId) : parseInt(item.dataset.utilityId);
+    if (confirm('Delete this ' + type + '?')) {
+      if (type === 'expense') {
+        const index = window.transactions.findIndex(t => t.id === id);
+        if (index !== -1) {
+          window.transactions.splice(index, 1);
+          updatePeriodDisplay();
+          renderQuickAddButtons();
+          window.saveData();
+        }
+      } else {
+        const index = window.utilities.findIndex(u => u.id === id);
+        if (index !== -1) {
+          window.utilities.splice(index, 1);
+          updateMonthlyDisplay();
+          window.saveData();
+        }
+      }
+    }
+  });
+  
+  document.addEventListener('click', e => {
+    if (!wrapper.contains(e.target)) {
+      item.classList.remove('swiped');
+    }
+  });
 }
 
 function addExpense() {
