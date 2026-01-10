@@ -1628,4 +1628,93 @@ window.saveData = function() {
 console.log('🚀 Auto-sync saveData() ready');
 </script>
 
+      <script>
+(function enablePaneSwipe() {
+  // Touch-only safeguard
+  if (!('ontouchstart' in window)) return;
+
+  const panes = Array.from(document.querySelectorAll('.pane'));
+  if (panes.length < 2) return;
+
+  let activeIndex = 0;
+  let startX = 0;
+  let startY = 0;
+  let currentX = 0;
+  let isHorizontal = false;
+  let isDragging = false;
+
+  function setActivePane(index) {
+    panes.forEach((pane, i) => {
+      pane.style.transition = 'transform 0.35s cubic-bezier(.4,0,.2,1)';
+      pane.style.transform = `translateX(${(i - index) * 110}%)`;
+      pane.classList.toggle('current', i === index);
+    });
+    activeIndex = index;
+  }
+
+  // Initial layout (mobile only)
+  setActivePane(0);
+
+  panes.forEach(pane => {
+    pane.addEventListener('touchstart', e => {
+      if (e.touches.length !== 1) return;
+
+      startX = e.touches[0].clientX;
+      startY = e.touches[0].clientY;
+      isHorizontal = false;
+      isDragging = true;
+
+      panes.forEach(p => p.style.transition = 'none');
+    }, { passive: true });
+
+    pane.addEventListener('touchmove', e => {
+      if (!isDragging) return;
+
+      currentX = e.touches[0].clientX;
+      const deltaX = currentX - startX;
+      const deltaY = e.touches[0].clientY - startY;
+
+      // Decide intent
+      if (!isHorizontal) {
+        if (Math.abs(deltaX) > 12 && Math.abs(deltaX) > Math.abs(deltaY)) {
+          isHorizontal = true;
+        } else {
+          return; // vertical scroll
+        }
+      }
+
+      e.preventDefault();
+
+      panes.forEach((p, i) => {
+        const offset = (i - activeIndex) * window.innerWidth + deltaX;
+        p.style.transform = `translateX(${offset}px)`;
+      });
+    }, { passive: false });
+
+    pane.addEventListener('touchend', () => {
+      if (!isDragging || !isHorizontal) {
+        isDragging = false;
+        return;
+      }
+
+      const delta = currentX - startX;
+      const threshold = window.innerWidth * 0.25;
+
+      if (delta < -threshold && activeIndex < panes.length - 1) {
+        setActivePane(activeIndex + 1);
+      } else if (delta > threshold && activeIndex > 0) {
+        setActivePane(activeIndex - 1);
+      } else {
+        setActivePane(activeIndex);
+      }
+
+      isDragging = false;
+    });
+  });
+})();
+</script>
+
+
+      
+
 </body></html>
