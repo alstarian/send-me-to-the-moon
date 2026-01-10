@@ -115,7 +115,7 @@
   100% { opacity: 0; transform: translateY(-50%) scale(0.5); }
 }
 .pane {
-  position: relative; overflow: visible !important; touch-action: pan-y;
+  position: relative; overflow: visible !important; touch-action: none;
   user-select: none; will-change: transform, opacity;
 }
 .pane::before, .pane::after {
@@ -150,6 +150,29 @@
 }
 #notifications-toggle:checked + span + span {
   transform: translateX(26px);
+}
+
+/* Logout Button Styles */
+.logout-btn {
+  position: absolute;
+  right: 20px;
+  background: linear-gradient(135deg, rgba(239,68,68,.25), rgba(239,68,68,.15));
+  border: 1px solid rgba(239,68,68,.4);
+  color: #ef4444;
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 600;
+  transition: all 0.3s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.logout-btn:hover {
+  background: linear-gradient(135deg, rgba(239,68,68,.35), rgba(239,68,68,.25));
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(239,68,68,.2);
 }
 </style>
 </head>
@@ -214,7 +237,7 @@
 
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
-import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, setPersistence, browserLocalPersistence } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, setPersistence, browserLocalPersistence, signOut } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
 import { getFirestore, doc, getDoc, setDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 
 const firebaseConfig = {
@@ -294,6 +317,16 @@ window.firebaseLogin = async function() {
     messageDiv.style.background = 'rgba(255,68,68,0.1)';
     messageDiv.style.color = '#ff4444';
     messageDiv.style.display = 'block';
+  }
+};
+
+// LOGOUT
+window.firebaseLogout = async function() {
+  try {
+    await signOut(auth);
+    console.log('✅ Logged out');
+  } catch (error) {
+    console.error('Logout error:', error);
   }
 };
 
@@ -415,7 +448,7 @@ onAuthStateChanged(auth, async (user) => {
 </script>
 
 
-<div class="app-header"><div class="app-logo">💰</div><h1 class="app-title">Expense Tracker</h1></div>
+<div class="app-header"><div class="app-logo">💰</div><h1 class="app-title">Expense Tracker</h1><button class="logout-btn" onclick="firebaseLogout()">Log Out 🚪</button></div>
 <div class="container">
 <div class="sync-bar">
 <button class="sync-btn settings" onclick="showSettings()">⚙️ Settings</button>
@@ -895,8 +928,625 @@ document.getElementById('salary-input').addEventListener('change', function() {
   period && (window.salaries[period.key] = parseFloat(this.value) || 0, updatePeriodDisplay(), window.saveData())
 }), document.getElementById('amount-input').addEventListener('keypress', function(e) { 'Enter' === e.key && addExpense() }), document.getElementById('utility-amount').addEventListener('keypress', function(e) { 'Enter' === e.key && addUtility() }), checkFirstTimeUser();
 
-// ... (keep the rest of your auth, swipe, disclaimer, notifications code unchanged)
+// ==================== AUTHENTICATION SYSTEM ====================
+
+let authSettings = {
+  passcodeHash: null,
+  recoveryCode: null,
+  lockTimeout: 60000,
+  isLocked: true
+};
+let lastActivityTime = Date.now();
+let lockTimer = null;
+let tempPasscode = null;
+
+function hashCode(str) {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = ((hash << 5) - hash) + str.charCodeAt(i);
+    hash = hash & hash;
+  }
+  return hash.toString();
+}
+
+function loadAuthSettings() {
+  const saved = localStorage.getItem('authSettings');
+  if (saved) authSettings = JSON.parse(saved);
+}
+
+function setupPasscodeInputs() {
+  document.querySelectorAll('.passcode-digit').forEach((input, index, inputs) => {
+    input.addEventListener('input', (e) => {
+      if (e.target.value.length === 1) {
+        if (index < inputs.length - 1) inputs[index + 1].focus();
+        else if (input.closest('#lock-screen')) attemptUnlock();
+      }
+    });
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Backspace' && !e.target.value && index > 0) {
+        inputs[index - 1].focus();
+      }
+    });
+  });
+}
+
+function proceedToSecurityQuestions() {
+  let passcode = '';
+  for (let i = 1; i <= 6; i++) {
+    passcode += document.getElementById(`setup-${i}`).value;
+  }
+  if (passcode.length !== 6 || !/^\d{6}$/.test(passcode)) {
+    alert('❌ Please enter a 6-digit PIN');
+    return;
+  }
+  tempPasscode = passcode;
+  document.getElementById('passcode-setup-modal').classList.remove('active');
+  document.getElementById('security-questions-modal').classList.add('active');
+}
+
+
+
+
+function completeAuthSetup() {
+  let passcode = '';
+  for (let i = 1; i <= 6; i++) {
+    passcode += document.getElementById('setup-' + i).value;
+  }
+  if (passcode.length !== 6 || !/^\d{6}$/.test(passcode)) {
+    alert('❌ Please enter a complete 6-digit PIN');
+    return;
+  }
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let recoveryCode = '';
+  for (let i = 0; i < 4; i++) {
+    recoveryCode += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  authSettings.passcodeHash = hashCode(passcode);
+  authSettings.recoveryCode = hashCode(recoveryCode);
+  authSettings.isLocked = false;
+  localStorage.setItem('authSettings', JSON.stringify(authSettings));
+  document.getElementById('passcode-setup-modal').classList.remove('active');
+  document.getElementById('recovery-display-code').textContent = recoveryCode;
+  document.getElementById('recovery-code-modal').classList.add('active');
+  window.tempRecoveryCode = recoveryCode;
+}
+
+function attemptUnlock() {
+  let enteredCode = '';
+  for (let i = 1; i <= 6; i++) {
+    enteredCode += document.getElementById(`unlock-${i}`).value;
+  }
+  if (enteredCode.length !== 6) return;
+
+  if (hashCode(enteredCode) === authSettings.passcodeHash) {
+    authSettings.isLocked = false;
+    document.getElementById('lock-screen').style.display = 'none';
+    document.body.style.overflow = 'auto';
+    document.querySelectorAll('.passcode-digit').forEach(input => input.value = '');
+    document.getElementById('passcode-error').style.display = 'none';
+    resetActivityTimer();
+    if (navigator.vibrate) navigator.vibrate(50);
+  } else {
+    document.getElementById('passcode-error').style.display = 'block';
+    if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+    const lockScreen = document.getElementById('lock-screen');
+    lockScreen.classList.add('shake-error');
+    setTimeout(() => lockScreen.classList.remove('shake-error'), 500);
+    document.querySelectorAll('.passcode-digit').forEach(input => input.value = '');
+    document.getElementById('unlock-1').focus();
+  }
+}
+
+function lockApp() {
+  if (!authSettings.passcodeHash) return;
+  authSettings.isLocked = true;
+  document.getElementById('lock-screen').style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+  setTimeout(() => document.getElementById('unlock-1').focus(), 300);
+}
+
+function resetActivityTimer() {
+  lastActivityTime = Date.now();
+  if (lockTimer) clearTimeout(lockTimer);
+  lockTimer = setTimeout(() => {
+    if (!authSettings.isLocked) lockApp();
+  }, authSettings.lockTimeout);
+}
+
+
+
+
+function trackActivity() {
+  if (!authSettings.isLocked) resetActivityTimer();
+}
+
+
+
+
+
+
+
+
+
+function verifySecurityAnswers() {
+  const a1 = document.getElementById('recovery-a1').value.trim().toLowerCase();
+  const a2 = document.getElementById('recovery-a2').value.trim().toLowerCase();
+
+  if (hashCode(a1) === authSettings.securityQuestions.a1 && hashCode(a2) === authSettings.securityQuestions.a2) {
+    alert('✅ Verified! Create a new passcode.');
+    closeSecurityRecovery();
+    document.getElementById('lock-screen').style.display = 'none';
+    for (let i = 1; i <= 6; i++) document.getElementById(`setup-${i}`).value = '';
+    document.getElementById('passcode-setup-modal').classList.add('active');
+  } else {
+    document.getElementById('recovery-error').style.display = 'block';
+  }
+}
+
+
+
+
+
+
+
+function confirmDataReset() {
+  if (confirm('⚠️ Delete ALL data? This cannot be undone!')) {
+    if (confirm('❗ Are you ABSOLUTELY SURE? All expenses, salaries, and settings will be lost forever!')) {
+      localStorage.clear();
+      location.reload();
+    }
+  }
+}
+
+
+
+
+function emailRecoveryCode() {
+  const code = window.tempRecoveryCode;
+  const subject = encodeURIComponent('Expense Tracker - Recovery Code');
+  const body = encodeURIComponent('Your PIN Recovery Code: ' + code + '\n\nSAVE THIS!');
+  window.location.href = 'mailto:?subject=' + subject + '&body=' + body;
+  setTimeout(() => { window.tempRecoveryCode = null; }, 1000);
+}
+function closeRecoveryCodeModal() {
+  document.getElementById('recovery-code-modal').classList.remove('active');
+  window.tempRecoveryCode = null;
+}
+function showRecoveryCodeInput() {
+  const modal = document.getElementById('recovery-input-modal');
+  if (!modal) { alert('Error'); return; }
+  for (let i = 1; i <= 4; i++) {
+    const input = document.getElementById('recovery-' + i);
+    if (input) input.value = '';
+  }
+  modal.classList.add('active');
+  setTimeout(() => {
+    setupRecoveryCodeInputs();
+    document.getElementById('recovery-1')?.focus();
+  }, 100);
+}
+function closeRecoveryInputModal() {
+  document.getElementById('recovery-input-modal').classList.remove('active');
+  for (let i = 1; i <= 4; i++) { document.getElementById('recovery-' + i).value = ''; }
+}
+function setupRecoveryCodeInputs() {
+  for (let i = 1; i <= 4; i++) {
+    const input = document.getElementById('recovery-' + i);
+    if (!input) continue;
+    input.addEventListener('input', function() {
+      this.value = this.value.toUpperCase();
+      if (this.value.length === 1 && i < 4) {
+        document.getElementById('recovery-' + (i + 1)).focus();
+      }
+    });
+    input.addEventListener('keydown', function(e) {
+      if (e.key === 'Backspace' && this.value === '' && i > 1) {
+        document.getElementById('recovery-' + (i - 1)).focus();
+      }
+    });
+  }
+}
+
+function saveNewPinAfterRecovery() {
+  let pin = '';
+  for (let i = 1; i <= 6; i++) { pin += document.getElementById('newpin-' + i).value; }
+  if (pin.length !== 6 || !/^\d{6}$/.test(pin)) { alert('❌ Complete PIN'); return; }
+  authSettings.passcodeHash = hashCode(pin);
+  authSettings.isLocked = false;
+  localStorage.setItem('authSettings', JSON.stringify(authSettings));
+  document.getElementById('new-pin-modal').classList.remove('active');
+  document.getElementById('lock-screen').style.display = 'none';
+  alert('✅ New PIN saved! Reloading app...');
+  location.reload();
+}
+function resetAppFromLockScreen() {
+  if (confirm('⚠️ DELETE ALL? Cannot be undone!')) {
+    if (confirm('Final confirmation?')) { localStorage.clear(); location.reload(); }
+  }
+}
+
+function closeRegenerateModal() {
+  document.getElementById('regenerate-recovery-modal').classList.remove('active');
+  for (let i = 1; i <= 6; i++) {
+    const input = document.getElementById('verify-' + i);
+    if (input) input.value = '';
+  }
+}
+function verifyPinAndGenerateNew() {
+  let pin = '';
+  for (let i = 1; i <= 6; i++) { pin += document.getElementById('verify-' + i).value; }
+  if (pin.length !== 6 || !/^\d{6}$/.test(pin)) { alert('❌ Complete PIN'); return; }
+  if (hashCode(pin) !== authSettings.passcodeHash) {
+    alert('❌ Incorrect PIN');
+    for (let i = 1; i <= 6; i++) { document.getElementById('verify-' + i).value = ''; }
+    document.getElementById('verify-1').focus();
+    return;
+  }
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let newCode = '';
+  for (let i = 0; i < 4; i++) { newCode += chars.charAt(Math.floor(Math.random() * chars.length)); }
+  authSettings.recoveryCode = hashCode(newCode);
+  localStorage.setItem('authSettings', JSON.stringify(authSettings));
+  document.getElementById('new-recovery-display').textContent = newCode;
+  window.tempRecoveryCode = newCode;
+  document.getElementById('regenerate-recovery-modal').classList.remove('active');
+  document.getElementById('new-recovery-code-modal').classList.add('active');
+}
+function closeNewRecoveryModal() {
+  document.getElementById('new-recovery-code-modal').classList.remove('active');
+  window.tempRecoveryCode = null;
+}
+function initAuth() {
+  setupPasscodeInputs();
+  checkAuthSetup();
+  ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'].forEach(event => {
+    document.addEventListener(event, trackActivity, { passive: true });
+  });
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      resetActivityTimer();
+    } else {
+      const idleTime = Date.now() - lastActivityTime;
+      if (idleTime > authSettings.lockTimeout && authSettings.passcodeHash) lockApp();
+    }
+  });
+}
+
+// ==================== SWIPE GESTURES ====================
+
+let swipeState = { startX: 0, startY: 0, currentX: 0, currentY: 0, isDragging: false, threshold: 50, element: null };
+
+function initSwipeGestures() {
+  const expensePane = document.getElementById('pane-period');
+  if (expensePane) setupSwipeListeners(expensePane, 'period');
+  const utilityPane = document.querySelector('.pane.monthly');
+  if (utilityPane) setupSwipeListeners(utilityPane, 'month');
+}
+
+function setupSwipeListeners(element, type) {
+  element.addEventListener('touchstart', (e) => {
+    console.log('Touch start on ' + type);
+    handleSwipeStart(e, type);
+  }, { passive: true });
+  element.addEventListener('touchmove', (e) => {
+    console.log('Touch move on ' + type);
+    handleSwipeMove(e, type);
+  }, { passive: false });
+  element.addEventListener('touchend', (e) => {
+    console.log('Touch end on ' + type);
+    handleSwipeEnd(e, type);
+  }, { passive: true });
+  element.addEventListener('mousedown', (e) => handleSwipeStart(e, type));
+  element.addEventListener('mousemove', (e) => handleSwipeMove(e, type));
+  element.addEventListener('mouseup', (e) => handleSwipeEnd(e, type));
+  element.addEventListener('mouseleave', (e) => handleSwipeEnd(e, type));
+}
+
+function handleSwipeStart(e, type) {
+  if (e.target.closest('.expense-item') || e.target.closest('.swipe-actions')) return;
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'BUTTON') return;
+  const touch = e.touches ? e.touches[0] : e;
+  swipeState.startX = touch.clientX;
+  swipeState.startY = touch.clientY;
+  swipeState.isDragging = true;
+  swipeState.element = e.currentTarget;
+  swipeState.type = type;
+  console.log('Swipe start detected on ' + type + ', startX: ' + swipeState.startX);
+}
+
+function handleSwipeMove(e, type) {
+  if (!swipeState.isDragging) return;
+  const touch = e.touches ? e.touches[0] : e;
+  swipeState.currentX = touch.clientX;
+  swipeState.currentY = touch.clientY;
+  const deltaX = swipeState.currentX - swipeState.startX;
+  const deltaY = swipeState.currentY - swipeState.startY;
+  if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 5) {
+    e.preventDefault();
+    const moveAmount = Math.min(Math.abs(deltaX) / 4, 40);
+    const direction = deltaX > 0 ? moveAmount : -moveAmount;
+    swipeState.element.style.transform = `translateX(${direction}px)`;
+    const opacity = 1 - (Math.abs(deltaX) / 400);
+    swipeState.element.style.opacity = Math.max(opacity, 0.8);
+    console.log('Horizontal swipe move on ' + type + ', deltaX: ' + deltaX);
+  } else {
+    console.log('Vertical move detected on ' + type + ', deltaY: ' + deltaY + ', not preventing default');
+  }
+}
+
+function handleSwipeEnd(e, type) {
+  if (!swipeState.isDragging) return;
+  const deltaX = swipeState.currentX - swipeState.startX;
+  const deltaY = swipeState.currentY - swipeState.startY;
+  if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > swipeState.threshold) {
+    console.log('Swipe detected on ' + type + ', direction: ' + (deltaX > 0 ? 'left' : 'right'));
+    if (deltaX > 0) {
+      if (type === 'period') changePeriod(-1);
+      else if (type === 'month') changeMonth(-1);
+      showSwipeFeedback(swipeState.element, 'left');
+    } else {
+      if (type === 'period') changePeriod(1);
+      else if (type === 'month') changeMonth(1);
+      showSwipeFeedback(swipeState.element, 'right');
+    }
+    if (navigator.vibrate) navigator.vibrate([30, 20, 30]);
+  } else {
+    swipeState.element.style.transition = 'transform 0.3s ease-out, opacity 0.3s ease-out';
+    swipeState.element.style.transform = 'translateX(0)';
+    swipeState.element.style.opacity = '1';
+    setTimeout(() => { swipeState.element.style.transition = ''; }, 300);
+  }
+  swipeState.isDragging = false;
+  swipeState.startX = 0;
+  swipeState.startY = 0;
+  swipeState.currentX = 0;
+  swipeState.currentY = 0;
+}
+
+function showSwipeFeedback(element, direction) {
+  const indicator = document.createElement('div');
+  indicator.className = 'swipe-indicator';
+  indicator.innerHTML = direction === 'left' ? '‹‹‹' : '›››';
+  indicator.style.cssText = `position:absolute; top:50%; ${direction === 'left' ? 'left:30px' : 'right:30px'}; transform:translateY(-50%); font-size:4rem; color:rgba(251,191,36,0.9); font-weight:900; z-index:100; pointer-events:none; text-shadow:0 0 20px rgba(251,191,36,0.5); animation:swipeIndicator 0.6s ease-out`;
+  element.style.position = 'relative';
+  element.appendChild(indicator);
+  element.style.transition = 'transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.5s ease';
+  if (direction === 'left') element.style.transform = 'translateX(120px) scale(0.97)';
+  else element.style.transform = 'translateX(-120px) scale(0.97)';
+  element.style.opacity = '0.5';
+  setTimeout(() => {
+    element.style.transform = 'translateX(0) scale(1)';
+    element.style.opacity = '1';
+  }, 180);
+  setTimeout(() => {
+    if (indicator.parentNode) indicator.remove();
+    element.style.transition = '';
+  }, 700);
+}
+
+// Initialize everything on load
+window.addEventListener('DOMContentLoaded', () => {
+  initAuth();
+  initSwipeGestures();
+});
+
+
+// Utility Disclaimer Functions
+function showUtilityDisclaimer() {
+  const dismissed = localStorage.getItem('utilityDisclaimerDismissed');
+  const disclaimer = document.getElementById('utility-disclaimer');
+  if (disclaimer && dismissed !== 'true') {
+    disclaimer.style.display = 'block';
+  }
+}
+
+function dismissUtilityDisclaimer(permanent) {
+  const disclaimer = document.getElementById('utility-disclaimer');
+  if (disclaimer) {
+    disclaimer.style.display = 'none';
+  }
+  if (permanent) {
+    localStorage.setItem('utilityDisclaimerDismissed', 'true');
+  }
+}
+
+// Push Notification Functions
+let notificationPermission = 'default';
+
+async function initNotifications() {
+  if (!('Notification' in window)) {
+    console.log('Notifications not supported');
+    return;
+  }
+
+  const enabled = localStorage.getItem('notificationsEnabled') === 'true';
+  const toggle = document.getElementById('notifications-toggle');
+  if (toggle) {
+    toggle.checked = enabled;
+  }
+
+  notificationPermission = Notification.permission;
+  updateNotificationStatus();
+}
+
+async function toggleNotifications() {
+  const toggle = document.getElementById('notifications-toggle');
+  const enabled = toggle.checked;
+
+  if (enabled) {
+    if (Notification.permission === 'default') {
+      const permission = await Notification.requestPermission();
+      notificationPermission = permission;
+
+      if (permission === 'granted') {
+        localStorage.setItem('notificationsEnabled', 'true');
+        showNotificationStatus('✅ Notifications enabled!', 'success');
+
+        setTimeout(() => {
+          showTestNotification();
+        }, 500);
+
+        schedulePayPeriodNotifications();
+      } else {
+        toggle.checked = false;
+        showNotificationStatus('❌ Permission denied. Enable in browser settings.', 'error');
+      }
+    } else if (Notification.permission === 'granted') {
+      localStorage.setItem('notificationsEnabled', 'true');
+      showNotificationStatus('✅ Notifications enabled!', 'success');
+      schedulePayPeriodNotifications();
+    } else {
+      toggle.checked = false;
+      showNotificationStatus('❌ Permission denied. Enable in browser settings.', 'error');
+    }
+  } else {
+    localStorage.setItem('notificationsEnabled', 'false');
+    showNotificationStatus('🔕 Notifications disabled', 'info');
+    cancelScheduledNotifications();
+  }
+
+  updateNotificationStatus();
+}
+
+function showTestNotification() {
+  if (Notification.permission === 'granted') {
+    const notification = new Notification('💰 Expense Tracker', {
+      body: 'Notifications are now enabled! You\'ll get reminders at the start of each pay period.',
+      icon: '💰',
+      badge: '💰',
+      tag: 'test-notification',
+      requireInteraction: false
+    });
+
+    notification.onclick = function() {
+      window.focus();
+      notification.close();
+    };
+  }
+}
+
+function schedulePayPeriodNotifications() {
+  const checkInterval = 1000 * 60 * 60 * 24;
+
+  const intervalId = setInterval(() => {
+    checkAndSendNotification();
+  }, checkInterval);
+
+  localStorage.setItem('notificationIntervalId', intervalId);
+  checkAndSendNotification();
+}
+
+function cancelScheduledNotifications() {
+  const intervalId = localStorage.getItem('notificationIntervalId');
+  if (intervalId) {
+    clearInterval(parseInt(intervalId));
+    localStorage.removeItem('notificationIntervalId');
+  }
+}
+
+function checkAndSendNotification() {
+  if (localStorage.getItem('notificationsEnabled') !== 'true') return;
+  if (Notification.permission !== 'granted') return;
+
+  const period = calculateCurrentPeriod(0);
+  if (!period) return;
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const periodStart = new Date(period.start);
+  periodStart.setHours(0, 0, 0, 0);
+
+  if (today.getTime() === periodStart.getTime()) {
+    const lastNotification = localStorage.getItem('lastNotificationDate');
+    const todayStr = today.toISOString().split('T')[0];
+
+    if (lastNotification !== todayStr) {
+      sendPayPeriodNotification(period);
+      localStorage.setItem('lastNotificationDate', todayStr);
+    }
+  }
+}
+
+function sendPayPeriodNotification(period) {
+  const salary = salaries[period.key] || 0;
+  const formattedDates = formatPeriodDates(period.start, period.end);
+
+  const notification = new Notification('💰 New Pay Period Started!', {
+    body: `${formattedDates}\nSalary: $${salary.toFixed(2)}\nTime to track your expenses!`,
+    icon: '💰',
+    badge: '💰',
+    tag: 'pay-period-' + period.key,
+    requireInteraction: false,
+    vibrate: [200, 100, 200]
+  });
+
+  notification.onclick = function() {
+    window.focus();
+    notification.close();
+  };
+}
+
+function formatPeriodDates(start, end) {
+  const options = { month: 'short', day: 'numeric' };
+  return start.toLocaleDateString('en-US', options) + ' - ' + end.toLocaleDateString('en-US', options);
+}
+
+function updateNotificationStatus() {
+  const statusDiv = document.getElementById('notification-status');
+  const statusText = document.getElementById('notification-status-text');
+
+  if (!statusDiv || !statusText) return;
+
+  const enabled = localStorage.getItem('notificationsEnabled') === 'true';
+
+  if (!('Notification' in window)) {
+    statusDiv.style.display = 'block';
+    statusText.innerHTML = '⚠️ Notifications not supported in this browser';
+    statusDiv.style.background = 'rgba(239,68,68,0.1)';
+  } else if (enabled && Notification.permission === 'granted') {
+    statusDiv.style.display = 'block';
+    statusText.innerHTML = '✅ Notifications active';
+    statusDiv.style.background = 'rgba(16,185,129,0.1)';
+  } else if (Notification.permission === 'denied') {
+    statusDiv.style.display = 'block';
+    statusText.innerHTML = '❌ Enable notifications in browser settings';
+    statusDiv.style.background = 'rgba(239,68,68,0.1)';
+  } else {
+    statusDiv.style.display = 'none';
+  }
+}
+
+function showNotificationStatus(message, type) {
+  const statusDiv = document.getElementById('notification-status');
+  const statusText = document.getElementById('notification-status-text');
+
+  if (!statusDiv || !statusText) return;
+
+  statusText.textContent = message;
+  statusDiv.style.display = 'block';
+
+  const colors = {
+    success: 'rgba(16,185,129,0.1)',
+    error: 'rgba(239,68,68,0.1)',
+    info: 'rgba(59,130,246,0.1)'
+  };
+
+  statusDiv.style.background = colors[type] || colors.info;
+
+  setTimeout(() => {
+    statusDiv.style.display = 'none';
+  }, 5000);
+}
+
+// Initialize everything on load
+document.addEventListener('DOMContentLoaded', function() {
+  showUtilityDisclaimer();
+  initNotifications();
+});
+
 </script>
+
 <!-- ==================== AUTHENTICATION SYSTEM ==================== -->
 
 <!-- Passcode Setup -->
