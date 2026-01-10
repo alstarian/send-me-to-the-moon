@@ -1117,6 +1117,8 @@ if (document.readyState === 'loading') {
   let currentX = 0;
   let dragging = false;
   let horizontal = false;
+  const resistance = 0.35; // swipe elasticity
+
 
   function updateDots(index) {
     dots.forEach((d, i) => d.classList.toggle('active', i === index));
@@ -1158,13 +1160,27 @@ if (document.readyState === 'loading') {
         }
       }
       e.preventDefault();
-      panes.forEach((p, i) => {
-        const offset = (i - activeIndex) * window.innerWidth + dx;
-        p.style.transform = `translateX(${offset}px)`;
-      });
+     panes.forEach((p, i) => {
+  const base = (i - activeIndex) * window.innerWidth;
+  const drag = dx * resistance;
+  const offset = base + drag;
+
+  const progress = Math.min(Math.abs(dx) / window.innerWidth, 1);
+  const scale = 1 - progress * 0.03;
+  const opacity = 1 - progress * 0.15;
+
+  p.style.transform = `translateX(${offset}px) scale(${scale})`;
+  p.style.opacity = opacity;
+});
+
     }, { passive: false });
 
     pane.addEventListener('touchend', () => {
+          panes.forEach(p => {
+  p.style.opacity = '';
+  p.style.transform = '';
+});
+
       if (!dragging || !horizontal) {
         dragging = false;
         return;
