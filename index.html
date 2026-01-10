@@ -977,191 +977,132 @@ window.saveData = function() {
 
 console.log('🚀 Auto-sync saveData() ready');
 </script>
-      <script>
+<script>
 // =============================================
-// SWIPE GESTURES FOR EXPENSES AND UTILITY PANELS
+// SWIPE GESTURES - NATURAL WITH FEEDBACK
 // =============================================
-// Subtle animation version
 
 let swipeState = {
-  startX: 0,
-  startY: 0,
-  currentX: 0,
-  currentY: 0,
-  isDragging: false,
-  threshold: 50,
-  element: null,
-  type: null
+  startX: 0, startY: 0, currentX: 0, currentY: 0,
+  isDragging: false, threshold: 40,  // Lower threshold for easier swipes
+  element: null, type: null
 };
 
 function initSwipeGestures() {
-  // Setup swipe for Expenses panel
   const expensePane = document.getElementById('pane-period');
-  if (expensePane) {
-    setupSwipeListeners(expensePane, 'period');
-  }
+  if (expensePane) setupSwipe(expensePane, 'period');
 
-  // Setup swipe for Monthly Utilities panel
   const utilityPane = document.querySelector('.pane.monthly');
-  if (utilityPane) {
-    setupSwipeListeners(utilityPane, 'month');
-  }
+  if (utilityPane) setupSwipe(utilityPane, 'month');
 }
 
-function setupSwipeListeners(element, type) {
-  // Touch events
-  element.addEventListener('touchstart', (e) => handleSwipeStart(e, type), { passive: true });
-  element.addEventListener('touchmove', (e) => handleSwipeMove(e, type), { passive: false });
-  element.addEventListener('touchend', (e) => handleSwipeEnd(e, type), { passive: true });
-
-  // Mouse events (for desktop testing)
-  element.addEventListener('mousedown', (e) => handleSwipeStart(e, type));
-  element.addEventListener('mousemove', (e) => handleSwipeMove(e, type));
-  element.addEventListener('mouseup', (e) => handleSwipeEnd(e, type));
-  element.addEventListener('mouseleave', (e) => handleSwipeEnd(e, type));
+function setupSwipe(element, type) {
+  element.dataset.swipeType = type;
+  
+  element.addEventListener('touchstart', startSwipe, { passive: true });
+  element.addEventListener('touchmove', moveSwipe, { passive: false });
+  element.addEventListener('touchend', endSwipe);
+  
+  // Desktop testing
+  element.addEventListener('mousedown', startSwipe);
+  element.addEventListener('mousemove', moveSwipe);
+  element.addEventListener('mouseup', endSwipe);
 }
 
-function handleSwipeStart(e, type) {
-  // Ignore if starting on interactive elements or existing expense items
-  if (e.target.closest('.expense-item') || 
-      e.target.closest('.swipe-actions') ||
-      e.target.tagName === 'INPUT' || 
-      e.target.tagName === 'SELECT' || 
-      e.target.tagName === 'BUTTON') {
-    return;
-  }
-
-  const touch = e.touches ? e.touches[0] : e;
-  swipeState.startX = touch.clientX;
-  swipeState.startY = touch.clientY;
-  swipeState.isDragging = true;
-  swipeState.element = e.currentTarget;
-  swipeState.type = type;
+function startSwipe(e) {
+  if (e.target.closest('.expense-item, .swipe-actions, input, select, button')) return;
+  
+  const touch = e.touches?.[0] || e;
+  swipeState = {
+    ...swipeState,
+    startX: touch.clientX, startY: touch.clientY,
+    isDragging: true, element: e.currentTarget, type: e.currentTarget.dataset.swipeType
+  };
 }
 
-function handleSwipeMove(e, type) {
+function moveSwipe(e) {
   if (!swipeState.isDragging) return;
-
-  const touch = e.touches ? e.touches[0] : e;
+  
+  const touch = e.touches?.[0] || e;
   swipeState.currentX = touch.clientX;
   swipeState.currentY = touch.clientY;
-
+  
   const deltaX = swipeState.currentX - swipeState.startX;
   const deltaY = swipeState.currentY - swipeState.startY;
-
-  // Only handle horizontal swipes (prevent vertical scroll interference)
-  if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 5) {
-    e.preventDefault(); // Prevent scroll on horizontal swipe
-
-    // SUBTLE: Reduced movement (1/8 instead of 1/4)
-    const moveAmount = Math.min(Math.abs(deltaX) / 8, 15);
-    const direction = deltaX > 0 ? moveAmount : -moveAmount;
-    swipeState.element.style.transform = `translateX(${direction}px)`;
+  
+  // Responsive horizontal detection
+  if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 8) {
+    e.preventDefault();
     
-    // SUBTLE: Less opacity change
-    const opacity = 1 - (Math.abs(deltaX) / 600);
-    swipeState.element.style.opacity = Math.max(opacity, 0.95);
+    // FEELABLE: Smooth 15px max movement + subtle scale
+    const progress = Math.min(Math.abs(deltaX) / 200, 1);
+    const moveX = deltaX * 0.075; // Max ~15px
+    const scale = 1 - (progress * 0.015); // Tiny scale (0.985 max)
+    
+    swipeState.element.style.transform = `translateX(${moveX}px) scale(${scale})`;
+    swipeState.element.style.opacity = 1 - (progress * 0.08); // Max 92% opacity
   }
 }
 
-function handleSwipeEnd(e, type) {
+function endSwipe(e) {
   if (!swipeState.isDragging) return;
-
+  
   const deltaX = swipeState.currentX - swipeState.startX;
-  const deltaY = swipeState.currentY - swipeState.startY;
-
-  // Check if it's a horizontal swipe above threshold
-  if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > swipeState.threshold) {
-    // Swipe left = next period/month
-    if (deltaX < 0) {
-      if (type === 'period') {
-        changePeriod(1);
-      } else if (type === 'month') {
-        changeMonth(1);
-      }
-      showSwipeFeedback(swipeState.element, 'left');
-    } 
-    // Swipe right = previous period/month
-    else {
-      if (type === 'period') {
-        changePeriod(-1);
-      } else if (type === 'month') {
-        changeMonth(-1);
-      }
-      showSwipeFeedback(swipeState.element, 'right');
-    }
-
-    // Haptic feedback (if supported)
-    if (navigator.vibrate) {
-      navigator.vibrate([30, 20, 30]);
-    }
-  } else {
-    // SUBTLE: Smoother reset
-    swipeState.element.style.transition = 'transform 0.25s ease-out, opacity 0.25s ease-out';
-    swipeState.element.style.transform = 'translateX(0)';
-    swipeState.element.style.opacity = '1';
-    setTimeout(() => {
-      swipeState.element.style.transition = '';
-    }, 250);
+  
+  if (Math.abs(deltaX) > swipeState.threshold) {
+    const dir = deltaX < 0 ? 1 : -1;
+    
+    // FIXED: Direct function calls work reliably
+    if (swipeState.type === 'period') changePeriod(dir);
+    if (swipeState.type === 'month') changeMonth(dir);
+    
+    hapticFeedback();
+    showQuickFeedback(swipeState.element, deltaX < 0);
   }
-
-  // Reset state
+  
+  // Smooth reset with feel
+  swipeState.element.style.transition = 'all 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+  swipeState.element.style.transform = 'translateX(0) scale(1)';
+  swipeState.element.style.opacity = '1';
+  
+  setTimeout(() => swipeState.element.style.transition = '', 250);
+  
   swipeState.isDragging = false;
-  swipeState.startX = 0;
-  swipeState.startY = 0;
-  swipeState.currentX = 0;
-  swipeState.currentY = 0;
 }
 
-function showSwipeFeedback(element, direction) {
-  // SUBTLE: Smaller, softer feedback icon
-  const indicator = document.createElement('div');
-  indicator.className = 'swipe-indicator';
-  indicator.innerHTML = direction === 'left' ? '→' : '←';
-  indicator.style.cssText = `
-    position: absolute;
-    top: 50%;
-    ${direction === 'left' ? 'left: 20px' : 'right: 20px'};
+function hapticFeedback() {
+  navigator.vibrate?.([40, 20, 40]);
+}
+
+function showQuickFeedback(element, isNext) {
+  const arrow = document.createElement('div');
+  arrow.innerHTML = isNext ? '→' : '←';
+  arrow.style.cssText = `
+    position: absolute; top: 50%; ${isNext ? 'left' : 'right'}: 25px;
     transform: translateY(-50%);
-    font-size: 2.5rem;
-    color: rgba(251, 191, 36, 0.7);
-    font-weight: 700;
-    z-index: 100;
-    pointer-events: none;
-    text-shadow: 0 0 10px rgba(251, 191, 36, 0.3);
-    animation: swipeIndicator 0.4s ease-out;
+    font-size: 2rem; color: rgba(251,191,36,0.9);
+    font-weight: 800; pointer-events: none; z-index: 10;
+    animation: quickSwipe 0.4s ease-out forwards;
   `;
-
+  
   element.style.position = 'relative';
-  element.appendChild(indicator);
-
-  // SUBTLE: Much gentler panel animation
-  element.style.transition = 'transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 0.4s ease';
-  if (direction === 'left') {
-    element.style.transform = 'translateX(40px) scale(0.99)';
-  } else {
-    element.style.transform = 'translateX(-40px) scale(0.99)';
-  }
-  element.style.opacity = '0.92';
-
-  setTimeout(() => {
-    element.style.transform = 'translateX(0) scale(1)';
-    element.style.opacity = '1';
-  }, 120);
-
-  setTimeout(() => {
-    if (indicator.parentNode) {
-      indicator.remove();
-    }
-    element.style.transition = '';
-  }, 500);
+  element.appendChild(arrow);
+  
+  setTimeout(() => arrow.remove(), 400);
 }
 
-// Initialize swipe gestures when DOM loads
-window.addEventListener('DOMContentLoaded', () => {
-  initSwipeGestures();
-});
+// Load & init
+document.addEventListener('DOMContentLoaded', initSwipeGestures);
 </script>
+
+<style>
+@keyframes quickSwipe {
+  0% { opacity: 0; transform: translateY(-50%) scale(0.5) translateX(0); }
+  50% { opacity: 1; transform: translateY(-50%) scale(1.2) translateX(${isNext ? '10px' : '-10px'}); }
+  100% { opacity: 0; transform: translateY(-50%) scale(0.8) translateX(${isNext ? '20px' : '-20px'}); }
+}
+</style>
+
 
 
 
