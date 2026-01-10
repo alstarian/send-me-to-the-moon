@@ -1091,4 +1091,98 @@ if (document.readyState === 'loading') {
 
 </script>
 
+<script>
+
+      // Wait for everything to load, then initialize
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+      setTimeout(initPanelSwipes, 500);
+    });
+  } else {
+    setTimeout(initPanelSwipes, 500);
+  }
+</script>
+
+<script>
+(function enablePaneSwipe() {
+  if (!('ontouchstart' in window)) return;
+
+  const panes = Array.from(document.querySelectorAll('.pane'));
+  const dots = document.querySelectorAll('.pane-dot');
+  if (panes.length < 2) return;
+
+  let activeIndex = 0;
+  let startX = 0;
+  let startY = 0;
+  let currentX = 0;
+  let dragging = false;
+  let horizontal = false;
+
+  function updateDots(index) {
+    dots.forEach((d, i) => d.classList.toggle('active', i === index));
+  }
+
+  function setPane(index) {
+    panes.forEach((pane, i) => {
+      pane.style.transition = 'transform 0.35s cubic-bezier(.4,0,.2,1)';
+      pane.style.transform = `translateX(${(i - index) * 110}%)`;
+      pane.classList.toggle('current', i === index);
+    });
+    activeIndex = index;
+    updateDots(index);
+    if (navigator.vibrate) navigator.vibrate(10);
+  }
+
+  setPane(0);
+
+  panes.forEach(pane => {
+    pane.addEventListener('touchstart', e => {
+      if (e.touches.length !== 1) return;
+      startX = e.touches[0].clientX;
+      startY = e.touches[0].clientY;
+      dragging = true;
+      horizontal = false;
+      panes.forEach(p => p.style.transition = 'none');
+    }, { passive: true });
+
+    pane.addEventListener('touchmove', e => {
+      if (!dragging) return;
+      currentX = e.touches[0].clientX;
+      const dx = currentX - startX;
+      const dy = e.touches[0].clientY - startY;
+      if (!horizontal) {
+        if (Math.abs(dx) > 12 && Math.abs(dx) > Math.abs(dy)) {
+          horizontal = true;
+        } else {
+          return;
+        }
+      }
+      e.preventDefault();
+      panes.forEach((p, i) => {
+        const offset = (i - activeIndex) * window.innerWidth + dx;
+        p.style.transform = `translateX(${offset}px)`;
+      });
+    }, { passive: false });
+
+    pane.addEventListener('touchend', () => {
+      if (!dragging || !horizontal) {
+        dragging = false;
+        return;
+      }
+      const dx = currentX - startX;
+      const threshold = window.innerWidth * 0.25;
+      if (dx < -threshold && activeIndex < panes.length - 1) {
+        setPane(activeIndex + 1);
+      } else if (dx > threshold && activeIndex > 0) {
+        setPane(activeIndex - 1);
+      } else {
+        setPane(activeIndex);
+      }
+      dragging = false;
+    });
+  });
+})();
+      
+</script>      
+
 </body></html>
