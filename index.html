@@ -978,16 +978,21 @@ window.saveData = function() {
 console.log('🚀 Auto-sync saveData() ready');
 
 
-// Panel Swipe Gesture Handling
+// Panel Swipe Gesture Handling - FIXED
 let panelTouchStartX = 0;
 let panelTouchEndX = 0;
 let panelTouchStartY = 0;
 let panelTouchEndY = 0;
 const SWIPE_THRESHOLD = 50;
 
-function handlePanelSwipe(containerSelector, prevBtn, nextBtn) {
+function handlePanelSwipe(containerSelector, prevBtnSelector, nextBtnSelector) {
   const container = document.querySelector(containerSelector);
-  if (!container) return;
+  if (!container) {
+    console.log('Container not found:', containerSelector);
+    return;
+  }
+
+  console.log('Swipe gestures enabled for:', containerSelector);
 
   container.addEventListener('touchstart', (e) => {
     panelTouchStartX = e.changedTouches[0].screenX;
@@ -1001,29 +1006,41 @@ function handlePanelSwipe(containerSelector, prevBtn, nextBtn) {
     const diffX = panelTouchStartX - panelTouchEndX;
     const diffY = Math.abs(panelTouchStartY - panelTouchEndY);
 
-    // Only trigger if horizontal swipe is dominant
-    if (Math.abs(diffX) > SWIPE_THRESHOLD && Math.abs(diffX) > diffY) {
+    // Only trigger if horizontal swipe is dominant (more horizontal than vertical)
+    if (Math.abs(diffX) > SWIPE_THRESHOLD && Math.abs(diffX) > diffY * 1.5) {
       if (diffX > 0) {
         // Swipe left - next panel
-        const nextButton = document.querySelector(nextBtn);
-        if (nextButton && !nextButton.disabled) nextButton.click();
+        const nextButtons = document.querySelectorAll(nextBtnSelector);
+        nextButtons.forEach(btn => {
+          if (btn && btn.offsetParent !== null) { // Check if button is visible
+            console.log('Next period triggered');
+            btn.click();
+          }
+        });
       } else {
         // Swipe right - previous panel
-        const prevButton = document.querySelector(prevBtn);
-        if (prevButton && !prevButton.disabled) prevButton.click();
+        const prevButtons = document.querySelectorAll(prevBtnSelector);
+        prevButtons.forEach(btn => {
+          if (btn && btn.offsetParent !== null) { // Check if button is visible
+            console.log('Previous period triggered');
+            btn.click();
+          }
+        });
       }
     }
   }, { passive: true });
 }
 
-// Initialize swipe gestures for panels
-document.addEventListener('DOMContentLoaded', () => {
-  // Expenses panel swipe
-  handlePanelSwipe('.expense-list', '.prev-period', '.next-period');
+// Initialize swipe gestures after DOM loads
+setTimeout(() => {
+  // Expenses panel swipe - attach to entire pane
+  handlePanelSwipe('#pane-period', '.period-nav button:first-child', '.period-nav button:last-child');
 
-  // Utilities panel swipe
-  handlePanelSwipe('.utilities-list', '.prev-utility-period', '.next-utility-period');
-});
+  // Utilities panel swipe - attach to entire monthly pane
+  handlePanelSwipe('.pane.monthly', '.month-nav button:first-child', '.month-nav button:last-child');
+
+  console.log('✅ Panel swipe gestures initialized');
+}, 1000);
 
 </script>
 
