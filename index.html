@@ -976,6 +976,55 @@ window.saveData = function() {
 };
 
 console.log('🚀 Auto-sync saveData() ready');
+
+
+// Panel Swipe Gesture Handling
+let panelTouchStartX = 0;
+let panelTouchEndX = 0;
+let panelTouchStartY = 0;
+let panelTouchEndY = 0;
+const SWIPE_THRESHOLD = 50;
+
+function handlePanelSwipe(containerSelector, prevBtn, nextBtn) {
+  const container = document.querySelector(containerSelector);
+  if (!container) return;
+
+  container.addEventListener('touchstart', (e) => {
+    panelTouchStartX = e.changedTouches[0].screenX;
+    panelTouchStartY = e.changedTouches[0].screenY;
+  }, { passive: true });
+
+  container.addEventListener('touchend', (e) => {
+    panelTouchEndX = e.changedTouches[0].screenX;
+    panelTouchEndY = e.changedTouches[0].screenY;
+
+    const diffX = panelTouchStartX - panelTouchEndX;
+    const diffY = Math.abs(panelTouchStartY - panelTouchEndY);
+
+    // Only trigger if horizontal swipe is dominant
+    if (Math.abs(diffX) > SWIPE_THRESHOLD && Math.abs(diffX) > diffY) {
+      if (diffX > 0) {
+        // Swipe left - next panel
+        const nextButton = document.querySelector(nextBtn);
+        if (nextButton && !nextButton.disabled) nextButton.click();
+      } else {
+        // Swipe right - previous panel
+        const prevButton = document.querySelector(prevBtn);
+        if (prevButton && !prevButton.disabled) prevButton.click();
+      }
+    }
+  }, { passive: true });
+}
+
+// Initialize swipe gestures for panels
+document.addEventListener('DOMContentLoaded', () => {
+  // Expenses panel swipe
+  handlePanelSwipe('.expense-list', '.prev-period', '.next-period');
+
+  // Utilities panel swipe
+  handlePanelSwipe('.utilities-list', '.prev-utility-period', '.next-utility-period');
+});
+
 </script>
 
 </body></html>
