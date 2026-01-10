@@ -950,42 +950,22 @@ document.getElementById('salary-input').addEventListener('change', function() {
 
 
 <script>
-// SUPER SAVEDATA - Syncs EVERYTHING automatically
-const originalSaveData = window.saveData;
-window.saveData = function() {
-  console.log('💾 saveData() called');
-  
-  // CRITICAL: Sync local variables to global
-  if (transactions) window.transactions = transactions.slice();
-  if (salaries) window.salaries = { ...salaries };
-  if (utilities) window.utilities = utilities.slice();
-  
-  console.log('  📊 Transactions:', window.transactions?.length || 0);
-  console.log('  📊 Salaries:', Object.keys(window.salaries || {}).length);
-  console.log('  📊 Utilities:', window.utilities?.length || 0);
-  
-  // Call original saveData
-  if (originalSaveData) {
-    try { originalSaveData(); } catch(e) {}
-  }
-  
-  // Firebase sync
-  if (window.currentUser && window.saveToFirebase) {
-    window.saveToFirebase();
-  }
-};
-
-console.log('🚀 Auto-sync saveData() ready');
-</script>
-<script>
 // =============================================
-// SWIPE GESTURES - NATURAL WITH FEEDBACK
+// APPLE-STYLE SWIPE GESTURES
 // =============================================
 
 let swipeState = {
-  startX: 0, startY: 0, currentX: 0, currentY: 0,
-  isDragging: false, threshold: 40,  // Lower threshold for easier swipes
-  element: null, type: null
+  startX: 0,
+  startY: 0,
+  currentX: 0,
+  currentY: 0,
+  startTime: 0,
+  isDragging: false,
+  isHorizontalSwipe: null,
+  threshold: 80,  // Apple uses higher threshold
+  velocityThreshold: 0.3,  // Velocity-based detection
+  element: null,
+  type: null
 };
 
 function initSwipeGestures() {
@@ -1001,27 +981,41 @@ function setupSwipe(element, type) {
   
   element.addEventListener('touchstart', startSwipe, { passive: true });
   element.addEventListener('touchmove', moveSwipe, { passive: false });
-  element.addEventListener('touchend', endSwipe);
+  element.addEventListener('touchend', endSwipe, { passive: true });
+  element.addEventListener('touchcancel', cancelSwipe, { passive: true });
   
-  // Desktop testing
+  // Desktop support
   element.addEventListener('mousedown', startSwipe);
   element.addEventListener('mousemove', moveSwipe);
   element.addEventListener('mouseup', endSwipe);
+  element.addEventListener('mouseleave', cancelSwipe);
 }
 
 function startSwipe(e) {
-  if (e.target.closest('.expense-item, .swipe-actions, input, select, button')) return;
+  // APPLE: Ignore interactive elements
+  if (e.target.closest('.expense-item, .swipe-actions, input, select, button, a')) {
+    return;
+  }
   
   const touch = e.touches?.[0] || e;
+  
   swipeState = {
-    ...swipeState,
-    startX: touch.clientX, startY: touch.clientY,
-    isDragging: true, element: e.currentTarget, type: e.currentTarget.dataset.swipeType
+    startX: touch.clientX,
+    startY: touch.clientY,
+    currentX: touch.clientX,
+    currentY: touch.clientY,
+    startTime: Date.now(),
+    isDragging: false,  // Not dragging until movement confirmed
+    isHorizontalSwipe: null,
+    threshold: 80,
+    velocityThreshold: 0.3,
+    element: e.currentTarget,
+    type: e.currentTarget.dataset.swipeType
   };
 }
 
 function moveSwipe(e) {
-  if (!swipeState.isDragging) return;
+  if (!swipeState.element) return;
   
   const touch = e.touches?.[0] || e;
   swipeState.currentX = touch.clientX;
@@ -1030,78 +1024,132 @@ function moveSwipe(e) {
   const deltaX = swipeState.currentX - swipeState.startX;
   const deltaY = swipeState.currentY - swipeState.startY;
   
-  // Responsive horizontal detection
-  if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 8) {
+  // APPLE: Determine swipe direction on first significant movement
+  if (swipeState.isHorizontalSwipe === null) {
+    const absX = Math.abs(deltaX);
+    const absY = Math.abs(deltaY);
+    
+    // Need at least 15px movement to determine direction
+    if (absX > 15 || absY > 15) {
+      // APPLE: Horizontal must be 2x more than vertical
+      swipeState.isHorizontalSwipe = absX > absY * 2;
+      
+      if (swipeState.isHorizontalSwipe) {
+        swipeState.isDragging = true;
+      }
+    }
+  }
+  
+  // APPLE: Only apply visual feedback if confirmed horizontal swipe
+  if (swipeState.isDragging && swipeState.isHorizontalSwipe) {
     e.preventDefault();
     
-    // FEELABLE: Smooth 15px max movement + subtle scale
-    const progress = Math.min(Math.abs(deltaX) / 200, 1);
-    const moveX = deltaX * 0.075; // Max ~15px
-    const scale = 1 - (progress * 0.015); // Tiny scale (0.985 max)
+    // APPLE: Rubber-band effect - resistance increases with distance
+    const resistance = Math.abs(deltaX) > 100 ? 0.03 : 0.12;
+    const moveX = deltaX * resistance;
+    
+    // Subtle scale and opacity
+    const progress = Math.min(Math.abs(deltaX) / 300, 1);
+    const scale = 1 - (progress * 0.02);
+    const opacity = 1 - (progress * 0.1);
     
     swipeState.element.style.transform = `translateX(${moveX}px) scale(${scale})`;
-    swipeState.element.style.opacity = 1 - (progress * 0.08); // Max 92% opacity
+    swipeState.element.style.opacity = opacity;
   }
 }
 
 function endSwipe(e) {
-  if (!swipeState.isDragging) return;
+  if (!swipeState.element) return;
+  
+  // APPLE: Only trigger if it was a confirmed horizontal swipe
+  if (!swipeState.isDragging || !swipeState.isHorizontalSwipe) {
+    resetSwipe();
+    return;
+  }
   
   const deltaX = swipeState.currentX - swipeState.startX;
+  const deltaY = swipeState.currentY - swipeState.startY;
+  const deltaTime = Date.now() - swipeState.startTime;
   
-  if (Math.abs(deltaX) > swipeState.threshold) {
+  // APPLE: Calculate velocity (pixels per millisecond)
+  const velocity = Math.abs(deltaX) / deltaTime;
+  
+  // APPLE: Trigger based on distance OR velocity (like iOS)
+  const distanceThreshold = Math.abs(deltaX) > swipeState.threshold;
+  const velocityThreshold = velocity > swipeState.velocityThreshold;
+  
+  if ((distanceThreshold || velocityThreshold) && Math.abs(deltaY) < 50) {
     const dir = deltaX < 0 ? 1 : -1;
     
-    // FIXED: Direct function calls work reliably
+    // Execute swipe action
     if (swipeState.type === 'period') changePeriod(dir);
     if (swipeState.type === 'month') changeMonth(dir);
     
-    hapticFeedback();
-    showQuickFeedback(swipeState.element, deltaX < 0);
+    // APPLE: Gentle haptic
+    if (navigator.vibrate) {
+      navigator.vibrate(15);
+    }
+    
+    // APPLE: Smooth completion animation
+    animateSwipeComplete(swipeState.element, dir);
+  } else {
+    // APPLE: Bounce back if threshold not met
+    resetSwipe();
   }
   
-  // Smooth reset with feel
-  swipeState.element.style.transition = 'all 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+  // Clear state
+  swipeState.element = null;
+  swipeState.isDragging = false;
+  swipeState.isHorizontalSwipe = null;
+}
+
+function cancelSwipe(e) {
+  if (swipeState.element) {
+    resetSwipe();
+  }
+  swipeState.element = null;
+  swipeState.isDragging = false;
+  swipeState.isHorizontalSwipe = null;
+}
+
+function resetSwipe() {
+  if (!swipeState.element) return;
+  
+  // APPLE: Spring animation back to origin
+  swipeState.element.style.transition = 'all 0.35s cubic-bezier(0.36, 0.66, 0.04, 1)';
   swipeState.element.style.transform = 'translateX(0) scale(1)';
   swipeState.element.style.opacity = '1';
   
-  setTimeout(() => swipeState.element.style.transition = '', 250);
-  
-  swipeState.isDragging = false;
+  setTimeout(() => {
+    if (swipeState.element) {
+      swipeState.element.style.transition = '';
+    }
+  }, 350);
 }
 
-function hapticFeedback() {
-  navigator.vibrate?.([40, 20, 40]);
+function animateSwipeComplete(element, direction) {
+  // APPLE: Elegant slide-out and slide-in
+  const slideAmount = direction > 0 ? '-50px' : '50px';
+  
+  element.style.transition = 'all 0.3s cubic-bezier(0.32, 0.72, 0, 1)';
+  element.style.transform = `translateX(${slideAmount}) scale(0.98)`;
+  element.style.opacity = '0.6';
+  
+  setTimeout(() => {
+    element.style.transition = 'all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)';
+    element.style.transform = 'translateX(0) scale(1)';
+    element.style.opacity = '1';
+    
+    setTimeout(() => {
+      element.style.transition = '';
+    }, 400);
+  }, 150);
 }
 
-function showQuickFeedback(element, isNext) {
-  const arrow = document.createElement('div');
-  arrow.innerHTML = isNext ? '→' : '←';
-  arrow.style.cssText = `
-    position: absolute; top: 50%; ${isNext ? 'left' : 'right'}: 25px;
-    transform: translateY(-50%);
-    font-size: 2rem; color: rgba(251,191,36,0.9);
-    font-weight: 800; pointer-events: none; z-index: 10;
-    animation: quickSwipe 0.4s ease-out forwards;
-  `;
-  
-  element.style.position = 'relative';
-  element.appendChild(arrow);
-  
-  setTimeout(() => arrow.remove(), 400);
-}
-
-// Load & init
+// Initialize on load
 document.addEventListener('DOMContentLoaded', initSwipeGestures);
 </script>
 
-<style>
-@keyframes quickSwipe {
-  0% { opacity: 0; transform: translateY(-50%) scale(0.5) translateX(0); }
-  50% { opacity: 1; transform: translateY(-50%) scale(1.2) translateX(${isNext ? '10px' : '-10px'}); }
-  100% { opacity: 0; transform: translateY(-50%) scale(0.8) translateX(${isNext ? '20px' : '-20px'}); }
-}
-</style>
 
 
 
