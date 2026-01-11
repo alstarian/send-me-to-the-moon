@@ -926,6 +926,40 @@ button,
 }
 
 
+/* =============================================
+   SCROLLBAR - BLACK FOR WHITE THEME
+   ============================================= */
+
+/* EXPENSE LIST SCROLLBAR */
+.expenses-list::-webkit-scrollbar {
+  width: 8px;
+}
+
+.expenses-list::-webkit-scrollbar-track {
+  background: rgba(0,0,0,0.05);
+  border-radius: 10px;
+}
+
+.expenses-list::-webkit-scrollbar-thumb {
+  background: rgba(0,0,0,0.3) !important;
+  border-radius: 10px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+.expenses-list::-webkit-scrollbar-thumb:hover {
+  background: rgba(0,0,0,0.5) !important;
+}
+
+/* FIREFOX SCROLLBAR */
+.expenses-list {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0,0,0,0.3) rgba(0,0,0,0.05);
+}
+
+
+
+
 
 </style>
 </head>
