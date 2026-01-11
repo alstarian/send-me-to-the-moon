@@ -388,10 +388,13 @@ body {
 }
 
 /* ACCENT COLORS - From your screenshot */
+/* TITLE FIX */
 .app-title {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
-  background-size: 300% 300%;
-  animation: gradient-shift 4s ease infinite;
+  background: linear-gradient(135deg, #e0e6ed, #c0d0e0, #e0e6ed) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  color: #e0e6ed !important;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.8) !important;
 }
 
 .summary-value.positive {
