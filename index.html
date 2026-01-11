@@ -1220,6 +1220,112 @@ if (document.readyState === 'loading') {
 </script>
 
 
+<script>
+// =============================================
+// AUTO-LOCK AFTER 5 SECONDS INACTIVITY
+// =============================================
+
+let inactivityTimer;
+let isLocked = false;
+
+function startInactivityTimer() {
+  clearTimeout(inactivityTimer);
+  inactivityTimer = setTimeout(() => {
+    if (!isLocked) lockApp();
+  }, 5000); // 5 seconds
+}
+
+function lockApp() {
+  isLocked = true;
+  clearTimeout(inactivityTimer);
+  
+  const lockScreen = document.createElement('div');
+  lockScreen.id = 'lock-screen';
+  lockScreen.innerHTML = `
+    <div style="position:fixed;top:0;left:0;width:100vw;height:100vh;background:linear-gradient(135deg,#000,#1a1a1a);display:flex;align-items:center;justify-content:center;z-index:10000;">
+      <div style="background:rgba(30,30,30,0.98);border-radius:24px;padding:50px;max-width:380px;width:90%;text-align:center;border:1px solid rgba(255,255,255,0.2);box-shadow:0 40px 100px rgba(0,0,0,0.9);">
+        <div style="font-size:5rem;margin-bottom:20px;color:#fbbf24;">🔒</div>
+        <h2 style="color:#fff;font-size:1.7rem;margin-bottom:12px;">App Locked</h2>
+        <p style="color:rgba(255,255,255,0.7);font-size:1rem;margin-bottom:32px;">Enter your 6-digit PIN</p>
+        
+        <!-- PIN INPUTS -->
+        <div style="display:flex;gap:12px;justify-content:center;margin-bottom:24px;">
+          <input type="password" maxlength="1" class="pin-input" inputmode="numeric" style="width:55px;height:65px;font-size:28px;font-weight:700;text-align:center;border:2px solid rgba(255,255,255,0.3);border-radius:12px;background:rgba(255,255,255,0.06);color:#fff;">
+          <input type="password" maxlength="1" class="pin-input" inputmode="numeric" style="width:55px;height:65px;font-size:28px;font-weight:700;text-align:center;border:2px solid rgba(255,255,255,0.3);border-radius:12px;background:rgba(255,255,255,0.06);color:#fff;">
+          <input type="password" maxlength="1" class="pin-input" inputmode="numeric" style="width:55px;height:65px;font-size:28px;font-weight:700;text-align:center;border:2px solid rgba(255,255,255,0.3);border-radius:12px;background:rgba(255,255,255,0.06);color:#fff;">
+          <input type="password" maxlength="1" class="pin-input" inputmode="numeric" style="width:55px;height:65px;font-size:28px;font-weight:700;text-align:center;border:2px solid rgba(255,255,255,0.3);border-radius:12px;background:rgba(255,255,255,0.06);color:#fff;">
+          <input type="password" maxlength="1" class="pin-input" inputmode="numeric" style="width:55px;height:65px;font-size:28px;font-weight:700;text-align:center;border:2px solid rgba(255,255,255,0.3);border-radius:12px;background:rgba(255,255,255,0.06);color:#fff;">
+          <input type="password" maxlength="1" class="pin-input" inputmode="numeric" style="width:55px;height:65px;font-size:28px;font-weight:700;text-align:center;border:2px solid rgba(255,255,255,0.3);border-radius:12px;background:rgba(255,255,255,0.06);color:#fff;">
+        </div>
+        
+        <div id="pin-error" style="color:#ef4444;font-size:0.9rem;min-height:20px;"></div>
+      </div>
+    </div>
+  `;
+  
+  document.body.appendChild(lockScreen);
+  
+  // PIN INPUT LOGIC
+  const inputs = lockScreen.querySelectorAll('.pin-input');
+  inputs[0].focus();
+  
+  inputs.forEach((input, i) => {
+    input.oninput = () => {
+      if (input.value.length === 1 && i < 5) {
+        inputs[i + 1].focus();
+      } else if (i === 5) {
+        checkPin();
+      }
+    };
+    
+    input.onkeydown = (e) => {
+      if (e.key === 'Backspace' && !input.value && i > 0) {
+        inputs[i - 1].focus();
+      }
+    };
+  });
+}
+
+function checkPin() {
+  const inputs = document.querySelectorAll('#lock-screen .pin-input');
+  const pin = Array.from(inputs).map(i => i.value).join('');
+  
+  // Check your saved PIN (or fallback to 000000)
+  const savedPin = localStorage.getItem('userPasscode') || '000000';
+  
+  if (pin === savedPin) {
+    const screen = document.getElementById('lock-screen');
+    screen.remove();
+    isLocked = false;
+    startInactivityTimer();
+  } else {
+    const error = document.getElementById('pin-error');
+    error.textContent = '❌ Wrong PIN';
+    
+    inputs.forEach(i => {
+      i.value = '';
+      i.style.borderColor = '#ef4444';
+    });
+    
+    setTimeout(() => {
+      error.textContent = '';
+      inputs.forEach(i => i.style.borderColor = 'rgba(255,255,255,0.3)');
+      inputs[0].focus();
+    }, 1000);
+  }
+}
+
+// TRACK ACTIVITY
+['mousedown','mousemove','keypress','scroll','touchstart'].forEach(evt => {
+  document.addEventListener(evt, () => {
+    if (!isLocked) startInactivityTimer();
+  }, true);
+});
+
+// START TIMER
+document.addEventListener('DOMContentLoaded', startInactivityTimer);
+console.log('🔒 Auto-lock: 5 seconds inactivity');
+</script>
 
 
 
