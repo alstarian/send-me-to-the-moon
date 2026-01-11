@@ -515,6 +515,149 @@ input:focus, select:focus {
   color: #fff;
 }
 
+/* =============================================
+   WHITE & BLACK COLOR SCHEME
+   ============================================= */
+
+/* BLACK BACKGROUND */
+body {
+  background: #000000 !important;
+}
+
+/* WHITE HEADER */
+.app-header {
+  background: rgba(255,255,255,0.95) !important;
+  border-bottom: 1px solid rgba(0,0,0,0.1) !important;
+  color: #000 !important;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.3);
+}
+
+/* WHITE TITLE ON BLACK */
+.app-title {
+  background: linear-gradient(135deg, #000000, #333333) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  color: #000 !important;
+  text-shadow: none !important;
+}
+
+.app-logo {
+  filter: none !important;
+  color: #000 !important;
+}
+
+/* WHITE PANES */
+.pane {
+  background: rgba(255,255,255,0.92) !important;
+  border: 1px solid rgba(0,0,0,0.08) !important;
+  color: #1a1a1a !important;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.15),
+              inset 0 1px 0 rgba(255,255,255,0.9);
+}
+
+/* WHITE SUMMARY CARDS */
+.summary-item {
+  background: rgba(255,255,255,0.95) !important;
+  border: 1px solid rgba(0,0,0,0.06) !important;
+  color: #1a1a1a !important;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+}
+
+.summary-item:hover {
+  background: #ffffff !important;
+  box-shadow: 0 16px 48px rgba(0,0,0,0.2);
+}
+
+/* BLACK TEXT */
+.summary-label, .input-label, .pane-title {
+  color: #333333 !important;
+}
+
+.summary-value {
+  color: #1a1a1a !important;
+}
+
+/* WHITE INPUTS WITH BLACK TEXT */
+input, select {
+  background: rgba(255,255,255,0.9) !important;
+  border: 1.5px solid rgba(0,0,0,0.1) !important;
+  color: #1a1a1a !important;
+}
+
+input::placeholder {
+  color: rgba(50,50,50,0.6) !important;
+}
+
+input:focus, select:focus {
+  background: #ffffff !important;
+  border-color: rgba(0,0,0,0.2) !important;
+  box-shadow: 0 0 0 3px rgba(0,0,0,0.08);
+}
+
+/* WHITE BUTTONS WITH BLACK TEXT */
+.btn {
+  background: rgba(255,255,255,0.95) !important;
+  color: #1a1a1a !important;
+  border: 1px solid rgba(0,0,0,0.1) !important;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+}
+
+.btn:hover {
+  background: #ffffff !important;
+  box-shadow: 0 12px 32px rgba(0,0,0,0.25);
+}
+
+/* SYNC BUTTONS - Black on white */
+.sync-btn {
+  background: rgba(255,255,255,0.9) !important;
+  color: #1a1a1a !important;
+  border: 1px solid rgba(0,0,0,0.1) !important;
+}
+
+.sync-btn:hover {
+  background: #ffffff !important;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+}
+
+/* EXPENSE ITEMS - White cards */
+.expense-item {
+  background: rgba(255,255,255,0.95) !important;
+  border: 1px solid rgba(0,0,0,0.08) !important;
+  color: #1a1a1a !important;
+}
+
+/* ACTION BUTTONS */
+.action-btn.edit {
+  background: #4f46e5 !important; /* Indigo */
+}
+
+.action-btn.delete {
+  background: #dc2626 !important; /* Red */
+}
+
+/* MODALS - White */
+.modal-content {
+  background: rgba(255,255,255,0.95) !important;
+  border: 1px solid rgba(0,0,0,0.1) !important;
+  color: #1a1a1a !important;
+}
+
+/* SCROLLBAR - Clean */
+.expenses-list::-webkit-scrollbar-thumb {
+  background: rgba(0,0,0,0.2) !important;
+  border-radius: 10px;
+}
+
+/* FOCUS RINGS - Black */
+*:focus-visible {
+  outline: 2px solid rgba(0,0,0,0.2) !important;
+}
+
+/* SELECTION */
+::selection {
+  background: rgba(0,0,0,0.2) !important;
+  color: #1a1a1a !important;
+}
 
 
 
