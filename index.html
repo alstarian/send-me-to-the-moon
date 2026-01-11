@@ -947,207 +947,276 @@ document.getElementById('salary-input').addEventListener('change', function() {
   </div>
 </div>
 
+
 <script>
 // =============================================
-// PRODUCTION SWIPE GESTURES v2.0
-// Perfect Apple-quality with all edge cases handled
+// WORKING SWIPE GESTURES - TESTED VERSION
 // =============================================
 
-class SwipeManager {
-  constructor() {
-    this.state = {
-      startX: 0, startY: 0, currentX: 0, currentY: 0,
-      startTime: 0, duration: 0,
-      isActive: false, isHorizontal: false, isCommitted: false,
-      threshold: 75, velocityMin: 0.25, verticalMax: 30,
-      element: null, paneType: null
-    };
-    
-    this.init();
-  }
-  
-  init() {
-    const panes = [
-      { el: document.getElementById('pane-period'), type: 'period' },
-      { el: document.querySelector('.pane.monthly'), type: 'month' }
-    ];
-    
-    panes.forEach(({ el, type }) => {
-      if (!el) return;
-      
-      ['touchstart', 'mousedown'].forEach(startEvt => {
-        el.addEventListener(startEvt, (e) => this.start(e, type), { passive: true });
-      });
-      
-      ['touchmove', 'mousemove'].forEach(moveEvt => {
-        el.addEventListener(moveEvt, (e) => this.move(e), { passive: false });
-      });
-      
-      ['touchend', 'mouseup'].forEach(endEvt => {
-        el.addEventListener(endEvt, (e) => this.end(e), { passive: true });
-      });
-      
-      ['touchcancel', 'mouseleave'].forEach(cancelEvt => {
-        el.addEventListener(cancelEvt, () => this.cancel(), { passive: true });
-      });
-    });
-  }
-  
-  start(e, type) {
-    // Skip interactive content
-    if (e.target.matches('*[class*="btn"], input, select, button, a, .expense-item *')) {
+(function() {
+  let swipe = {
+    startX: 0, startY: 0, 
+    currentX: 0, currentY: 0,
+    element: null, paneType: null,
+    isTracking: false, hasCommitted: false
+  };
+
+  function initSwipes() {
+    // Wait for DOM and your functions to be ready
+    if (typeof changePeriod === 'undefined' || typeof changeMonth === 'undefined') {
+      setTimeout(initSwipes, 100);
       return;
     }
+
+    const expensePane = document.getElementById('pane-period');
+    const utilityPane = document.querySelector('.pane.monthly');
+
+    if (expensePane) setupPane(expensePane, 'expense');
+    if (utilityPane) setupPane(utilityPane, 'utility');
+
+    console.log('✅ Swipe gestures initialized');
+  }
+
+  function setupPane(pane, type) {
+    pane.dataset.swipeType = type;
+
+    // Touch events
+    pane.addEventListener('touchstart', handleStart, { passive: true });
+    pane.addEventListener('touchmove', handleMove, { passive: false });
+    pane.addEventListener('touchend', handleEnd, { passive: true });
     
-    const touch = e.touches?.[0] || e;
-    
-    this.state = {
-      ...this.state,
-      element: e.currentTarget,
-      paneType: type,
+    // Mouse events (desktop)
+    pane.addEventListener('mousedown', handleStart);
+    pane.addEventListener('mousemove', handleMove);
+    pane.addEventListener('mouseup', handleEnd);
+    pane.addEventListener('mouseleave', handleEnd);
+  }
+
+  function handleStart(e) {
+    // Ignore if clicking on interactive elements
+    const target = e.target;
+    if (target.tagName === 'INPUT' || 
+        target.tagName === 'SELECT' || 
+        target.tagName === 'BUTTON' ||
+        target.closest('.expense-item') ||
+        target.closest('.quick-add-btn')) {
+      return;
+    }
+
+    const touch = e.touches ? e.touches[0] : e;
+    swipe = {
       startX: touch.clientX,
       startY: touch.clientY,
       currentX: touch.clientX,
       currentY: touch.clientY,
-      startTime: performance.now(),
-      isActive: true,
-      isHorizontal: false,
-      isCommitted: false
+      element: e.currentTarget,
+      paneType: e.currentTarget.dataset.swipeType,
+      isTracking: true,
+      hasCommitted: false
     };
   }
-  
-  move(e) {
-    if (!this.state.isActive || !this.state.element) return;
-    
-    const touch = e.touches?.[0] || e;
-    this.state.currentX = touch.clientX;
-    this.state.currentY = touch.clientY;
-    
-    const dx = this.state.currentX - this.state.startX;
-    const dy = this.state.currentY - this.state.startY;
-    
-    // Phase 1: Direction lock (needs 20px movement)
-    if (!this.state.isCommitted) {
-      if (Math.abs(dx) < 20 && Math.abs(dy) < 20) return;
-      
-      this.state.isHorizontal = Math.abs(dx) > Math.abs(dy) * 1.8;
-      this.state.isCommitted = true;
-      
-      if (!this.state.isHorizontal) {
-        this.cancel();
+
+  function handleMove(e) {
+    if (!swipe.isTracking || !swipe.element) return;
+
+    const touch = e.touches ? e.touches[0] : e;
+    swipe.currentX = touch.clientX;
+    swipe.currentY = touch.clientY;
+
+    const deltaX = swipe.currentX - swipe.startX;
+    const deltaY = swipe.currentY - swipe.startY;
+
+    // Commit to horizontal swipe if movement is mostly horizontal
+    if (!swipe.hasCommitted && (Math.abs(deltaX) > 15 || Math.abs(deltaY) > 15)) {
+      swipe.hasCommitted = true;
+      if (Math.abs(deltaX) < Math.abs(deltaY) * 1.5) {
+        // More vertical than horizontal - cancel
+        resetSwipe();
         return;
       }
     }
-    
-    if (this.state.isHorizontal) {
+
+    if (swipe.hasCommitted && Math.abs(deltaX) > Math.abs(deltaY)) {
       e.preventDefault();
       
-      // Physics: Overscroll rubberbanding
-      const rawDx = dx;
-      const resistance = Math.abs(rawDx) > 120 ? 0.025 : 0.11;
-      const translateX = rawDx * resistance;
+      // Visual feedback
+      const moveX = deltaX * 0.1;
+      const opacity = 1 - Math.abs(deltaX) / 600;
       
-      // Subtle depth effect
-      const progress = Math.min(Math.abs(rawDx) / 250, 1);
-      const scaleX = 1 - (progress * 0.018);
-      const scaleY = 1 - (progress * 0.012);
-      
-      this.state.element.style.transform = 
-        `translateX(${translateX}px) scale(${scaleX}, ${scaleY})`;
-      this.state.element.style.opacity = 1 - (progress * 0.12);
+      swipe.element.style.transform = `translateX(${moveX}px)`;
+      swipe.element.style.opacity = Math.max(opacity, 0.9);
+      swipe.element.style.transition = 'none';
     }
   }
-  
-  end(e) {
-    if (!this.state.isActive || !this.state.isCommitted || !this.state.isHorizontal) {
-      this.reset();
+
+  function handleEnd(e) {
+    if (!swipe.isTracking || !swipe.element || !swipe.hasCommitted) {
+      resetSwipe();
       return;
     }
-    
-    const now = performance.now();
-    this.state.duration = now - this.state.startTime;
-    
-    const dx = this.state.currentX - this.state.startX;
-    const dy = this.state.currentY - this.state.startY;
-    const velocity = Math.abs(dx) / this.state.duration;
-    
-    // Success criteria (75px OR fast swipe)
-    const success = (
-      Math.abs(dx) >= this.state.threshold ||
-      (velocity >= this.state.velocityMin && Math.abs(dx) >= 45)
-    ) && Math.abs(dy) <= this.state.verticalMax;
-    
-    if (success) {
-      this.completeSwipe(dx);
+
+    const deltaX = swipe.currentX - swipe.startX;
+    const deltaY = swipe.currentY - swipe.startY;
+
+    // Must be horizontal and exceed threshold
+    if (Math.abs(deltaX) > 60 && Math.abs(deltaX) > Math.abs(deltaY)) {
+      const direction = deltaX < 0 ? 1 : -1;
+
+      // Call the appropriate function
+      try {
+        if (swipe.paneType === 'expense') {
+          changePeriod(direction);
+        } else if (swipe.paneType === 'utility') {
+          changeMonth(direction);
+        }
+
+        // Haptic feedback
+        if (navigator.vibrate) {
+          navigator.vibrate(20);
+        }
+
+        // Success animation
+        animateSuccess(swipe.element, direction);
+      } catch (error) {
+        console.error('Swipe error:', error);
+        resetSwipe();
+      }
     } else {
-      this.reset();
+      resetSwipe();
     }
+
+    swipe.isTracking = false;
   }
-  
-  completeSwipe(dx) {
-    const dir = dx < 0 ? 1 : -1;
+
+  function animateSuccess(element, direction) {
+    const slideOut = direction > 0 ? '-40px' : '40px';
     
-    // Execute navigation
-    if (this.state.paneType === 'period') {
-      changePeriod(dir);
-    } else if (this.state.paneType === 'month') {
-      changeMonth(dir);
-    }
-    
-    // iOS-style haptic
-    navigator.vibrate?.([10, 30, 10]);
-    
-    // Completion animation
-    this.state.element.style.transition = 
-      'all 320ms cubic-bezier(0.32, 0.72, 0, 1)';
-    
-    const slideOut = dx < 0 ? '-60px' : '60px';
-    this.state.element.style.transform = 
-      `translateX(${slideOut}) scale(0.97)`;
-    this.state.element.style.opacity = '0.4';
-    
+    element.style.transition = 'all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+    element.style.transform = `translateX(${slideOut})`;
+    element.style.opacity = '0.6';
+
     setTimeout(() => {
-      this.state.element.style.transition = 
-        'all 400ms cubic-bezier(0.34, 1.56, 0.64, 1)';
-      this.state.element.style.transform = 'translateX(0) scale(1)';
-      this.state.element.style.opacity = '1';
+      element.style.transform = 'translateX(0)';
+      element.style.opacity = '1';
       
       setTimeout(() => {
-        this.state.element.style.transition = '';
-      }, 400);
-    }, 160);
-    
-    this.reset();
+        element.style.transition = '';
+      }, 300);
+    }, 150);
   }
-  
-  reset() {
-    if (!this.state.element) return;
+
+  function resetSwipe() {
+    if (swipe.element) {
+      swipe.element.style.transition = 'all 0.25s ease-out';
+      swipe.element.style.transform = 'translateX(0)';
+      swipe.element.style.opacity = '1';
+      
+      setTimeout(() => {
+        if (swipe.element) {
+          swipe.element.style.transition = '';
+        }
+      }, 250);
+    }
     
-    this.state.element.style.transition = 
-      'all 300ms cubic-bezier(0.36, 0.66, 0.04, 1)';
-    this.state.element.style.transform = 'translateX(0) scale(1)';
-    this.state.element.style.opacity = '1';
-    
-    setTimeout(() => {
-      if (this.state.element) {
-        this.state.element.style.transition = '';
-      }
-    }, 300);
+    swipe.isTracking = false;
+    swipe.hasCommitted = false;
   }
-  
-  cancel() {
-    this.reset();
-    this.state.isActive = false;
-    this.state.isCommitted = false;
-    this.state.isHorizontal = false;
-    this.state.element = null;
+
+  // Initialize when everything is ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initSwipes);
+  } else {
+    initSwipes();
   }
+})();
+</script>
+
+<!-- VISUAL SWIPE INDICATORS (Shows arrows on hover) -->
+<style>
+.pane {
+  position: relative;
 }
 
-// Initialize production swipe manager
-document.addEventListener('DOMContentLoaded', () => {
-  new SwipeManager();
-});
+/* Only show on desktop hover */
+@media (hover: hover) and (pointer: fine) {
+  .pane::before,
+  .pane::after {
+    content: '‹';
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 3rem;
+    color: rgba(251, 191, 36, 0.2);
+    font-weight: 900;
+    pointer-events: none;
+    opacity: 0;
+    transition: all 0.3s;
+    z-index: 5;
+  }
+
+  .pane::before {
+    left: 20px;
+  }
+
+  .pane::after {
+    content: '›';
+    right: 20px;
+  }
+
+  .pane:hover::before,
+  .pane:hover::after {
+    opacity: 1;
+    color: rgba(251, 191, 36, 0.5);
+  }
+
+  .pane:hover::before {
+    left: 15px;
+  }
+
+  .pane:hover::after {
+    right: 15px;
+  }
+}
+</style>
+
+<!-- FIRST-TIME USER TUTORIAL -->
+<script>
+function showSwipeTutorial() {
+  if (localStorage.getItem('swipe-tutorial-seen')) return;
+
+  setTimeout(() => {
+    const tutorial = document.createElement('div');
+    tutorial.innerHTML = `
+      <div style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.95);z-index:9999;display:flex;align-items:center;justify-content:center;">
+        <div style="max-width:400px;text-align:center;padding:40px;">
+          <div style="font-size:5rem;margin-bottom:20px;">👆</div>
+          <h2 style="color:#fbbf24;font-size:1.8rem;margin-bottom:12px;">Swipe to Navigate</h2>
+          <p style="color:rgba(255,255,255,0.8);font-size:1rem;line-height:1.6;margin-bottom:30px;">
+            Swipe <strong style="color:#fff;">left</strong> or <strong style="color:#fff;">right</strong> 
+            anywhere on the panels to quickly navigate between periods and months!
+          </p>
+          <div style="font-size:3rem;margin:30px 0;display:flex;gap:20px;justify-content:center;">
+            <span>👈</span>
+            <span style="color:#fbbf24;">📊</span>
+            <span>👉</span>
+          </div>
+          <button onclick="this.closest('div').parentElement.remove();localStorage.setItem('swipe-tutorial-seen','true');" 
+            style="background:linear-gradient(135deg,#fbbf24,#f59e0b);color:#000;border:none;padding:14px 32px;border-radius:10px;font-size:1rem;font-weight:700;cursor:pointer;box-shadow:0 4px 16px rgba(251,191,36,0.5);">
+            Got it! ✨
+          </button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(tutorial);
+  }, 1500);
+}
+
+// Show tutorial after page loads
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => setTimeout(showSwipeTutorial, 500));
+} else {
+  setTimeout(showSwipeTutorial, 500);
+}
 </script>
 
 
