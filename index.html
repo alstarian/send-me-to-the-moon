@@ -957,54 +957,63 @@ button,
   scrollbar-color: rgba(0,0,0,0.3) rgba(0,0,0,0.05);
 }
 
-
 /* =============================================
-   FIX MODAL HEADER OVERLAP
+   BULLETPROOF MODAL HEADER FIX
    ============================================= */
 
-/* ADD MORE TOP PADDING TO MODALS */
+/* MODAL CONTAINER - START LOWER */
+.modal {
+  padding-top: 120px !important;
+  align-items: flex-start !important;
+  overflow-y: auto;
+}
+
+/* MODAL CONTENT - ENSURE SPACING */
 .modal-content {
-  padding: 60px 48px 48px 48px !important;
-  margin-top: 20px;
+  margin-top: 40px !important;
+  padding: 50px 40px !important;
+  max-height: calc(100vh - 180px);
+  overflow-y: auto;
 }
 
-/* MODAL HEADER - MORE SPACING */
+/* MODAL HEADER - CLEAR SPACING */
 .modal-header {
-  margin-bottom: 40px !important;
-  padding-top: 10px;
+  padding-top: 0 !important;
+  margin-top: 0 !important;
+  margin-bottom: 32px !important;
   position: relative;
+  z-index: 1;
 }
 
-/* MODAL TITLE - MOVE DOWN */
+/* MODAL TITLE - FORCE DOWN */
 .modal-title {
   margin-top: 0 !important;
-  padding-top: 0;
-  line-height: 1.4;
+  padding-top: 0 !important;
+  font-size: 1.6rem !important;
 }
 
-/* CLOSE BUTTON - REPOSITION */
-.close-btn {
-  position: absolute;
-  top: 0;
-  right: 0;
+/* APP HEADER - ENSURE IT STAYS ON TOP */
+.app-header {
+  position: fixed !important;
+  top: 0 !important;
+  z-index: 1001 !important;
 }
 
-/* ENSURE MODAL DOESN'T TOUCH TOP */
+/* MODAL BACKDROP - BELOW HEADER */
 .modal {
-  padding-top: 40px;
-  align-items: flex-start !important;
+  z-index: 1000 !important;
 }
 
-.modal.active {
-  overflow-y: auto;
-  padding: 40px 0;
-}
-
-/* SETTINGS/INSIGHTS SPECIFIC */
-#settings-modal .modal-content,
-#insights-modal .modal-content,
-#analytics-modal .modal-content {
-  padding-top: 70px !important;
+/* MOBILE FIX */
+@media (max-width: 768px) {
+  .modal {
+    padding-top: 100px !important;
+  }
+  
+  .modal-content {
+    margin-top: 20px !important;
+    padding: 40px 24px !important;
+  }
 }
 
 
