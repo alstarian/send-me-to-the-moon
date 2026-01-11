@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+hi<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -958,6 +958,54 @@ button,
 }
 
 
+/* =============================================
+   FIX MODAL HEADER OVERLAP
+   ============================================= */
+
+/* ADD MORE TOP PADDING TO MODALS */
+.modal-content {
+  padding: 60px 48px 48px 48px !important;
+  margin-top: 20px;
+}
+
+/* MODAL HEADER - MORE SPACING */
+.modal-header {
+  margin-bottom: 40px !important;
+  padding-top: 10px;
+  position: relative;
+}
+
+/* MODAL TITLE - MOVE DOWN */
+.modal-title {
+  margin-top: 0 !important;
+  padding-top: 0;
+  line-height: 1.4;
+}
+
+/* CLOSE BUTTON - REPOSITION */
+.close-btn {
+  position: absolute;
+  top: 0;
+  right: 0;
+}
+
+/* ENSURE MODAL DOESN'T TOUCH TOP */
+.modal {
+  padding-top: 40px;
+  align-items: flex-start !important;
+}
+
+.modal.active {
+  overflow-y: auto;
+  padding: 40px 0;
+}
+
+/* SETTINGS/INSIGHTS SPECIFIC */
+#settings-modal .modal-content,
+#insights-modal .modal-content,
+#analytics-modal .modal-content {
+  padding-top: 70px !important;
+}
 
 
 
