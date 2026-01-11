@@ -795,6 +795,104 @@ select option {
 }
 
 
+
+
+/* =============================================
+   FORCE ALL MODAL TEXT BLACK - BULLETPROOF
+   ============================================= */
+
+/* ALL MODAL CONTENT */
+#settings-modal *,
+#analytics-modal *,
+#insights-modal *,
+.modal-content * {
+  color: #1a1a1a !important;
+}
+
+/* SPECIFIC TEXT ELEMENTS */
+.modal-title,
+.insight-title,
+.insight-label,
+.insight-value,
+.stat-label,
+.stat-value,
+.settings-info-title,
+.settings-info-value,
+.analytics-table th,
+.analytics-table td,
+.category-name,
+.category-amount {
+  color: #1a1a1a !important;
+  font-weight: 600 !important;
+}
+
+/* SYNC BUTTONS TEXT */
+.sync-btn,
+.sync-btn * {
+  color: #1a1a1a !important;
+  font-weight: 700 !important;
+}
+
+/* LABELS & SECONDARY TEXT */
+.summary-label,
+.input-label,
+.quick-add-label,
+.insight-trend {
+  color: #333333 !important;
+}
+
+/* PLACEHOLDER & OPTION TEXT */
+input::placeholder,
+select,
+select option,
+.security-question-select option {
+  color: #666666 !important;
+}
+
+/* BUTTON TEXT */
+button,
+.modal-btn,
+.sync-btn,
+.quick-add-btn,
+.action-btn {
+  color: #1a1a1a !important;
+}
+
+/* OVERWRITE ANY INHERITED WHITE TEXT */
+#settings-modal,
+#analytics-modal,
+#insights-modal,
+.modal-content,
+.sync-bar,
+.insight-section,
+.insight-card,
+.stat-card,
+.settings-info {
+  color: #1a1a1a !important;
+}
+
+/* INSIGHTS SPECIFIC */
+.insight-trend.up {
+  color: #dc2626 !important;
+}
+
+.insight-trend.down {
+  color: #059669 !important;
+}
+
+/* TABLE ROWS */
+.analytics-table tr {
+  color: #1a1a1a !important;
+}
+
+/* EMERGENCY OVERRIDE */
+[data-theme="white"] *,
+.white-theme * {
+  color: #1a1a1a !important;
+}
+
+
+
 </style>
 </head>
 <body>
