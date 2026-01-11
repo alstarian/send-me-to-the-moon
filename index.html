@@ -371,6 +371,145 @@ input:focus, select:focus {
   border-radius: 32px;
 }
 
+/* =============================================
+   NEW COLOR SCHEME - Matches your screenshot
+   ============================================= */
+
+/* PRIMARY BACKGROUND */
+body {
+  background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
+}
+
+/* DEEPER CARD BACKGROUNDS */
+.pane, .modal-content, .summary-item {
+  background: linear-gradient(145deg, rgba(15,15,35,0.95), rgba(26,26,46,0.98));
+  border: 1px solid rgba(255,255,255,0.08);
+}
+
+/* ACCENT COLORS - From your screenshot */
+.app-title {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+  background-size: 300% 300%;
+  animation: gradient-shift 4s ease infinite;
+}
+
+.summary-value.positive {
+  color: #00d4aa; /* Teal from screenshot */
+  text-shadow: 0 2px 12px rgba(0,212,170,0.4);
+}
+
+.summary-value {
+  color: #e0e6ed; /* Light steel */
+}
+
+/* BUTTON GRADIENTS - Screenshot exact */
+.sync-btn {
+  background: linear-gradient(135deg, rgba(102,126,234,0.2), rgba(118,75,162,0.15));
+  border-color: rgba(102,126,234,0.4);
+}
+
+.sync-btn:hover {
+  background: linear-gradient(135deg, rgba(102,126,234,0.3), rgba(118,75,162,0.25));
+}
+
+.btn {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+  box-shadow: 0 8px 24px rgba(102,126,234,0.4);
+}
+
+.btn:hover {
+  background: linear-gradient(135deg, #5a6fd8, #6a4190);
+  transform: translateY(-2px);
+}
+
+/* INPUT FIELDS - Purple accent */
+input:focus, select:focus {
+  border-color: rgba(102,126,234,0.6);
+  box-shadow: 0 0 0 4px rgba(102,126,234,0.15);
+}
+
+/* SUMMARY CARDS - Purple glow */
+.summary-item:hover {
+  box-shadow: 0 16px 40px rgba(102,126,234,0.3),
+              0 0 20px rgba(102,126,234,0.15);
+}
+
+/* PANES - Purple borders */
+.pane.current {
+  border-color: rgba(102,126,234,0.5);
+  box-shadow: 0 24px 64px rgba(0,0,0,0.6),
+              0 0 40px rgba(102,126,234,0.25);
+}
+
+.pane.monthly {
+  border-color: rgba(240,147,251,0.4);
+  box-shadow: 0 24px 64px rgba(0,0,0,0.6),
+              0 0 40px rgba(240,147,251,0.2);
+}
+
+/* BUTTONS - New gradient palette */
+.sync-btn.export {
+  background: linear-gradient(135deg, rgba(0,212,170,0.25), rgba(0,212,170,0.15));
+  border-color: rgba(0,212,170,0.4);
+}
+
+.sync-btn.import {
+  background: linear-gradient(135deg, rgba(102,126,234,0.25), rgba(118,75,162,0.15));
+  border-color: rgba(102,126,234,0.4);
+}
+
+.sync-btn.settings {
+  background: linear-gradient(135deg, rgba(240,147,251,0.25), rgba(118,75,162,0.15));
+  border-color: rgba(240,147,251,0.4);
+}
+
+/* EXPENSE ITEMS */
+.expense-item {
+  background: linear-gradient(145deg, rgba(26,26,46,0.9), rgba(15,15,35,0.95));
+  border-color: rgba(255,255,255,0.06);
+}
+
+/* ACTION BUTTONS */
+.action-btn.edit {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+}
+
+.action-btn.delete {
+  background: linear-gradient(135deg, #ff6b6b, #ee5a52);
+}
+
+/* MODAL BUTTONS */
+.modal-btn.save {
+  background: linear-gradient(135deg, #00d4aa, #00b894);
+}
+
+.modal-btn.cancel {
+  background: rgba(102,126,234,0.15);
+  border-color: rgba(102,126,234,0.3);
+}
+
+/* SCROLLBAR - Purple accent */
+.expenses-list::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, rgba(102,126,234,0.5), rgba(118,75,162,0.4));
+}
+
+/* LOGO GRADIENT */
+.app-logo {
+  filter: drop-shadow(0 0 24px rgba(102,126,234,0.6));
+}
+
+/* FOCUS RINGS - Purple */
+*:focus-visible {
+  outline: 2px solid rgba(102,126,234,0.5);
+  outline-offset: 2px;
+}
+
+/* SELECTION COLOR */
+::selection {
+  background: rgba(102,126,234,0.4);
+  color: #fff;
+}
 
 
 
