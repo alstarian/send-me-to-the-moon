@@ -1180,6 +1180,7 @@ async function loadFirebaseData() {
       window.settings = data.settings || { startDate: new Date().toISOString().split('T')[0] };
       window.transactions = data.transactions || [];
       window.salaries = data.salaries || {};
+    window.otherIncomes = data.otherIncomes || {};
       window.utilities = data.utilities || [];
 
       console.log(`📊 ${window.transactions.length} transactions, ${window.utilities.length} utilities`);
@@ -1250,8 +1251,8 @@ window.saveToFirebase = async function() {
       settings: window.settings || {},
       transactions: window.transactions || [],
       salaries: window.salaries || {},
-      utilities: window.utilities,
-      otherIncomes: window.otherIncomes || [],
+      utilities: window.utilities || [],
+      otherIncomes: window.otherIncomes || {},
       lastUpdated: new Date().toISOString()
     });
 
