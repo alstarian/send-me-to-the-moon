@@ -4,27 +4,35 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Expense Tracker</title>
+
 <!-- iOS App Icons -->
 <link rel="apple-touch-icon" sizes="180x180" href="icon.jpg">
 <link rel="apple-touch-icon" sizes="152x152" href="icon.jpg">
 <link rel="apple-touch-icon" sizes="120x120" href="icon.jpg">
 <link rel="icon" type="image/jpeg" href="icon.jpg">
+
 <!-- PWA Settings -->
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Expense Tracker">
+
 <!-- Theme Colors -->
 <meta name="theme-color" content="#000000">
 <meta name="msapplication-TileColor" content="#ffffff">
 <meta name="msapplication-TileImage" content="icon.jpg">
+
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 *{margin:0;padding:0;box-sizing:border-box}.app-header{position:fixed;top:0;left:0;right:0;background:linear-gradient(135deg,rgba(10,10,10,.95) 0%,rgba(0,0,0,.98) 100%);backdrop-filter:blur(20px) saturate(180%);-webkit-backdrop-filter:blur(20px) saturate(180%);border-bottom:1px solid rgba(255,255,255,.1);padding:16px 20px;display:flex;align-items:center;justify-content:center;gap:16px;z-index:1001;box-shadow:0 4px 24px rgba(0,0,0,.5)}.app-logo{font-size:2.5rem;animation:float 3s ease-in-out infinite;filter:drop-shadow(0 0 20px rgba(251,191,36,.4))}.app-title{font-size:1.8rem;font-weight:800;background:linear-gradient(135deg,#fbbf24,#f59e0b,#fbbf24);background-size:200% 200%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;letter-spacing:-1px;animation:gradient-shift 3s ease infinite}@keyframes gradient-shift{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#000;background-image:radial-gradient(at 0% 0%,rgba(30,64,175,.15) 0px,transparent 50%),radial-gradient(at 100% 0%,rgba(139,92,246,.15) 0px,transparent 50%),radial-gradient(at 100% 100%,rgba(16,185,129,.1) 0px,transparent 50%);min-height:100vh;padding:100px 20px 60px 20px;display:flex;align-items:center;justify-content:center;color:#fff;position:relative;overflow-x:hidden}body::before{content:'';position:fixed;top:0;left:0;right:0;bottom:0;background:linear-gradient(45deg,transparent 48%,rgba(255,255,255,.01) 50%,transparent 52%),linear-gradient(-45deg,transparent 48%,rgba(255,255,255,.01) 50%,transparent 52%);background-size:60px 60px;pointer-events:none;opacity:.3}.container{max-width:1600px;width:100%;display:grid;grid-template-columns:1fr 1fr;gap:32px;position:relative;z-index:1}.sync-bar{grid-column:1/-1;background:rgba(255,255,255,.03);backdrop-filter:blur(30px) saturate(180%);-webkit-backdrop-filter:blur(30px) saturate(180%);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:20px 28px;display:flex;gap:16px;justify-content:center;align-items:center;flex-wrap:wrap;box-shadow:0 8px 32px rgba(0,0,0,.3),inset 0 1px 0 rgba(255,255,255,.1);position:relative;overflow:hidden}.sync-bar::before{content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.05),transparent);animation:shimmer 3s infinite}@keyframes shimmer{to{left:200%}}.sync-btn{background:linear-gradient(135deg,rgba(255,255,255,.1),rgba(255,255,255,.05));border:1px solid rgba(255,255,255,.15);color:white;padding:12px 24px;border-radius:12px;cursor:pointer;font-size:.95rem;font-weight:600;transition:all .3s cubic-bezier(.4,0,.2,1);display:flex;align-items:center;gap:10px;position:relative;overflow:hidden;box-shadow:0 4px 16px rgba(0,0,0,.2)}.sync-btn::before{content:'';position:absolute;top:0;left:0;width:100%;height:100%;background:linear-gradient(135deg,rgba(255,255,255,.2),transparent);opacity:0;transition:opacity .3s}.sync-btn:hover::before{opacity:1}.sync-btn:hover{transform:translateY(-3px);box-shadow:0 8px 24px rgba(0,0,0,.3)}.sync-btn:active{transform:translateY(-1px)}.sync-btn.export{background:linear-gradient(135deg,rgba(16,185,129,.25),rgba(16,185,129,.15));border-color:rgba(16,185,129,.4);box-shadow:0 4px 20px rgba(16,185,129,.2)}.sync-btn.import{background:linear-gradient(135deg,rgba(99,102,241,.25),rgba(99,102,241,.15));border-color:rgba(99,102,241,.4);box-shadow:0 4px 20px rgba(99,102,241,.2)}.sync-btn.analytics{background:linear-gradient(135deg,rgba(251,191,36,.25),rgba(251,191,36,.15));border-color:rgba(251,191,36,.4);box-shadow:0 4px 20px rgba(251,191,36,.2)}.sync-btn.insights{background:linear-gradient(135deg,rgba(236,72,153,.25),rgba(236,72,153,.15));border-color:rgba(236,72,153,.4);box-shadow:0 4px 20px rgba(236,72,153,.2)}.sync-btn.settings{background:linear-gradient(135deg,rgba(139,92,246,.25),rgba(139,92,246,.15));border-color:rgba(139,92,246,.4);box-shadow:0 4px 20px rgba(139,92,246,.2)}.sync-btn.danger{background:linear-gradient(135deg,rgba(239,68,68,.25),rgba(239,68,68,.15));border-color:rgba(239,68,68,.4);box-shadow:0 4px 20px rgba(239,68,68,.2)}.pane{background:linear-gradient(135deg,rgba(30,30,30,.95) 0%,rgba(15,15,15,.98) 100%);backdrop-filter:blur(30px) saturate(180%);-webkit-backdrop-filter:blur(30px) saturate(180%);border:1px solid rgba(255,255,255,.1);border-radius:24px;padding:36px;box-shadow:0 24px 64px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.1);position:relative;overflow:hidden;transition:all .4s cubic-bezier(.4,0,.2,1)}.pane::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.2),transparent)}.pane::after{content:'';position:absolute;top:0;left:0;width:100%;height:100%;background:radial-gradient(circle at 50% 0%,rgba(255,255,255,.05),transparent 70%);pointer-events:none}.pane.current{border-color:rgba(251,191,36,.4);box-shadow:0 24px 64px rgba(0,0,0,.5),0 0 40px rgba(251,191,36,.15),inset 0 1px 0 rgba(251,191,36,.2)}.pane.current::before{background:linear-gradient(90deg,transparent,rgba(251,191,36,.4),transparent)}.pane.monthly{border-color:rgba(59,130,246,.4);box-shadow:0 24px 64px rgba(0,0,0,.5),0 0 40px rgba(59,130,246,.15),inset 0 1px 0 rgba(59,130,246,.2)}.pane.monthly::before{background:linear-gradient(90deg,transparent,rgba(59,130,246,.4),transparent)}.pane:hover{transform:translateY(-4px);box-shadow:0 32px 80px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.15)}.pane-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;padding-bottom:20px;border-bottom:1px solid rgba(255,255,255,.08);position:relative;z-index:1;gap:20px}.period-nav{display:flex;gap:12px;align-items:center;flex:1}.period-nav button{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);color:white;width:36px;height:36px;border-radius:8px;cursor:pointer;font-size:1.1rem;transition:all .2s;display:flex;align-items:center;justify-content:center}.period-nav button:hover{background:rgba(255,255,255,.15);transform:scale(1.1)}.period-nav button:active{transform:scale(.95)}.period-title{font-size:1.1rem;font-weight:600;color:#fff;text-align:center;flex:1}.star-toggle{font-size:1.8rem;cursor:pointer;transition:all .3s cubic-bezier(.4,0,.2,1);user-select:none;filter:grayscale(100%) brightness(.5);flex-shrink:0}.star-toggle:hover{transform:scale(1.2) rotate(15deg);filter:grayscale(0%) brightness(1)}.star-toggle.active{filter:grayscale(0%) brightness(1);animation:pulse 2s ease-in-out infinite;text-shadow:0 0 12px rgba(251,191,36,.6)}@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.7;transform:scale(1.15)}}.summary{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:28px;position:relative;z-index:1}.summary-item{background:linear-gradient(135deg,rgba(255,255,255,.08),rgba(255,255,255,.03));padding:18px;border-radius:14px;text-align:center;border:1px solid rgba(255,255,255,.1);transition:all .3s cubic-bezier(.4,0,.2,1);position:relative;overflow:hidden;box-shadow:0 4px 16px rgba(0,0,0,.2),inset 0 1px 0 rgba(255,255,255,.1)}.summary-item.full-width{grid-column:1/-1}.summary-item::before{content:'';position:absolute;top:0;left:0;width:100%;height:100%;background:linear-gradient(135deg,rgba(255,255,255,.1),transparent);opacity:0;transition:opacity .3s}.summary-item:hover::before{opacity:1}.summary-item:hover{border-color:rgba(255,255,255,.2);transform:translateY(-3px) scale(1.02);box-shadow:0 8px 24px rgba(0,0,0,.3),inset 0 1px 0 rgba(255,255,255,.15)}.summary-label{font-size:.65rem;color:rgba(255,255,255,.6);margin-bottom:8px;text-transform:uppercase;letter-spacing:1.2px;font-weight:600}.summary-value{font-size:1.6rem;font-weight:800;color:#fff;letter-spacing:-1px;text-shadow:0 2px 12px rgba(0,0,0,.3)}.summary-value.positive{color:#10b981;text-shadow:0 2px 12px rgba(16,185,129,.4)}.summary-value.negative{color:#ef4444;text-shadow:0 2px 12px rgba(239,68,68,.4)}.summary-value.info{color:#8b5cf6;text-shadow:0 2px 12px rgba(139,92,246,.4)}.input-group{margin-bottom:16px;position:relative;z-index:1}.input-label{font-size:.75rem;color:rgba(255,255,255,.7);margin-bottom:8px;display:block;font-weight:600;text-transform:uppercase;letter-spacing:.8px}input,select{width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:12px 14px;color:#fff;font-size:.95rem;font-family:inherit;transition:all .3s cubic-bezier(.4,0,.2,1);box-shadow:inset 0 2px 8px rgba(0,0,0,.15)}input[type="date"]{color-scheme:dark}input::placeholder{color:rgba(255,255,255,.35)}input:focus,select:focus{outline:0;background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.25);box-shadow:inset 0 2px 8px rgba(0,0,0,.15),0 0 0 4px rgba(255,255,255,.05);transform:translateY(-1px)}select option{background:#1a1a1a;color:#fff}.btn{width:100%;background:linear-gradient(135deg,#fff,#f0f0f0);color:#0a0a0a;border:none;border-radius:10px;padding:14px;font-size:.85rem;font-weight:700;cursor:pointer;transition:all .3s cubic-bezier(.4,0,.2,1);text-transform:uppercase;letter-spacing:.8px;position:relative;overflow:hidden;box-shadow:0 4px 16px rgba(255,255,255,.15),0 8px 24px rgba(0,0,0,.2)}.btn::before{content:'';position:absolute;top:0;left:0;width:100%;height:100%;background:linear-gradient(135deg,rgba(255,255,255,.3),transparent);opacity:0;transition:opacity .3s}.btn:hover::before{opacity:1}.btn:hover{transform:translateY(-3px);box-shadow:0 6px 20px rgba(255,255,255,.2),0 12px 32px rgba(0,0,0,.3)}.btn:active{transform:translateY(-1px)}.quick-add-section{margin-top:20px;padding-top:16px;border-top:1px solid rgba(255,255,255,.08);position:relative;z-index:1}.quick-add-label{font-size:.75rem;color:rgba(255,255,255,.6);margin-bottom:10px;text-transform:uppercase;letter-spacing:.8px;font-weight:600}.quick-add-buttons{display:flex;flex-wrap:wrap;gap:8px}.quick-add-btn{background:linear-gradient(135deg,rgba(251,191,36,.15),rgba(251,191,36,.08));border:1px solid rgba(251,191,36,.3);color:#fbbf24;padding:8px 16px;border-radius:8px;cursor:pointer;font-size:.85rem;font-weight:600;transition:all .3s cubic-bezier(.4,0,.2,1);display:flex;align-items:center;gap:6px;white-space:nowrap;box-shadow:0 2px 8px rgba(251,191,36,.1)}.quick-add-btn:hover{background:linear-gradient(135deg,rgba(251,191,36,.25),rgba(251,191,36,.15));border-color:rgba(251,191,36,.5);transform:translateY(-2px);box-shadow:0 4px 12px rgba(251,191,36,.2)}.quick-add-btn:active{transform:translateY(0)}.quick-add-empty{font-size:.85rem;color:rgba(255,255,255,.4);font-style:italic}.expenses-list{max-height:350px;overflow-y:auto;overflow-x:hidden;margin-top:20px;padding-right:8px;position:relative;z-index:1}.expense-item-wrapper{position:relative;margin-bottom:10px;overflow:visible}.expense-item{background:linear-gradient(135deg,rgba(255,255,255,.06),rgba(255,255,255,.03));padding:14px 16px;border-radius:12px;display:flex;justify-content:space-between;align-items:center;border:1px solid rgba(255,255,255,.08);box-shadow:0 2px 8px rgba(0,0,0,.15);position:relative;touch-action:pan-y;-webkit-user-select:none;user-select:none;will-change:transform;-webkit-transform:translate3d(0,0,0);transform:translate3d(0,0,0)}.expense-item.transitioning{transition:transform .3s cubic-bezier(.4,0,.2,1)}.swipe-actions{position:absolute;right:0;top:0;bottom:0;display:flex;opacity:0;transition:opacity .3s;pointer-events:none}.expense-item.swiped{transform:translate3d(-160px,0,0)}.expense-item.swiped+.swipe-actions{opacity:1;pointer-events:auto}@media (hover:hover) and (pointer:fine){.expense-item-wrapper:hover .expense-item{transform:translate3d(-160px,0,0);transition:transform .3s cubic-bezier(.4,0,.2,1)}.expense-item-wrapper:hover .swipe-actions{opacity:1;pointer-events:auto}}.action-btn{width:80px;border:none;color:white;font-weight:700;font-size:.8rem;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;transition:all .2s}.action-btn.edit{background:linear-gradient(135deg,#3b82f6,#2563eb);border-radius:0}.action-btn.edit:hover{background:linear-gradient(135deg,#2563eb,#1d4ed8);transform:scale(1.05)}.action-btn.delete{background:linear-gradient(135deg,#ef4444,#dc2626);border-radius:0 12px 12px 0}.action-btn.delete:hover{background:linear-gradient(135deg,#dc2626,#b91c1c);transform:scale(1.05)}.action-icon{font-size:1.2rem}.expense-info{flex:1;pointer-events:none}.expense-desc{font-size:.95rem;font-weight:600;color:#fff;margin-bottom:4px}.expense-cat{font-size:.75rem;color:rgba(255,255,255,.5)}.expense-amount{font-size:1.1rem;font-weight:700;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.2);min-width:80px;text-align:right;pointer-events:none}.empty-state{text-align:center;padding:50px 20px;color:rgba(255,255,255,.35)}.empty-state-icon{font-size:3rem;margin-bottom:16px;opacity:.5;filter:drop-shadow(0 4px 12px rgba(0,0,0,.3))}.expenses-list::-webkit-scrollbar{width:6px}.expenses-list::-webkit-scrollbar-track{background:rgba(255,255,255,.03);border-radius:3px}.expenses-list::-webkit-scrollbar-thumb{background:linear-gradient(180deg,rgba(255,255,255,.15),rgba(255,255,255,.1));border-radius:3px;border:1px solid rgba(255,255,255,.05)}.expenses-list::-webkit-scrollbar-thumb:hover{background:linear-gradient(180deg,rgba(255,255,255,.2),rgba(255,255,255,.15))}.month-nav{display:flex;gap:8px;align-items:center;justify-content:center;margin-bottom:16px}.month-nav button{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);color:white;padding:8px 12px;border-radius:8px;cursor:pointer;font-size:1.2rem;transition:all .2s}.month-nav button:hover{background:rgba(255,255,255,.15);transform:scale(1.1)}.month-display{font-size:1.1rem;font-weight:600;min-width:140px;text-align:center}.pane-title{font-size:1.4rem;font-weight:700;color:#fff;letter-spacing:-.8px;text-shadow:0 2px 10px rgba(0,0,0,.3)}.modal{display:none;position:fixed;z-index:1000;left:0;top:0;width:100%;height:100%;background:rgba(0,0,0,.85);backdrop-filter:blur(10px)}.modal.active{display:flex;align-items:center;justify-content:center}.modal-content{background:linear-gradient(135deg,rgba(30,30,30,.98) 0%,rgba(15,15,15,.98) 100%);border:1px solid rgba(255,255,255,.2);border-radius:24px;padding:40px;max-width:500px;width:90%;max-height:85vh;overflow-y:auto;box-shadow:0 32px 96px rgba(0,0,0,.7);position:relative}.insights-content{max-width:700px}.modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:30px;padding-bottom:20px;border-bottom:1px solid rgba(255,255,255,.1)}.modal-title{font-size:1.8rem;font-weight:700;color:#fff}.close-btn{background:rgba(239,68,68,.2);border:1px solid rgba(239,68,68,.3);color:#ef4444;width:36px;height:36px;border-radius:50%;cursor:pointer;font-size:1.2rem;display:flex;align-items:center;justify-content:center;transition:all .3s}.close-btn:hover{background:rgba(239,68,68,.3);transform:rotate(90deg)}.modal-buttons{display:flex;gap:12px;margin-top:24px}.modal-btn{flex:1;padding:14px;border-radius:10px;font-size:.9rem;font-weight:700;cursor:pointer;transition:all .3s;text-transform:uppercase;letter-spacing:.8px;border:none}.modal-btn.cancel{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:white}.modal-btn.cancel:hover{background:rgba(255,255,255,.15)}.modal-btn.save{background:linear-gradient(135deg,#10b981,#059669);border:none;color:white}.modal-btn.save:hover{transform:translateY(-2px);box-shadow:0 4px 16px rgba(16,185,129,.4)}.insights-body{display:flex;flex-direction:column;gap:24px}.insight-section{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:24px}.insight-title{font-size:1.1rem;font-weight:700;color:#fff;margin-bottom:16px;display:flex;align-items:center;gap:10px}.insight-card{background:rgba(255,255,255,.05);border-radius:12px;padding:16px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center}.insight-label{font-size:.9rem;color:rgba(255,255,255,.7)}.insight-value{font-size:1.3rem;font-weight:700;color:#fff}.insight-trend{font-size:.85rem;font-weight:600;margin-left:8px}.insight-trend.up{color:#ef4444}.insight-trend.down{color:#10b981}.category-breakdown{display:flex;flex-direction:column;gap:12px}.category-item{display:flex;justify-content:space-between;align-items:center;padding:12px;background:rgba(255,255,255,.03);border-radius:10px}.category-name{font-size:.95rem;font-weight:600;color:#fff}.category-amount{font-size:1.1rem;font-weight:700;color:#fbbf24}.stat-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}.stat-card{background:rgba(255,255,255,.05);border-radius:12px;padding:16px;text-align:center}.stat-label{font-size:.75rem;color:rgba(255,255,255,.6);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px}.stat-value{font-size:1.4rem;font-weight:800;color:#fff}.analytics-table{width:100%;border-collapse:collapse;margin-top:20px}.analytics-table th,.analytics-table td{padding:16px;text-align:left;border-bottom:1px solid rgba(255,255,255,.08)}.analytics-table th{background:rgba(255,255,255,.05);font-weight:700;text-transform:uppercase;font-size:.75rem;letter-spacing:1px;color:rgba(255,255,255,.7)}.analytics-table td{font-size:.95rem;color:rgba(255,255,255,.9)}.analytics-table tr:hover{background:rgba(255,255,255,.03)}.analytics-table td:last-child{font-weight:700;color:#10b981}.setup-wizard{text-align:center}.setup-wizard .modal-content{max-width:600px}.wizard-icon{font-size:4rem;margin-bottom:20px;animation:float 3s ease-in-out infinite}.wizard-subtitle{font-size:1rem;color:rgba(255,255,255,.7);margin-bottom:30px;line-height:1.6}.quick-dates{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin:20px 0}.quick-date-btn{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);color:white;padding:12px;border-radius:10px;cursor:pointer;font-size:.9rem;font-weight:600;transition:all .3s}.quick-date-btn:hover{background:rgba(255,255,255,.15);border-color:rgba(255,255,255,.25);transform:translateY(-2px)}.quick-date-btn.selected{background:linear-gradient(135deg,rgba(16,185,129,.25),rgba(16,185,129,.15));border-color:rgba(16,185,129,.4)}.divider{display:flex;align-items:center;gap:16px;margin:24px 0;color:rgba(255,255,255,.4);font-size:.85rem}.divider::before,.divider::after{content:'';flex:1;height:1px;background:rgba(255,255,255,.1)}.settings-info{background:rgba(139,92,246,.1);border:1px solid rgba(139,92,246,.3);border-radius:12px;padding:16px;margin-bottom:24px}.settings-info-title{font-size:.85rem;font-weight:700;color:rgba(255,255,255,.9);margin-bottom:8px;text-transform:uppercase;letter-spacing:.8px}.settings-info-value{font-size:1.1rem;font-weight:600;color:#8b5cf6}.warning-box{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:12px;padding:16px;margin:20px 0}.warning-box p{font-size:.9rem;color:rgba(255,255,255,.8);line-height:1.6;margin:0}@media (max-width:1200px){.container{grid-template-columns:1fr}}@media (max-width:768px){.app-header{padding:12px 16px}.app-logo{font-size:2rem}.app-title{font-size:1.4rem}body{padding:80px 20px 60px 20px}.summary{grid-template-columns:1fr}.stat-grid{grid-template-columns:1fr}.quick-dates{grid-template-columns:1fr}.quick-add-buttons{gap:6px}.quick-add-btn{font-size:.8rem;padding:6px 12px}.analytics-table{font-size:.85rem}.analytics-table th,.analytics-table td{padding:12px 8px}}
+
+
 /* ==================== AUTHENTICATION & SWIPE STYLES ==================== */
+
 .auth-modal .modal-content { max-width: 500px; }
 .auth-content { text-align: center; }
 .auth-icon { font-size: 5rem; margin: 20px 0; animation: float 3s ease-in-out infinite; }
 .auth-subtitle { color: rgba(255,255,255,0.7); font-size: 0.95rem; line-height: 1.6; margin-bottom: 30px; }
+
 .passcode-input-group { display: flex; gap: 10px; justify-content: center; margin: 30px 0; }
 .passcode-digit {
       width: 50px;
@@ -47,6 +55,7 @@
   transform: scale(1.1); box-shadow: 0 0 20px rgba(251,191,36,0.3);
 }
 .passcode-hint { color: rgba(255,255,255,0.5); font-size: 0.85rem; margin-top: -20px; margin-bottom: 20px; }
+
 #lock-screen {
   position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
   background: linear-gradient(135deg, #000 0%, #1a1a1a 100%);
@@ -62,12 +71,14 @@
   cursor: pointer; text-decoration: underline; transition: all 0.3s;
 }
 .unlock-forgot-btn:hover { color: #f59e0b; transform: scale(1.05); }
+
 @keyframes shake {
   0%, 100% { transform: translateX(0); }
   10%, 30%, 50%, 70%, 90% { transform: translateX(-10px); }
   20%, 40%, 60%, 80% { transform: translateX(10px); }
 }
 .shake-error { animation: shake 0.5s; }
+
 .security-question-select {
   width: 100%; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12);
   border-radius: 10px; padding: 12px 14px; color: #fff; font-size: 0.95rem;
@@ -75,12 +86,14 @@
 }
 .security-question-select:focus { outline: 0; background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.25); }
 .security-question-select option { background: #1a1a1a; color: #fff; }
+
 .recovery-key-display {
   background: rgba(251,191,36,0.1); border: 2px solid rgba(251,191,36,0.3);
   border-radius: 16px; padding: 24px; margin: 20px 0;
   font-family: 'Courier New', monospace; font-size: 1.1rem; font-weight: 700;
   color: #fbbf24; line-height: 1.8; word-break: break-word; user-select: all;
 }
+
 .recovery-option-buttons { display: flex; flex-direction: column; gap: 16px; margin: 30px 0; }
 .recovery-option-btn {
   display: flex; align-items: center; gap: 20px; padding: 20px;
@@ -94,6 +107,7 @@
 .recovery-text { flex: 1; }
 .recovery-text strong { display: block; font-size: 1.1rem; color: #fff; margin-bottom: 5px; }
 .recovery-text span { display: block; font-size: 0.85rem; color: rgba(255,255,255,0.6); }
+
 /* Swipe Gestures */
 @keyframes swipeIndicator {
   0% { opacity: 0; transform: translateY(-50%) scale(0.3); }
@@ -116,16 +130,20 @@
     color: rgba(251,191,36,0.35); text-shadow: 0 0 10px rgba(251,191,36,0.3);
   }
 }
+
 @media (max-width: 768px) {
   .passcode-digit { width: 45px !important; height: 55px; font-size: 1.6rem; }
   .passcode-input-group { gap: 8px; }
   .lock-container { padding: 30px 20px; }
   .recovery-key-display { font-size: 0.95rem; padding: 16px; }
 }
+
+
 /* Remove decorative line from Monthly Utilities pane */
 .pane.monthly::before {
   display: none !important;
 }
+
 /* Notification Toggle Switch */
 #notifications-toggle:checked + span {
   background: linear-gradient(135deg, #10b981, #059669);
@@ -133,35 +151,44 @@
 #notifications-toggle:checked + span + span {
   transform: translateX(26px);
 }
+
+
+
 /* =============================================
    MODERN ROUNDED UI/UX UPDATE
    ============================================= */
+
 /* GLOBAL BODY - Add more padding for breathing room */
 body {
   padding: 110px 24px 80px 24px;
   background: #0a0a0a; /* Deeper black */
 }
+
 /* APP HEADER - More rounded, elevated */
 .app-header {
   border-radius: 0 0 32px 32px; /* Rounded bottom corners */
   padding: 20px 24px;
   box-shadow: 0 8px 40px rgba(0,0,0,0.8);
 }
+
 /* CONTAINER - Better spacing */
 .container {
   gap: 24px;
   max-width: 1400px;
 }
+
 /* SYNC BAR - More rounded */
 .sync-bar {
   border-radius: 28px;
   padding: 24px 32px;
   box-shadow: 0 12px 48px rgba(0,0,0,0.4);
 }
+
 .sync-btn {
   border-radius: 16px; /* More rounded buttons */
   padding: 14px 28px;
 }
+
 /* PANES - BIGGER ROUNDED CORNERS */
 .pane {
   border-radius: 32px; /* Much rounder */
@@ -169,11 +196,13 @@ body {
   box-shadow: 0 20px 60px rgba(0,0,0,0.6),
               inset 0 1px 0 rgba(255,255,255,0.1);
 }
+
 /* PANE HEADER - Cleaner */
 .pane-header {
   margin-bottom: 28px;
   padding-bottom: 24px;
 }
+
 /* NAVIGATION BUTTONS - iOS style rounded */
 .period-nav button,
 .month-nav button {
@@ -185,16 +214,19 @@ body {
   border: 1.5px solid rgba(255,255,255,0.15);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
+
 .period-nav button:hover,
 .month-nav button:hover {
   background: rgba(255,255,255,0.2);
   transform: scale(1.15);
 }
+
 /* SUMMARY CARDS - Super rounded */
 .summary {
   gap: 16px;
   margin-bottom: 32px;
 }
+
 .summary-item {
   border-radius: 20px; /* Rounder cards */
   padding: 24px;
@@ -204,10 +236,12 @@ body {
               inset 0 1px 0 rgba(255,255,255,0.15);
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
+
 .summary-item:hover {
   transform: translateY(-6px) scale(1.02);
   box-shadow: 0 16px 40px rgba(0,0,0,0.4);
 }
+
 /* INPUTS - Smoother, rounder */
 input, select {
   border-radius: 16px;
@@ -217,12 +251,14 @@ input, select {
   border: 1.5px solid rgba(255,255,255,0.15);
   transition: all 0.3s ease;
 }
+
 input:focus, select:focus {
   background: rgba(255,255,255,0.12);
   border-color: rgba(251,191,36,0.5);
   box-shadow: 0 0 0 4px rgba(251,191,36,0.1),
               inset 0 2px 8px rgba(0,0,0,0.2);
 }
+
 /* MAIN BUTTON - Bigger, rounder */
 .btn {
   border-radius: 16px;
@@ -233,12 +269,14 @@ input:focus, select:focus {
   box-shadow: 0 8px 24px rgba(255,255,255,0.2),
               0 12px 40px rgba(0,0,0,0.3);
 }
+
 /* QUICK ADD BUTTONS - iOS style pills */
 .quick-add-btn {
   border-radius: 14px;
   padding: 10px 20px;
   font-size: 0.9rem;
 }
+
 /* EXPENSE ITEMS - Smoother cards */
 .expense-item {
   border-radius: 16px;
@@ -248,13 +286,16 @@ input:focus, select:focus {
   border: 1px solid rgba(255,255,255,0.1);
   box-shadow: 0 4px 16px rgba(0,0,0,0.25);
 }
+
 /* ACTION BUTTONS - Rounded */
 .action-btn.edit {
   border-radius: 12px 0 0 12px;
 }
+
 .action-btn.delete {
   border-radius: 0 12px 12px 0;
 }
+
 /* MODALS - Super rounded */
 .modal-content {
   border-radius: 32px;
@@ -262,76 +303,90 @@ input:focus, select:focus {
   border: 1.5px solid rgba(255,255,255,0.25);
   box-shadow: 0 40px 120px rgba(0,0,0,0.8);
 }
+
 /* MODAL BUTTONS */
 .modal-btn {
   border-radius: 14px;
   padding: 16px;
   font-size: 1rem;
 }
+
 .close-btn {
   width: 40px;
   height: 40px;
   border-radius: 50%;
   font-size: 1.3rem;
 }
+
 /* SCROLLBAR - Smoother */
 .expenses-list::-webkit-scrollbar {
   width: 8px;
 }
+
 .expenses-list::-webkit-scrollbar-thumb {
   border-radius: 10px;
   background: linear-gradient(180deg, rgba(251,191,36,0.4), rgba(251,191,36,0.2));
 }
+
 /* MOBILE OPTIMIZATIONS */
 @media (max-width: 768px) {
   body {
     padding: 90px 16px 70px 16px;
   }
- 
+  
   .pane {
     border-radius: 28px;
     padding: 32px;
   }
- 
+  
   .summary-item {
     border-radius: 18px;
     padding: 20px;
   }
- 
+  
   input, select {
     border-radius: 14px;
   }
 }
+
 /* SMOOTH TRANSITIONS EVERYWHERE */
 * {
   transition: border-radius 0.3s ease,
               box-shadow 0.3s ease,
               transform 0.3s ease;
 }
+
 /* GLASSMORPHISM ENHANCEMENT */
 .pane, .summary-item, .modal-content {
   backdrop-filter: blur(40px) saturate(200%);
   -webkit-backdrop-filter: blur(40px) saturate(200%);
 }
+
 /* CARD DEPTH LAYERS */
 .summary-item::before {
   border-radius: 20px;
 }
+
 .pane::after {
   border-radius: 32px;
 }
+
 /* =============================================
    NEW COLOR SCHEME - Matches your screenshot
    ============================================= */
+
 /* PRIMARY BACKGROUND */
 body {
   background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f0f23 100%);
 }
+
+
 /* DEEPER CARD BACKGROUNDS */
 .pane, .modal-content, .summary-item {
   background: linear-gradient(145deg, rgba(15,15,35,0.95), rgba(26,26,46,0.98));
   border: 1px solid rgba(255,255,255,0.08);
 }
+
 /* ACCENT COLORS - From your screenshot */
 /* TITLE FIX */
 .app-title {
@@ -341,109 +396,134 @@ body {
   color: #e0e6ed !important;
   text-shadow: 0 2px 8px rgba(0,0,0,0.8) !important;
 }
+
 .summary-value.positive {
   color: #00d4aa; /* Teal from screenshot */
   text-shadow: 0 2px 12px rgba(0,212,170,0.4);
 }
+
 .summary-value {
   color: #e0e6ed; /* Light steel */
 }
+
 /* BUTTON GRADIENTS - Screenshot exact */
 .sync-btn {
   background: linear-gradient(135deg, rgba(102,126,234,0.2), rgba(118,75,162,0.15));
   border-color: rgba(102,126,234,0.4);
 }
+
 .sync-btn:hover {
   background: linear-gradient(135deg, rgba(102,126,234,0.3), rgba(118,75,162,0.25));
 }
+
 .btn {
   background: linear-gradient(135deg, #667eea, #764ba2);
   color: white;
   box-shadow: 0 8px 24px rgba(102,126,234,0.4);
 }
+
 .btn:hover {
   background: linear-gradient(135deg, #5a6fd8, #6a4190);
   transform: translateY(-2px);
 }
+
 /* INPUT FIELDS - Purple accent */
 input:focus, select:focus {
   border-color: rgba(102,126,234,0.6);
   box-shadow: 0 0 0 4px rgba(102,126,234,0.15);
 }
+
 /* SUMMARY CARDS - Purple glow */
 .summary-item:hover {
   box-shadow: 0 16px 40px rgba(102,126,234,0.3),
               0 0 20px rgba(102,126,234,0.15);
 }
+
 /* PANES - Purple borders */
 .pane.current {
   border-color: rgba(102,126,234,0.5);
   box-shadow: 0 24px 64px rgba(0,0,0,0.6),
               0 0 40px rgba(102,126,234,0.25);
 }
+
 .pane.monthly {
   border-color: rgba(240,147,251,0.4);
   box-shadow: 0 24px 64px rgba(0,0,0,0.6),
               0 0 40px rgba(240,147,251,0.2);
 }
+
 /* BUTTONS - New gradient palette */
 .sync-btn.export {
   background: linear-gradient(135deg, rgba(0,212,170,0.25), rgba(0,212,170,0.15));
   border-color: rgba(0,212,170,0.4);
 }
+
 .sync-btn.import {
   background: linear-gradient(135deg, rgba(102,126,234,0.25), rgba(118,75,162,0.15));
   border-color: rgba(102,126,234,0.4);
 }
+
 .sync-btn.settings {
   background: linear-gradient(135deg, rgba(240,147,251,0.25), rgba(118,75,162,0.15));
   border-color: rgba(240,147,251,0.4);
 }
+
 /* EXPENSE ITEMS */
 .expense-item {
   background: linear-gradient(145deg, rgba(26,26,46,0.9), rgba(15,15,35,0.95));
   border-color: rgba(255,255,255,0.06);
 }
+
 /* ACTION BUTTONS */
 .action-btn.edit {
   background: linear-gradient(135deg, #667eea, #764ba2);
 }
+
 .action-btn.delete {
   background: linear-gradient(135deg, #ff6b6b, #ee5a52);
 }
+
 /* MODAL BUTTONS */
 .modal-btn.save {
   background: linear-gradient(135deg, #00d4aa, #00b894);
 }
+
 .modal-btn.cancel {
   background: rgba(102,126,234,0.15);
   border-color: rgba(102,126,234,0.3);
 }
+
 /* SCROLLBAR - Purple accent */
 .expenses-list::-webkit-scrollbar-thumb {
   background: linear-gradient(180deg, rgba(102,126,234,0.5), rgba(118,75,162,0.4));
 }
+
 /* LOGO GRADIENT */
 .app-logo {
   filter: drop-shadow(0 0 24px rgba(102,126,234,0.6));
 }
+
 /* FOCUS RINGS - Purple */
 *:focus-visible {
   outline: 2px solid rgba(102,126,234,0.5);
   outline-offset: 2px;
 }
+
 /* SELECTION COLOR */
 ::selection {
   background: rgba(102,126,234,0.4);
   color: #fff;
 }
+
 /* =============================================
    WHITE & BLACK COLOR SCHEME
    ============================================= */
+
 /* BLACK BACKGROUND */
 body {
   background: #000000 !important;
 }
+
 /* WHITE HEADER */
 .app-header {
   background: rgba(255,255,255,0.95) !important;
@@ -451,6 +531,7 @@ body {
   color: #000 !important;
   box-shadow: 0 4px 24px rgba(0,0,0,0.3);
 }
+
 /* WHITE TITLE ON BLACK */
 .app-title {
   background: linear-gradient(135deg, #000000, #333333) !important;
@@ -459,10 +540,12 @@ body {
   color: #000 !important;
   text-shadow: none !important;
 }
+
 .app-logo {
   filter: none !important;
   color: #000 !important;
 }
+
 /* WHITE PANES */
 .pane {
   background: rgba(255,255,255,0.92) !important;
@@ -471,6 +554,7 @@ body {
   box-shadow: 0 12px 40px rgba(0,0,0,0.15),
               inset 0 1px 0 rgba(255,255,255,0.9);
 }
+
 /* WHITE SUMMARY CARDS */
 .summary-item {
   background: rgba(255,255,255,0.95) !important;
@@ -478,31 +562,38 @@ body {
   color: #1a1a1a !important;
   box-shadow: 0 8px 24px rgba(0,0,0,0.12);
 }
+
 .summary-item:hover {
   background: #ffffff !important;
   box-shadow: 0 16px 48px rgba(0,0,0,0.2);
 }
+
 /* BLACK TEXT */
 .summary-label, .input-label, .pane-title {
   color: #333333 !important;
 }
+
 .summary-value {
   color: #1a1a1a !important;
 }
+
 /* WHITE INPUTS WITH BLACK TEXT */
 input, select {
   background: rgba(255,255,255,0.9) !important;
   border: 1.5px solid rgba(0,0,0,0.1) !important;
   color: #1a1a1a !important;
 }
+
 input::placeholder {
   color: rgba(50,50,50,0.6) !important;
 }
+
 input:focus, select:focus {
   background: #ffffff !important;
   border-color: rgba(0,0,0,0.2) !important;
   box-shadow: 0 0 0 3px rgba(0,0,0,0.08);
 }
+
 /* WHITE BUTTONS WITH BLACK TEXT */
 .btn {
   background: rgba(255,255,255,0.95) !important;
@@ -510,56 +601,68 @@ input:focus, select:focus {
   border: 1px solid rgba(0,0,0,0.1) !important;
   box-shadow: 0 6px 20px rgba(0,0,0,0.15);
 }
+
 .btn:hover {
   background: #ffffff !important;
   box-shadow: 0 12px 32px rgba(0,0,0,0.25);
 }
+
 /* SYNC BUTTONS - Black on white */
 .sync-btn {
   background: rgba(255,255,255,0.9) !important;
   color: #1a1a1a !important;
   border: 1px solid rgba(0,0,0,0.1) !important;
 }
+
 .sync-btn:hover {
   background: #ffffff !important;
   box-shadow: 0 8px 24px rgba(0,0,0,0.2);
 }
+
 /* EXPENSE ITEMS - White cards */
 .expense-item {
   background: rgba(255,255,255,0.95) !important;
   border: 1px solid rgba(0,0,0,0.08) !important;
   color: #1a1a1a !important;
 }
+
 /* ACTION BUTTONS */
 .action-btn.edit {
   background: #4f46e5 !important; /* Indigo */
 }
+
 .action-btn.delete {
   background: #dc2626 !important; /* Red */
 }
+
 /* MODALS - White */
 .modal-content {
   background: rgba(255,255,255,0.95) !important;
   border: 1px solid rgba(0,0,0,0.1) !important;
   color: #1a1a1a !important;
 }
+
 /* SCROLLBAR - Clean */
 .expenses-list::-webkit-scrollbar-thumb {
   background: rgba(0,0,0,0.2) !important;
   border-radius: 10px;
 }
+
 /* FOCUS RINGS - Black */
 *:focus-visible {
   outline: 2px solid rgba(0,0,0,0.2) !important;
 }
+
 /* SELECTION */
 ::selection {
   background: rgba(0,0,0,0.2) !important;
   color: #1a1a1a !important;
 }
+
 /* =============================================
    BLACK TEXT FIX FOR WHITE CARDS
    ============================================= */
+
 /* EXPENSE PANEL TEXT */
 #pane-period .expense-desc,
 #pane-period .expense-cat,
@@ -569,6 +672,7 @@ input:focus, select:focus {
 #pane-period button {
   color: #1a1a1a !important;
 }
+
 /* UTILITY PANEL TEXT */
 .pane.monthly .pane-title,
 .pane.monthly button,
@@ -576,11 +680,13 @@ input:focus, select:focus {
 .pane.monthly .summary-value {
   color: #1a1a1a !important;
 }
+
 /* ARROW BUTTONS */
 .period-nav button,
 .month-nav button {
   color: #1a1a1a !important;
 }
+
 /* ALL WHITE CARD TEXT */
 .pane *,
 .summary-item *,
@@ -589,6 +695,7 @@ input:focus, select:focus {
 input::placeholder {
   color: #1a1a1a !important;
 }
+
 /* LABELS & SECONDARY TEXT */
 .summary-label,
 .input-label,
@@ -596,14 +703,20 @@ input::placeholder {
 .quick-add-label {
   color: #333333 !important;
 }
+
 /* PLACEHOLDER TEXT */
 input::placeholder,
 select option {
   color: #666666 !important;
 }
+
+
+
+
 /* =============================================
    SYNC BUTTONS + MODAL TEXT FIX
    ============================================= */
+
 /* SYNC BAR BUTTONS - Black text + borders */
 .sync-bar .sync-btn {
   color: #1a1a1a !important;
@@ -611,11 +724,13 @@ select option {
   border: 2px solid rgba(0,0,0,0.15) !important;
   font-weight: 700 !important;
 }
+
 .sync-bar .sync-btn:hover {
   background: #ffffff !important;
   border-color: rgba(0,0,0,0.25) !important;
   box-shadow: 0 8px 24px rgba(0,0,0,0.2) !important;
 }
+
 /* MODAL CONTENT - Black text */
 .modal-content,
 #analytics-modal,
@@ -623,6 +738,7 @@ select option {
 #settings-modal {
   color: #1a1a1a !important;
 }
+
 /* MODAL TEXT ELEMENTS */
 .modal-title,
 .insight-title,
@@ -634,23 +750,28 @@ select option {
 .analytics-table td {
   color: #1a1a1a !important;
 }
+
 /* MODAL BUTTONS - Black borders */
 .modal-btn {
   border: 2px solid rgba(0,0,0,0.15) !important;
   color: #1a1a1a !important;
   background: rgba(255,255,255,0.9) !important;
 }
+
 .modal-btn:hover {
   border-color: rgba(0,0,0,0.3) !important;
   background: #ffffff !important;
 }
+
 /* TABLE TEXT */
 .analytics-table th {
   color: #333333 !important;
 }
+
 .analytics-table td {
   color: #1a1a1a !important;
 }
+
 /* INSIGHTS CARDS */
 .insight-card,
 .stat-card,
@@ -659,20 +780,27 @@ select option {
   border: 1px solid rgba(0,0,0,0.08) !important;
   color: #1a1a1a !important;
 }
+
 /* SETTINGS INFO */
 .settings-info-title,
 .settings-info-value {
   color: #1a1a1a !important;
 }
+
 /* CLOSE BUTTON */
 .close-btn {
   color: #1a1a1a !important;
   background: rgba(0,0,0,0.1) !important;
   border: 2px solid rgba(0,0,0,0.2) !important;
 }
+
+
+
+
 /* =============================================
    FORCE ALL MODAL TEXT BLACK - BULLETPROOF
    ============================================= */
+
 /* ALL MODAL CONTENT */
 #settings-modal *,
 #analytics-modal *,
@@ -680,6 +808,7 @@ select option {
 .modal-content * {
   color: #1a1a1a !important;
 }
+
 /* SPECIFIC TEXT ELEMENTS */
 .modal-title,
 .insight-title,
@@ -696,12 +825,14 @@ select option {
   color: #1a1a1a !important;
   font-weight: 600 !important;
 }
+
 /* SYNC BUTTONS TEXT */
 .sync-btn,
 .sync-btn * {
   color: #1a1a1a !important;
   font-weight: 700 !important;
 }
+
 /* LABELS & SECONDARY TEXT */
 .summary-label,
 .input-label,
@@ -709,6 +840,7 @@ select option {
 .insight-trend {
   color: #333333 !important;
 }
+
 /* PLACEHOLDER & OPTION TEXT */
 input::placeholder,
 select,
@@ -716,6 +848,7 @@ select option,
 .security-question-select option {
   color: #666666 !important;
 }
+
 /* BUTTON TEXT */
 button,
 .modal-btn,
@@ -724,6 +857,7 @@ button,
 .action-btn {
   color: #1a1a1a !important;
 }
+
 /* OVERWRITE ANY INHERITED WHITE TEXT */
 #settings-modal,
 #analytics-modal,
@@ -736,25 +870,33 @@ button,
 .settings-info {
   color: #1a1a1a !important;
 }
+
 /* INSIGHTS SPECIFIC */
 .insight-trend.up {
   color: #dc2626 !important;
 }
+
 .insight-trend.down {
   color: #059669 !important;
 }
+
 /* TABLE ROWS */
 .analytics-table tr {
   color: #1a1a1a !important;
 }
+
 /* EMERGENCY OVERRIDE */
 [data-theme="white"] *,
 .white-theme * {
   color: #1a1a1a !important;
 }
+
+
+
 /* =============================================
    NAVIGATION ARROW BUTTONS - BLACK BORDERS
    ============================================= */
+
 /* PERIOD NAVIGATION ARROWS */
 .period-nav button,
 .month-nav button {
@@ -769,6 +911,7 @@ button,
   box-shadow: 0 4px 12px rgba(0,0,0,0.1);
   transition: all 0.3s ease;
 }
+
 .period-nav button:hover,
 .month-nav button:hover {
   background: #ffffff !important;
@@ -776,44 +919,55 @@ button,
   box-shadow: 0 6px 20px rgba(0,0,0,0.2);
   transform: scale(1.1);
 }
+
 .period-nav button:active,
 .month-nav button:active {
   transform: scale(0.95);
 }
+
+
 /* =============================================
    SCROLLBAR - BLACK FOR WHITE THEME
    ============================================= */
+
 /* EXPENSE LIST SCROLLBAR */
 .expenses-list::-webkit-scrollbar {
   width: 8px;
 }
+
 .expenses-list::-webkit-scrollbar-track {
   background: rgba(0,0,0,0.05);
   border-radius: 10px;
 }
+
 .expenses-list::-webkit-scrollbar-thumb {
   background: rgba(0,0,0,0.3) !important;
   border-radius: 10px;
   border: 2px solid transparent;
   background-clip: padding-box;
 }
+
 .expenses-list::-webkit-scrollbar-thumb:hover {
   background: rgba(0,0,0,0.5) !important;
 }
+
 /* FIREFOX SCROLLBAR */
 .expenses-list {
   scrollbar-width: thin;
   scrollbar-color: rgba(0,0,0,0.3) rgba(0,0,0,0.05);
 }
+
 /* =============================================
    BULLETPROOF MODAL HEADER FIX
    ============================================= */
+
 /* MODAL CONTAINER - START LOWER */
 .modal {
   padding-top: 120px !important;
   align-items: flex-start !important;
   overflow-y: auto;
 }
+
 /* MODAL CONTENT - ENSURE SPACING */
 .modal-content {
   margin-top: 40px !important;
@@ -821,6 +975,7 @@ button,
   max-height: calc(100vh - 180px);
   overflow-y: auto;
 }
+
 /* MODAL HEADER - CLEAR SPACING */
 .modal-header {
   padding-top: 0 !important;
@@ -829,39 +984,48 @@ button,
   position: relative;
   z-index: 1;
 }
+
 /* MODAL TITLE - FORCE DOWN */
 .modal-title {
   margin-top: 0 !important;
   padding-top: 0 !important;
   font-size: 1.6rem !important;
 }
+
 /* APP HEADER - ENSURE IT STAYS ON TOP */
 .app-header {
   position: fixed !important;
   top: 0 !important;
   z-index: 1001 !important;
 }
+
 /* MODAL BACKDROP - BELOW HEADER */
 .modal {
   z-index: 1000 !important;
 }
+
 /* MOBILE FIX */
 @media (max-width: 768px) {
   .modal {
     padding-top: 100px !important;
   }
- 
+  
   .modal-content {
     margin-top: 20px !important;
     padding: 40px 24px !important;
   }
 }
+
+
+
 </style>
 </head>
 <body>
+
 <!-- ================================================================ -->
-<!-- FIREBASE AUTHENTICATION - NO PIN/PASSCODE SYSTEM -->
+<!-- FIREBASE AUTHENTICATION - NO PIN/PASSCODE SYSTEM                -->
 <!-- ================================================================ -->
+
 <div id="firebase-login-screen" style="
     position: fixed;
     top: 0;
@@ -886,34 +1050,40 @@ button,
         <div style="font-size: 64px; margin-bottom: 20px;">💰</div>
         <h2 style="color: white; margin-bottom: 10px;">Expense Tracker</h2>
         <p style="color: #888; margin-bottom: 30px; font-size: 14px;">Sign in to sync your data</p>
-        <input
-            type="email"
-            id="firebase-email"
-            placeholder="Email"
+
+        <input 
+            type="email" 
+            id="firebase-email" 
+            placeholder="Email" 
             autocomplete="email"
             style="width: 100%; padding: 15px; margin: 10px 0; border-radius: 10px; border: 1px solid #444; background: #2a2a2a; color: white; font-size: 16px; box-sizing: border-box;"
         />
-        <input
-            type="password"
-            id="firebase-password"
-            placeholder="Password"
+
+        <input 
+            type="password" 
+            id="firebase-password" 
+            placeholder="Password" 
             autocomplete="current-password"
             onkeypress="if(event.key==='Enter')firebaseLogin()"
             style="width: 100%; padding: 15px; margin: 10px 0; border-radius: 10px; border: 1px solid #444; background: #2a2a2a; color: white; font-size: 16px; box-sizing: border-box;"
         />
-        <button
-            onclick="firebaseLogin()"
+
+        <button 
+            onclick="firebaseLogin()" 
             style="width: 100%; padding: 15px; margin: 20px 0; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 10px; font-size: 18px; font-weight: bold; cursor: pointer; box-sizing: border-box;"
         >
             🔓 Sign In
         </button>
+
         <div id="firebase-message" style="margin-top: 15px; padding: 10px; border-radius: 8px; display: none; font-size: 14px;"></div>
     </div>
 </div>
+
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
 import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, setPersistence, browserLocalPersistence } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
 import { getFirestore, doc, getDoc, setDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
 const firebaseConfig = {
   apiKey: "AIzaSyAHgeL8cnjLGegRPvL-VCLbd_PCTo81Xvg",
   authDomain: "expensetracker-650bb.firebaseapp.com",
@@ -922,30 +1092,38 @@ const firebaseConfig = {
   messagingSenderId: "1049493175328",
   appId: "1:1049493175328:web:b3ba0b37fa104b3724d045"
 };
+
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
+
 setPersistence(auth, browserLocalPersistence);
+
 window.auth = auth;
 window.db = db;
 window.currentUser = null;
 window.unsubscribe = null;
+
 console.log('🔥 Firebase initialized');
+
 // BLOCK LOCALSTORAGE COMPLETELY
 const origGetItem = Storage.prototype.getItem;
 Storage.prototype.getItem = function(key) {
   console.log(`⚠️ Blocked localStorage.getItem('${key}')`);
   return null;
 };
+
 // OVERRIDE SAVEDATA IMMEDIATELY
 const origSaveData = window.saveData;
 window.saveData = function() {
   console.log('💾 saveData() called');
-  console.log(' 📊 Transactions:', window.transactions?.length || 0);
-  console.log(' 📊 Utilities:', window.utilities?.length || 0);
+  console.log('  📊 Transactions:', window.transactions?.length || 0);
+  console.log('  📊 Utilities:', window.utilities?.length || 0);
+
   if (origSaveData && typeof origSaveData === 'function') {
     try { origSaveData(); } catch(e) { console.error('⚠️ Original saveData error:', e); }
   }
+
   if (window.currentUser && window.saveToFirebase) {
     console.log('🔄 Syncing to Firebase...');
     window.saveToFirebase();
@@ -953,12 +1131,15 @@ window.saveData = function() {
     console.warn('⚠️ Not logged in - cannot sync');
   }
 };
+
 console.log('✅ saveData() override installed');
+
 // LOGIN
 window.firebaseLogin = async function() {
   const email = document.getElementById('firebase-email').value.trim();
   const password = document.getElementById('firebase-password').value;
   const messageDiv = document.getElementById('firebase-message');
+
   if (!email || !password) {
     messageDiv.textContent = '⚠️ Enter email and password';
     messageDiv.style.background = 'rgba(255,68,68,0.1)';
@@ -966,11 +1147,13 @@ window.firebaseLogin = async function() {
     messageDiv.style.display = 'block';
     return;
   }
+
   try {
     messageDiv.textContent = '🔄 Signing in...';
     messageDiv.style.background = 'rgba(68,138,255,0.1)';
     messageDiv.style.color = '#448aff';
     messageDiv.style.display = 'block';
+
     await signInWithEmailAndPassword(auth, email, password);
   } catch (error) {
     console.error('Login error:', error);
@@ -980,89 +1163,105 @@ window.firebaseLogin = async function() {
     messageDiv.style.display = 'block';
   }
 };
+
 // LOAD FROM FIREBASE
 async function loadFirebaseData() {
   if (!window.currentUser) return;
+
   try {
     console.log('📥 Loading from Firebase...');
     const docRef = doc(db, 'users', window.currentUser.uid);
     const docSnap = await getDoc(docRef);
+
     if (docSnap.exists()) {
       const data = docSnap.data();
       console.log('✅ Data loaded:', data);
+
       window.settings = data.settings || { startDate: new Date().toISOString().split('T')[0] };
       window.transactions = data.transactions || [];
       window.salaries = data.salaries || {};
-      window.otherIncomes = data.otherIncomes || {};
+    window.otherIncomes = data.otherIncomes || {};
       window.utilities = data.utilities || [];
+
       console.log(`📊 ${window.transactions.length} transactions, ${window.utilities.length} utilities`);
+
       setTimeout(() => {
         if (typeof updatePeriodDisplay === 'function') updatePeriodDisplay();
         if (typeof renderTransactions === 'function') renderTransactions();
         if (typeof updateUtilitiesList === 'function') updateUtilitiesList();
         console.log('✅ UI updated');
       }, 200);
+
     } else {
       console.log('📝 New user');
       window.settings = { startDate: new Date().toISOString().split('T')[0] };
       window.transactions = [];
       window.salaries = {};
-      window.otherIncomes = {};
+window.otherIncomes = {};
       window.utilities = [];
+
       await setDoc(docRef, {
         settings: window.settings,
         transactions: [],
         salaries: {},
-        otherIncomes: {},
         utilities: [],
+        otherIncomes: {},
         lastUpdated: new Date().toISOString()
       });
     }
+
     // Real-time listener
     window.unsubscribe = onSnapshot(docRef, (snapshot) => {
       if (!snapshot.exists()) return;
       const data = snapshot.data();
       console.log('🔄 Real-time update');
+
       window.settings = data.settings || window.settings;
       window.transactions = data.transactions || [];
       window.salaries = data.salaries || {};
-      window.otherIncomes = data.otherIncomes || {};
       window.utilities = data.utilities || [];
+      window.otherIncomes = data.otherIncomes || {};
+
       if (typeof updatePeriodDisplay === 'function') updatePeriodDisplay();
       if (typeof renderTransactions === 'function') renderTransactions();
       if (typeof updateUtilitiesList === 'function') updateUtilitiesList();
     });
+
     console.log('✅ Real-time sync active');
   } catch (error) {
     console.error('❌ Load error:', error);
   }
 }
+
 // SAVE TO FIREBASE
 window.saveToFirebase = async function() {
   if (!window.currentUser) {
     console.warn('⚠️ Not logged in');
     return;
   }
+
   try {
     console.log('💾 Saving to Firebase...');
-    console.log(' Settings:', window.settings);
-    console.log(' Transactions:', window.transactions?.length || 0);
-    console.log(' Salaries:', Object.keys(window.salaries || {}).length);
-    console.log(' Other Incomes:', Object.keys(window.otherIncomes || {}).length);
-    console.log(' Utilities:', window.utilities?.length || 0);
+    console.log('  Settings:', window.settings);
+    console.log('  Transactions:', window.transactions?.length || 0);
+    console.log('  Salaries:', Object.keys(window.salaries || {}).length);
+    console.log('  Utilities:', window.utilities?.length || 0);
+
     await setDoc(doc(db, 'users', window.currentUser.uid), {
       settings: window.settings || {},
       transactions: window.transactions || [],
       salaries: window.salaries || {},
-      otherIncomes: window.otherIncomes || {},
       utilities: window.utilities || [],
+      otherIncomes: window.otherIncomes || {},
       lastUpdated: new Date().toISOString()
     });
+
     console.log('✅ Saved to Firebase!');
   } catch (error) {
     console.error('❌ Save error:', error);
   }
 };
+
 // AUTH STATE
 onAuthStateChanged(auth, async (user) => {
   if (user) {
@@ -1070,10 +1269,10 @@ onAuthStateChanged(auth, async (user) => {
     window.currentUser = user;
     await loadFirebaseData();
     document.getElementById('firebase-login-screen').style.display = 'none';
-   
+    
     // FIX: Check for setup wizard ONLY AFTER data loads
     checkFirstTimeUser();
-   
+    
     // Safety: If wizard showed prematurely, hide it if settings now exist
     if (window.settings && window.settings.startDate) {
       document.getElementById('setup-wizard').classList.remove('active');
@@ -1084,7 +1283,10 @@ onAuthStateChanged(auth, async (user) => {
     document.getElementById('firebase-login-screen').style.display = 'flex';
   }
 });
+
 </script>
+
+
 <div class="app-header"><div class="app-logo">💰</div><h1 class="app-title">Expense Tracker</h1></div>
 <div class="container">
 <div class="sync-bar">
@@ -1122,7 +1324,7 @@ onAuthStateChanged(auth, async (user) => {
         <div style="flex:1;">
           <div style="font-weight:700;color:#8b5cf6;margin-bottom:6px;font-size:0.95rem;">📌 Tracking Only - Not Added to Expenses</div>
           <p style="margin:0;font-size:0.85rem;line-height:1.6;color:rgba(255,255,255,0.85);">
-            This section is for <strong style="color:#8b5cf6;">tracking your monthly utility bills</strong> and viewing analytics.
+            This section is for <strong style="color:#8b5cf6;">tracking your monthly utility bills</strong> and viewing analytics. 
             <span style="display:block;margin-top:8px;padding:8px;background:rgba(239,68,68,0.1);border-radius:6px;border-left:3px solid rgba(239,68,68,0.5);">
               <strong style="color:#ef4444;">⚠️ Not Auto-Added:</strong> These utilities are <strong>NOT automatically included</strong> in your bi-weekly expenses.
             </span>
@@ -1142,6 +1344,7 @@ onAuthStateChanged(auth, async (user) => {
         <button onclick="dismissUtilityDisclaimer(false)" style="background:none;border:none;color:rgba(255,255,255,0.5);font-size:1.5rem;cursor:pointer;padding:0;margin:0;line-height:1;transition:color 0.3s;" onmouseover="this.style.color='rgba(255,255,255,0.9)'" onmouseout="this.style.color='rgba(255,255,255,0.5)'">×</button>
       </div>
     </div>
+
 <div class="summary"><div class="summary-item full-width"><div class="summary-label">Total Bills</div><div class="summary-value" id="monthly-total">$0</div></div></div>
 <div class="input-group"><label class="input-label">Utility Type</label><select id="utility-type"><option value="">Select utility...</option><option value="💧 Water">💧 Water</option><option value="🔥 Gas">🔥 Gas</option><option value="⚡ Hydro">⚡ Hydro</option><option value="📡 Internet">📡 Internet</option><option value="📱 Phone">📱 Phone</option><option value="🏠 Home Insurance">🏠 Home Insurance</option><option value="🚗 Car Insurance">🚗 Car Insurance</option><option value="Other">Other</option></select></div>
 <div class="input-group" id="custom-utility-group" style="display:none"><label class="input-label">Custom Utility</label><input type="text" id="custom-utility" placeholder="Enter utility name"></div>
@@ -1169,7 +1372,9 @@ onAuthStateChanged(auth, async (user) => {
   <input type="password" id="confirm-passcode-settings" maxlength="6" placeholder="••••••" inputmode="numeric">
 </div>
 <button class="sync-btn" style="width:100%;margin-bottom:30px;background:linear-gradient(135deg,rgba(251,191,36,.25),rgba(251,191,36,.15));border-color:rgba(251,191,36,.4)" onclick="changePasscodeSettings()">🔒 Update Passcode</button>
+
       <div class="divider" style="margin:30px 0">🔑 Recovery Code</div>
+
       <div style="background:rgba(59,130,246,0.15);border:2px solid rgba(59,130,246,0.4);border-radius:16px;padding:24px;margin:20px 0">
         <div style="font-size:1.1rem;font-weight:700;color:#3b82f6;margin-bottom:12px">
           Generate New Recovery Code
@@ -1181,6 +1386,9 @@ onAuthStateChanged(auth, async (user) => {
           🔑 Generate New Recovery Code
         </button>
       </div>
+
+
+
     <div class="divider" style="margin:30px 0">🔔 Push Notifications</div>
     <div style="background:rgba(251,191,36,0.1);border:1px solid rgba(251,191,36,0.3);border-radius:12px;padding:16px;margin-bottom:20px;">
       <div style="font-size:0.85rem;color:rgba(255,255,255,0.8);line-height:1.6;">
@@ -1208,10 +1416,12 @@ onAuthStateChanged(auth, async (user) => {
 <div id="analytics-modal" class="modal"><div class="modal-content"><div class="modal-header"><div class="modal-title">Utility Analytics</div><button class="close-btn" onclick="closeAnalytics()">✕</button></div><div id="analytics-body"></div></div></div>
 <div id="insights-modal" class="modal"><div class="modal-content insights-content"><div class="modal-header"><div class="modal-title">Spending Insights 📈</div><button class="close-btn" onclick="closeInsights()">✕</button></div><div id="insights-body" class="insights-body"></div></div></div>
 <script>
-window.transactions = [], window.salaries = {}, window.utilities = [], window.settings = null, window.otherIncomes = {}, currentPeriodOffset = 0, currentMonthOffset = 0, editingItem = null, editingType = null, selectedQuickDate = null;
+window.transactions = [], window.salaries = {}, window.utilities = [], window.settings = null, currentPeriodOffset = 0, currentMonthOffset = 0, editingItem = null, editingType = null, selectedQuickDate = null;
+
 function resetApp() {
   confirm('⚠️ Delete ALL data and restart setup?') && (localStorage.clear(), location.reload())
 }
+
 function checkFirstTimeUser() {
   console.log('🔧 checkFirstTimeUser() - Firebase only mode');
   if (window.settings && window.settings.startDate) {
@@ -1222,9 +1432,11 @@ function checkFirstTimeUser() {
     showSetupWizard();
   }
 }
+
 function showSetupWizard() {
   generateQuickDates(), document.getElementById('setup-wizard').classList.add('active')
 }
+
 function generateQuickDates() {
   const container = document.getElementById('quick-dates'), today = new Date(), dates = [];
   for (let i = 0; i < 4; i++) {
@@ -1238,28 +1450,35 @@ function generateQuickDates() {
     return `<button class="quick-date-btn" onclick="selectQuickDate('${formatted}')">${display}${label}</button>`
   }).join('')
 }
+
 function selectQuickDate(dateStr) {
   selectedQuickDate = dateStr, document.getElementById('setup-start-date').value = dateStr, document.querySelectorAll('.quick-date-btn').forEach(btn => btn.classList.remove('selected')), event.target.classList.add('selected')
 }
+
 function completeSetup() {
   let startDate = document.getElementById('setup-start-date').value || selectedQuickDate;
   startDate ? (window.settings = { startDate: startDate, setupComplete: !0, setupDate: (new Date).toISOString() }, currentPeriodOffset = 0, updatePeriodDisplay(), updateMonthlyDisplay(), renderQuickAddButtons(), window.saveData(), document.getElementById('setup-wizard').classList.remove('active')) : alert('Please select a start date')
 }
+
 function showSettings() {
   if (!window.settings || !window.settings.startDate) return void alert('Complete setup first');
   const modal = document.getElementById('settings-modal'), dateObj = new Date(window.settings.startDate + 'T00:00:00');
   document.getElementById('current-start-date').textContent = dateObj.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }), document.getElementById('settings-start-date').value = window.settings.startDate, modal.classList.add('active')
 }
+
 function closeSettings() {
   document.getElementById('settings-modal').classList.remove('active')
 }
+
 function saveSettings() {
   const newStartDate = document.getElementById('settings-start-date').value;
   newStartDate ? confirm('Change pay cycle start date? This recalculates all periods.') && (window.settings.startDate = newStartDate, window.settings.lastModified = (new Date).toISOString(), currentPeriodOffset = 0, updatePeriodDisplay(), window.saveData(), closeSettings(), alert('✅ Pay cycle updated!')) : alert('Enter a valid start date')
 }
+
 document.getElementById('utility-type').addEventListener('change', function() {
   document.getElementById('custom-utility-group').style.display = 'Other' === this.value ? 'block' : 'none'
 });
+
 function showAnalytics() {
   const modal = document.getElementById('analytics-modal'), body = document.getElementById('analytics-body'), utilityGroups = {};
   window.utilities.forEach(util => { utilityGroups[util.type] || (utilityGroups[util.type] = []), utilityGroups[util.type].push(util.amount) });
@@ -1273,9 +1492,11 @@ function showAnalytics() {
   }
   modal.classList.add('active')
 }
+
 function closeAnalytics() {
   document.getElementById('analytics-modal').classList.remove('active')
 }
+
 function showInsights() {
   const modal = document.getElementById('insights-modal'), body = document.getElementById('insights-body'), currentPeriod = getPeriod(0), previousPeriod = getPeriod(-1);
   if (!currentPeriod) return body.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📊</div><div>No data available</div></div>', void modal.classList.add('active');
@@ -1293,13 +1514,16 @@ function showInsights() {
   }
   html += `<div class="insight-section"><div class="insight-title">🎯 All-Time Stats</div><div class="stat-grid"><div class="stat-card"><div class="stat-label">Periods Tracked</div><div class="stat-value">${allTimeStats.periodsTracked}</div></div><div class="stat-card"><div class="stat-label">Avg Savings</div><div class="stat-value" style="color:${allTimeStats.avgSavings >= 0 ? '#10b981' : '#ef4444'}">$${allTimeStats.avgSavings.toFixed(0)}</div></div><div class="stat-card"><div class="stat-label">Best Period</div><div class="stat-value" style="color:#fbbf24;font-size:1.2rem">$${allTimeStats.bestSavings.toFixed(0)}</div></div><div class="stat-card"><div class="stat-label">Total Saved</div><div class="stat-value" style="color:${allTimeStats.totalSavings >= 0 ? '#10b981' : '#ef4444'}">$${allTimeStats.totalSavings.toFixed(0)}</div></div></div></div>`, allTimeStats.topCategories.length > 0 && (html += `<div class="insight-section"><div class="insight-title">🏆 Top Spending Categories</div><div class="category-breakdown">${allTimeStats.topCategories.slice(0, 5).map((cat, idx) => `<div class="category-item"><span class="category-name">${idx + 1}. ${cat.category}</span><span class="category-amount">$${cat.total.toFixed(0)}</span></div>`).join('')}</div></div>`), body.innerHTML = html, modal.classList.add('active')
 }
+
 function closeInsights() {
   document.getElementById('insights-modal').classList.remove('active')
 }
+
 function getCategoryBreakdown(expenses) {
   const categories = {};
   return expenses.forEach(exp => { categories[exp.category] || (categories[exp.category] = 0), categories[exp.category] += exp.amount }), Object.keys(categories).map(cat => ({ category: cat, amount: categories[cat] })).sort((a, b) => b.amount - a.amount)
 }
+
 function calculateAllTimeStats() {
   if (!window.settings || !window.settings.startDate) return { periodsTracked: 0, avgSavings: 0, bestSavings: 0, totalSavings: 0, topCategories: [] };
   const today = new Date; today.setHours(0, 0, 0, 0);
@@ -1310,22 +1534,24 @@ function calculateAllTimeStats() {
   for (let i = 0; i < totalPeriods; i++) {
     const periodStart = new Date(startDate); periodStart.setDate(periodStart.getDate() + 14 * i);
     const periodEnd = new Date(periodStart); periodEnd.setDate(periodEnd.getDate() + 13), periodEnd.setHours(23, 59, 59, 999);
-    const periodKey = `period-${periodStart.getFullYear()}-${String(periodStart.getMonth() + 1).padStart(2, '0')}-${String(periodStart.getDate()).padStart(2, '0')}`, salary = window.salaries[periodKey] || 0, otherIncome = window.otherIncomes[periodKey] || 0, totalIncome = salary + otherIncome, periodExpenses = window.transactions.filter(t => {
+    const periodKey = `period-${periodStart.getFullYear()}-${String(periodStart.getMonth() + 1).padStart(2, '0')}-${String(periodStart.getDate()).padStart(2, '0')}`, salary = window.salaries[periodKey] || 0, periodExpenses = window.transactions.filter(t => {
       const tDate = new Date(t.date); tDate.setHours(0, 0, 0, 0); return tDate >= periodStart && tDate <= periodEnd
     });
-    if (salary > 0 || otherIncome > 0 || periodExpenses.length > 0) {
-      periodsWithData++; const expenseTotal = periodExpenses.reduce((sum, t) => sum + t.amount, 0), savings = totalIncome - expenseTotal;
+    if (salary > 0 || periodExpenses.length > 0) {
+      periodsWithData++; const expenseTotal = periodExpenses.reduce((sum, t) => sum + t.amount, 0), savings = salary - expenseTotal;
       totalSavings += savings, savings > bestSavings && (bestSavings = savings), periodExpenses.forEach(exp => { allCategories[exp.category] || (allCategories[exp.category] = 0), allCategories[exp.category] += exp.amount })
     }
   }
   const topCategories = Object.keys(allCategories).map(cat => ({ category: cat, total: allCategories[cat] })).sort((a, b) => b.total - a.total);
   return { periodsTracked: periodsWithData, avgSavings: periodsWithData > 0 ? totalSavings / periodsWithData : 0, bestSavings: -Infinity === bestSavings ? 0 : bestSavings, totalSavings: totalSavings, topCategories: topCategories }
 }
+
 function getTopCategories(limit = 5) {
   if (0 === window.transactions.length) return [];
   const categoryFrequency = {};
   return window.transactions.forEach(t => { const cat = t.category.trim(); cat && (categoryFrequency[cat] = (categoryFrequency[cat] || 0) + 1) }), Object.keys(categoryFrequency).map(cat => ({ category: cat, count: categoryFrequency[cat] })).sort((a, b) => b.count - a.count).slice(0, limit).map(item => item.category)
 }
+
 function renderQuickAddButtons() {
   const container = document.getElementById('quick-add-buttons'), topCategories = getTopCategories(5);
   if (0 === topCategories.length) return void (container.innerHTML = '<div class="quick-add-empty">Add some expenses to see quick categories</div>');
@@ -1336,11 +1562,13 @@ function renderQuickAddButtons() {
     return `<button class="quick-add-btn" onclick="quickAddCategory('${category.replace(/'/g, "\\'")}')"> ${emoji ? emoji + ' ' : ''}${category}</button>`
   }).join('')
 }
+
 function quickAddCategory(category) {
   document.getElementById('category-input').value = category;
   const amountInput = document.getElementById('amount-input'); amountInput.focus(), amountInput.select();
   const categoryInput = document.getElementById('category-input'); categoryInput.style.background = 'rgba(251,191,36,.15)', setTimeout(() => { categoryInput.style.background = '' }, 500)
 }
+
 function openEditModal(id, type) {
   editingType = type;
   if ('expense' === type) {
@@ -1360,9 +1588,11 @@ function openEditModal(id, type) {
   }
   document.getElementById('edit-modal').classList.add('active')
 }
+
 function closeEditModal() {
   document.getElementById('edit-modal').classList.remove('active'), editingItem = null, editingType = null
 }
+
 function saveEdit() {
   if (!editingItem) return;
   const newCategory = document.getElementById('edit-category').value.trim(), newAmount = parseFloat(document.getElementById('edit-amount').value);
@@ -1387,28 +1617,34 @@ function saveEdit() {
   }
   closeEditModal()
 }
+
 window.onclick = function(event) {
   event.target === document.getElementById('analytics-modal') && closeAnalytics(), event.target === document.getElementById('insights-modal') && closeInsights(), event.target === document.getElementById('edit-modal') && closeEditModal(), event.target === document.getElementById('settings-modal') && closeSettings()
 };
+
 function exportData() {
-  const data = { transactions: window.transactions, salaries: window.salaries, utilities: window.utilities, settings: window.settings, otherIncomes: window.otherIncomes, exportDate: (new Date).toISOString(), version: '3.0' }, blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }), url = URL.createObjectURL(blob), link = document.createElement('a');
+  const data = { transactions: window.transactions, salaries: window.salaries, utilities: window.utilities, settings: window.settings, exportDate: (new Date).toISOString(), version: '3.0' }, blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }), url = URL.createObjectURL(blob), link = document.createElement('a');
   link.href = url, link.download = `expense-tracker-${(new Date).toISOString().split('T')[0]}.json`, link.click(), URL.revokeObjectURL(url), alert('✅ Data exported!')
 }
+
 function importData(event) {
   const file = event.target.files[0]; if (!file) return;
   const reader = new FileReader; reader.onload = function(e) {
     try {
       const imported = JSON.parse(e.target.result);
-      confirm('Import data? This replaces current data.') && (window.transactions = imported.transactions || [], window.salaries = imported.salaries || {}, window.otherIncomes = imported.otherIncomes || {}, window.utilities = imported.utilities || [], window.settings = imported.settings || null, currentPeriodOffset = 0, updatePeriodDisplay(), updateMonthlyDisplay(), renderQuickAddButtons(), window.saveData(), alert('✅ Data imported!'))
+      confirm('Import data? This replaces current data.') && (window.transactions = imported.transactions || [], window.salaries = imported.salaries || {}, window.utilities = imported.utilities || [], window.settings = imported.settings || null, currentPeriodOffset = 0, updatePeriodDisplay(), updateMonthlyDisplay(), renderQuickAddButtons(), window.saveData(), alert('✅ Data imported!'))
     } catch (error) { alert('❌ Invalid file') }
   }, reader.readAsText(file), event.target.value = ''
 }
+
 function changePeriod(direction) {
   currentPeriodOffset += direction, updatePeriodDisplay()
 }
+
 function jumpToCurrent() {
   currentPeriodOffset = 0, updatePeriodDisplay()
 }
+
 function getPeriod(offset = 0) {
   try {
     if (!window.settings || !window.settings.startDate) return null;
@@ -1422,16 +1658,20 @@ function getPeriod(offset = 0) {
     return { start: periodStart, end: periodEnd, key: `period-${periodStart.getFullYear()}-${String(periodStart.getMonth() + 1).padStart(2, '0')}-${String(periodStart.getDate()).padStart(2, '0')}`, periodNum: targetPeriod }
   } catch (error) { return console.error('Error in getPeriod:', error), null }
 }
+
 function getMonth(offset = 0) {
   const today = new Date, month = new Date(today.getFullYear(), today.getMonth() + offset, 1);
   return { year: month.getFullYear(), month: month.getMonth(), key: `${month.getFullYear()}-${String(month.getMonth() + 1).padStart(2, '0')}`, display: month.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) }
 }
+
 function formatDateShort(date) {
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 }
+
 function changeMonth(direction) {
   currentMonthOffset += direction, updateMonthlyDisplay()
 }
+
 function calculateCarryForward(upToPeriodNum) {
   if (!window.settings || !window.settings.startDate) return 0;
   if (upToPeriodNum <= 0) return 0;
@@ -1440,19 +1680,20 @@ function calculateCarryForward(upToPeriodNum) {
   for (let i = 0; i < upToPeriodNum; i++) {
     const periodStart = new Date(startDate); periodStart.setDate(periodStart.getDate() + 14 * i);
     const periodEnd = new Date(periodStart); periodEnd.setDate(periodEnd.getDate() + 13), periodEnd.setHours(23, 59, 59, 999);
-    const periodKey = `period-${periodStart.getFullYear()}-${String(periodStart.getMonth() + 1).padStart(2, '0')}-${String(periodStart.getDate()).padStart(2, '0')}`, salary = window.salaries[periodKey] || 0, otherIncome = window.otherIncomes[periodKey] || 0, totalIncome = salary + otherIncome, periodExpenses = window.transactions.filter(t => {
+    const periodKey = `period-${periodStart.getFullYear()}-${String(periodStart.getMonth() + 1).padStart(2, '0')}-${String(periodStart.getDate()).padStart(2, '0')}`, salary = window.salaries[periodKey] || 0, periodExpenses = window.transactions.filter(t => {
       const tDate = new Date(t.date); tDate.setHours(0, 0, 0, 0); return tDate >= periodStart && tDate <= periodEnd
     }), totalExpenses = periodExpenses.reduce((sum, t) => sum + t.amount, 0);
-    cumulativeSavings += totalIncome - totalExpenses
+    cumulativeSavings += salary - totalExpenses
   }
   return cumulativeSavings
 }
+
 function updatePeriodDisplay() {
   const period = getPeriod(currentPeriodOffset); if (!period) return;
   const pane = document.getElementById('pane-period'), star = document.getElementById('star-current'), dateRange = `${formatDateShort(period.start)} - ${formatDateShort(period.end)}`, isCurrent = 0 === currentPeriodOffset;
   document.getElementById('period-dates').textContent = isCurrent ? `${dateRange} (CURRENT)` : dateRange;
   isCurrent ? (star.classList.add('active'), pane.classList.add('current')) : (star.classList.remove('active'), pane.classList.remove('current'));
-  const salary = window.salaries[period.key] || 0, otherIncome = window.otherIncomes[period.key] || 0, totalIncome = salary + otherIncome; document.getElementById('salary-input').value = salary || ''; document.getElementById('other-income-input').value = otherIncome || '';
+  const salary = window.salaries[period.key] || 0; const otherIncome = window.otherIncomes[period.key] || 0; const totalIncome = salary + otherIncome; document.getElementById('salary-input').value = salary || ''; document.getElementById('other-income-input').value = otherIncome || '';
   const periodExpenses = window.transactions.filter(t => {
     const tDate = new Date(t.date); tDate.setHours(0, 0, 0, 0); return tDate >= period.start && tDate <= period.end
   }), totalExpenses = periodExpenses.reduce((sum, t) => sum + t.amount, 0), thisPeriodSavings = totalIncome - totalExpenses, carryForward = calculateCarryForward(period.periodNum), totalCumulativeSavings = carryForward + thisPeriodSavings;
@@ -1461,21 +1702,25 @@ function updatePeriodDisplay() {
   const carryForwardEl = document.getElementById('carry-forward-display'); carryForwardEl.textContent = `$${carryForward.toFixed(0)}`, carryForwardEl.className = 'summary-value info ' + (carryForward >= 0 ? 'positive' : 'negative');
   const totalSavingsEl = document.getElementById('total-savings-display'); totalSavingsEl.textContent = `$${totalCumulativeSavings.toFixed(0)}`, totalSavingsEl.className = 'summary-value ' + (totalCumulativeSavings >= 0 ? 'positive' : 'negative'), renderExpenses(periodExpenses)
 }
+
 function updateMonthlyDisplay() {
   const month = getMonth(currentMonthOffset); document.getElementById('month-display').textContent = month.display;
   const monthUtilities = window.utilities.filter(u => u.month === month.key), total = monthUtilities.reduce((sum, u) => sum + u.amount, 0);
   document.getElementById('monthly-total').textContent = `$${total.toFixed(0)}`, renderUtilities(monthUtilities)
 }
+
 function renderExpenses(expenses) {
   const listEl = document.getElementById('expenses-list');
   if (0 === expenses.length) return void (listEl.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📊</div><div>No expenses yet</div></div>');
   listEl.innerHTML = expenses.slice().reverse().map(exp => `<div class="expense-item-wrapper"><div class="expense-item" data-expense-id="${exp.id}"><div class="expense-info"><div class="expense-desc">${exp.category}</div><div class="expense-cat">${new Date(exp.date).toLocaleDateString()}</div></div><div class="expense-amount">$${exp.amount.toFixed(2)}</div></div><div class="swipe-actions"><button class="action-btn edit"><span class="action-icon">✏️</span><span>Edit</span></button><button class="action-btn delete"><span class="action-icon">🗑️</span><span>Delete</span></button></div></div>`).join(''), listEl.querySelectorAll('.expense-item').forEach(item => setupSwipeActions(item, 'expense'))
 }
+
 function renderUtilities(utilityList) {
   const listEl = document.getElementById('utilities-list');
   if (0 === utilityList.length) return void (listEl.innerHTML = '<div class="empty-state"><div class="empty-state-icon">💡</div><div>No utilities yet</div></div>');
   listEl.innerHTML = utilityList.map(util => `<div class="expense-item-wrapper"><div class="expense-item" data-utility-id="${util.id}"><div class="expense-info"><div class="expense-desc">${util.type}</div><div class="expense-cat">${util.month}</div></div><div class="expense-amount">$${util.amount.toFixed(2)}</div></div><div class="swipe-actions"><button class="action-btn edit"><span class="action-icon">✏️</span><span>Edit</span></button><button class="action-btn delete"><span class="action-icon">🗑️</span><span>Delete</span></button></div></div>`).join(''), listEl.querySelectorAll('.expense-item').forEach(item => setupSwipeActions(item, 'utility'))
 }
+
 function setupSwipeActions(item, type) {
   let startX = 0, currentX = 0, isSwiping = !1;
   const swipeThreshold = 60, wrapper = item.closest('.expense-item-wrapper'), editBtn = wrapper.querySelector('.action-btn.edit'), deleteBtn = wrapper.querySelector('.action-btn.delete');
@@ -1499,6 +1744,7 @@ function setupSwipeActions(item, type) {
     }
   }), document.addEventListener('click', e => { wrapper.contains(e.target) || item.classList.remove('swiped') })
 }
+
 function addExpense() {
   const period = getPeriod(currentPeriodOffset); if (!period) return;
   const category = document.getElementById('category-input').value.trim(), amount = parseFloat(document.getElementById('amount-input').value);
@@ -1506,6 +1752,7 @@ function addExpense() {
   const transaction = { id: Date.now(), category: category, amount: amount, date: period.start.toISOString() };
   window.transactions.push(transaction), document.getElementById('category-input').value = '', document.getElementById('amount-input').value = '', updatePeriodDisplay(), renderQuickAddButtons(), window.saveData()
 }
+
 function addUtility() {
   let type = document.getElementById('utility-type').value;
   if (!type) return void alert('Select a utility type');
@@ -1515,13 +1762,16 @@ function addUtility() {
   const month = getMonth(currentMonthOffset), utility = { id: Date.now(), type: type, amount: amount, month: month.key };
   window.utilities.push(utility), document.getElementById('utility-type').value = '', document.getElementById('custom-utility').value = '', document.getElementById('utility-amount').value = '', document.getElementById('custom-utility-group').style.display = 'none', updateMonthlyDisplay(), window.saveData()
 }
+
 document.getElementById('salary-input').addEventListener('change', function() {
   const period = getPeriod(currentPeriodOffset);
   period && (window.salaries[period.key] = parseFloat(this.value) || 0, updatePeriodDisplay(), window.saveData())
 }), document.getElementById('amount-input').addEventListener('keypress', function(e) { 'Enter' === e.key && addExpense() }), document.getElementById('utility-amount').addEventListener('keypress', function(e) { 'Enter' === e.key && addUtility() }), checkFirstTimeUser();
+
 // ... (keep the rest of your auth, swipe, disclaimer, notifications code unchanged)
 </script>
 <!-- ==================== AUTHENTICATION SYSTEM ==================== -->
+
 <!-- Passcode Setup -->
 <div id="passcode-setup-modal" class="modal auth-modal">
   <div class="modal-content auth-content">
@@ -1542,12 +1792,15 @@ document.getElementById('salary-input').addEventListener('change', function() {
     </div>
   </div>
 </div>
+
   <div id="recovery-code-modal" class="modal auth-modal" style="z-index:10001"><div class="modal-content" style="max-width:550px"><div class="modal-header"><div class="modal-title">✅ PIN Created!</div></div><div class="auth-content"><div class="auth-icon">🔑</div><p class="auth-subtitle" style="font-size:1.1rem;margin-bottom:20px"><strong>Your Recovery Code:</strong></p><div style="background:rgba(251,191,36,0.15);border:2px solid rgba(251,191,36,0.4);border-radius:16px;padding:30px;margin:20px 0"><div id="recovery-display-code" style="font-size:3rem;font-weight:800;letter-spacing:8px;color:#fbbf24;text-align:center;font-family:monospace">XXXX</div></div><div style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:12px;padding:20px;margin:20px 0"><p style="color:rgba(255,255,255,0.9);font-size:0.95rem;margin:0"><strong style="color:#ef4444">⚠️</strong> Email NOW!</p></div><button class="modal-btn save" style="width:100%;margin-bottom:12px" onclick="emailRecoveryCode()">📧 Email</button><button class="modal-btn cancel" style="width:100%" onclick="closeRecoveryCodeModal()">Later</button></div></div></div>
   <div id="recovery-input-modal" class="modal auth-modal" style="z-index:10001"><div class="modal-content"><div class="modal-header"><div class="modal-title">🔓 Enter Code</div><button class="close-btn" onclick="closeRecoveryInputModal()">×</button></div><div class="auth-content"><div class="auth-icon">🔑</div><p class="auth-subtitle">4-character code from email</p><div class="passcode-input-group"><input type="text" class="passcode-digit" id="recovery-1" maxlength="1" style="text-transform:uppercase"><input type="text" class="passcode-digit" id="recovery-2" maxlength="1" style="text-transform:uppercase"><input type="text" class="passcode-digit" id="recovery-3" maxlength="1" style="text-transform:uppercase"><input type="text" class="passcode-digit" id="recovery-4" maxlength="1" style="text-transform:uppercase"></div><p class="passcode-hint">From email</p><button class="modal-btn save" style="width:100%;margin-top:20px" onclick="verifyRecoveryCode()">✅ Verify</button></div></div></div>
   <div id="new-pin-modal" class="modal auth-modal" style="z-index:10001"><div class="modal-content"><div class="modal-header"><div class="modal-title">🔑 New PIN</div></div><div class="auth-content"><div class="auth-icon">✅</div><p class="auth-subtitle">Create new PIN</p><div class="passcode-input-group"><input type="password" class="passcode-digit" id="newpin-1" maxlength="1" inputmode="numeric"><input type="password" class="passcode-digit" id="newpin-2" maxlength="1" inputmode="numeric"><input type="password" class="passcode-digit" id="newpin-3" maxlength="1" inputmode="numeric"><input type="password" class="passcode-digit" id="newpin-4" maxlength="1" inputmode="numeric"><input type="password" class="passcode-digit" id="newpin-5" maxlength="1" inputmode="numeric"><input type="password" class="passcode-digit" id="newpin-6" maxlength="1" inputmode="numeric"></div><p class="passcode-hint">6 digits</p><button class="modal-btn save" style="width:100%;margin-top:20px" onclick="saveNewPinAfterRecovery()">✅ Save</button></div></div></div>
   <div id="regenerate-recovery-modal" class="modal auth-modal" style="z-index:10001"><div class="modal-content"><div class="modal-header"><div class="modal-title">🔐 Verify PIN</div><button class="close-btn" onclick="closeRegenerateModal()">×</button></div><div class="auth-content"><div class="auth-icon">🔑</div><p class="auth-subtitle">Enter current PIN</p><div class="passcode-input-group"><input type="password" class="passcode-digit" id="verify-1" maxlength="1" inputmode="numeric"><input type="password" class="passcode-digit" id="verify-2" maxlength="1" inputmode="numeric"><input type="password" class="passcode-digit" id="verify-3" maxlength="1" inputmode="numeric"><input type="password" class="passcode-digit" id="verify-4" maxlength="1" inputmode="numeric"><input type="password" class="passcode-digit" id="verify-5" maxlength="1" inputmode="numeric"><input type="password" class="passcode-digit" id="verify-6" maxlength="1" inputmode="numeric"></div><p class="passcode-hint">Current PIN</p><button class="modal-btn save" style="width:100%;margin-top:20px" onclick="verifyPinAndGenerateNew()">✅ Generate</button></div></div></div>
   <div id="new-recovery-code-modal" class="modal auth-modal" style="z-index:10002"><div class="modal-content" style="max-width:550px"><div class="modal-header"><div class="modal-title">✅ New Code!</div></div><div class="auth-content"><div class="auth-icon">🔑</div><p class="auth-subtitle" style="font-size:1.1rem;margin-bottom:20px"><strong>NEW Code:</strong></p><div style="background:rgba(251,191,36,0.15);border:2px solid rgba(251,191,36,0.4);border-radius:16px;padding:30px;margin:20px 0"><div id="new-recovery-display" style="font-size:3rem;font-weight:800;letter-spacing:8px;color:#fbbf24;text-align:center;font-family:monospace">XXXX</div></div><div style="background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.3);border-radius:12px;padding:20px;margin:20px 0"><p style="color:rgba(255,255,255,0.9);font-size:0.95rem;margin:0"><strong style="color:#3b82f6">ℹ️</strong> Old code invalid!</p></div><button class="modal-btn save" style="width:100%;margin-bottom:12px" onclick="emailRecoveryCode()">📧 Email</button><button class="modal-btn cancel" style="width:100%" onclick="closeNewRecoveryModal()">Done</button></div></div></div>
   <!-- Lock Screen -->
+
+
 <!-- Recovery Key Input -->
 <div id="recovery-key-input-modal" class="modal auth-modal">
   <div class="modal-content auth-content">
@@ -1566,52 +1819,72 @@ document.getElementById('salary-input').addEventListener('change', function() {
     </div>
   </div>
 </div>
+
+
 <script>
 // =============================================
 // WORKING SWIPE GESTURES - TESTED VERSION
 // =============================================
+
 (function() {
   let swipe = {
-    startX: 0, startY: 0,
+    startX: 0, startY: 0, 
     currentX: 0, currentY: 0,
     element: null, paneType: null,
     isTracking: false, hasCommitted: false
   };
+
   function initSwipes() {
     // Wait for DOM and your functions to be ready
     if (typeof changePeriod === 'undefined' || typeof changeMonth === 'undefined') {
       setTimeout(initSwipes, 100);
       return;
     }
+
     const expensePane = document.getElementById('pane-period');
     const utilityPane = document.querySelector('.pane.monthly');
+
     if (expensePane) setupPane(expensePane, 'expense');
     if (utilityPane) setupPane(utilityPane, 'utility');
+
     console.log('✅ Swipe gestures initialized');
   }
+
   function setupPane(pane, type) {
     pane.dataset.swipeType = type;
+
     // Touch events
     pane.addEventListener('touchstart', handleStart, { passive: true });
+document.getElementById('other-income-input').addEventListener('change', function() {
+  const period = getPeriod(currentPeriodOffset);
+  if (period) {
+    window.otherIncomes[period.key] = parseFloat(this.value) || 0;
+    saveData();
+    renderPeriod();
+  }
+});
+
     pane.addEventListener('touchmove', handleMove, { passive: false });
     pane.addEventListener('touchend', handleEnd, { passive: true });
-   
+    
     // Mouse events (desktop)
     pane.addEventListener('mousedown', handleStart);
     pane.addEventListener('mousemove', handleMove);
     pane.addEventListener('mouseup', handleEnd);
     pane.addEventListener('mouseleave', handleEnd);
   }
+
   function handleStart(e) {
     // Ignore if clicking on interactive elements
     const target = e.target;
-    if (target.tagName === 'INPUT' ||
-        target.tagName === 'SELECT' ||
+    if (target.tagName === 'INPUT' || 
+        target.tagName === 'SELECT' || 
         target.tagName === 'BUTTON' ||
         target.closest('.expense-item') ||
         target.closest('.quick-add-btn')) {
       return;
     }
+
     const touch = e.touches ? e.touches[0] : e;
     swipe = {
       startX: touch.clientX,
@@ -1624,13 +1897,17 @@ document.getElementById('salary-input').addEventListener('change', function() {
       hasCommitted: false
     };
   }
+
   function handleMove(e) {
     if (!swipe.isTracking || !swipe.element) return;
+
     const touch = e.touches ? e.touches[0] : e;
     swipe.currentX = touch.clientX;
     swipe.currentY = touch.clientY;
+
     const deltaX = swipe.currentX - swipe.startX;
     const deltaY = swipe.currentY - swipe.startY;
+
     // Commit to horizontal swipe if movement is mostly horizontal
     if (!swipe.hasCommitted && (Math.abs(deltaX) > 15 || Math.abs(deltaY) > 15)) {
       swipe.hasCommitted = true;
@@ -1640,28 +1917,33 @@ document.getElementById('salary-input').addEventListener('change', function() {
         return;
       }
     }
+
     if (swipe.hasCommitted && Math.abs(deltaX) > Math.abs(deltaY)) {
       e.preventDefault();
-     
+      
       // Visual feedback
       const moveX = deltaX * 0.1;
       const opacity = 1 - Math.abs(deltaX) / 600;
-     
+      
       swipe.element.style.transform = `translateX(${moveX}px)`;
       swipe.element.style.opacity = Math.max(opacity, 0.9);
       swipe.element.style.transition = 'none';
     }
   }
+
   function handleEnd(e) {
     if (!swipe.isTracking || !swipe.element || !swipe.hasCommitted) {
       resetSwipe();
       return;
     }
+
     const deltaX = swipe.currentX - swipe.startX;
     const deltaY = swipe.currentY - swipe.startY;
+
     // Must be horizontal and exceed threshold
     if (Math.abs(deltaX) > 60 && Math.abs(deltaX) > Math.abs(deltaY)) {
       const direction = deltaX < 0 ? 1 : -1;
+
       // Call the appropriate function
       try {
         if (swipe.paneType === 'expense') {
@@ -1669,10 +1951,12 @@ document.getElementById('salary-input').addEventListener('change', function() {
         } else if (swipe.paneType === 'utility') {
           changeMonth(direction);
         }
+
         // Haptic feedback
         if (navigator.vibrate) {
           navigator.vibrate(20);
         }
+
         // Success animation
         animateSuccess(swipe.element, direction);
       } catch (error) {
@@ -1682,39 +1966,44 @@ document.getElementById('salary-input').addEventListener('change', function() {
     } else {
       resetSwipe();
     }
+
     swipe.isTracking = false;
   }
+
   function animateSuccess(element, direction) {
     const slideOut = direction > 0 ? '-40px' : '40px';
-   
+    
     element.style.transition = 'all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
     element.style.transform = `translateX(${slideOut})`;
     element.style.opacity = '0.6';
+
     setTimeout(() => {
       element.style.transform = 'translateX(0)';
       element.style.opacity = '1';
-     
+      
       setTimeout(() => {
         element.style.transition = '';
       }, 300);
     }, 150);
   }
+
   function resetSwipe() {
     if (swipe.element) {
       swipe.element.style.transition = 'all 0.25s ease-out';
       swipe.element.style.transform = 'translateX(0)';
       swipe.element.style.opacity = '1';
-     
+      
       setTimeout(() => {
         if (swipe.element) {
           swipe.element.style.transition = '';
         }
       }, 250);
     }
-   
+    
     swipe.isTracking = false;
     swipe.hasCommitted = false;
   }
+
   // Initialize when everything is ready
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initSwipes);
@@ -1723,11 +2012,13 @@ document.getElementById('salary-input').addEventListener('change', function() {
   }
 })();
 </script>
+
 <!-- VISUAL SWIPE INDICATORS (Shows arrows on hover) -->
 <style>
 .pane {
   position: relative;
 }
+
 /* Only show on desktop hover */
 @media (hover: hover) and (pointer: fine) {
   .pane::before,
@@ -1744,24 +2035,42 @@ document.getElementById('salary-input').addEventListener('change', function() {
     transition: all 0.3s;
     z-index: 5;
   }
+
   .pane::before {
     left: 20px;
   }
+
   .pane::after {
     content: '›';
     right: 20px;
   }
+
   .pane:hover::before,
   .pane:hover::after {
     opacity: 1;
     color: rgba(251, 191, 36, 0.5);
   }
+
   .pane:hover::before {
     left: 15px;
   }
+
   .pane:hover::after {
     right: 15px;
   }
 }
 </style>
+
+
+
+
+
+
+
+
+
+
+
+
+
 </body></html>
