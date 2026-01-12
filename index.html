@@ -1180,7 +1180,6 @@ async function loadFirebaseData() {
       window.settings = data.settings || { startDate: new Date().toISOString().split('T')[0] };
       window.transactions = data.transactions || [];
       window.salaries = data.salaries || {};
-    window.otherIncomes = data.otherIncomes || {};
       window.utilities = data.utilities || [];
 
       console.log(`📊 ${window.transactions.length} transactions, ${window.utilities.length} utilities`);
@@ -1251,8 +1250,8 @@ window.saveToFirebase = async function() {
       settings: window.settings || {},
       transactions: window.transactions || [],
       salaries: window.salaries || {},
-      utilities: window.utilities || [],
-      otherIncomes: window.otherIncomes || {},
+      utilities: window.utilities,
+      otherIncomes: window.otherIncomes || [],
       lastUpdated: new Date().toISOString()
     });
 
@@ -1534,7 +1533,7 @@ function calculateAllTimeStats() {
   for (let i = 0; i < totalPeriods; i++) {
     const periodStart = new Date(startDate); periodStart.setDate(periodStart.getDate() + 14 * i);
     const periodEnd = new Date(periodStart); periodEnd.setDate(periodEnd.getDate() + 13), periodEnd.setHours(23, 59, 59, 999);
-    const periodKey = `period-${periodStart.getFullYear()}-${String(periodStart.getMonth() + 1).padStart(2, '0')}-${String(periodStart.getDate()).padStart(2, '0')}`, salary = window.salaries[periodKey] || 0, otherIncome = window.otherIncomes[periodKey] || 0, periodExpenses = window.transactions.filter(t => {
+    const periodKey = `period-${periodStart.getFullYear()}-${String(periodStart.getMonth() + 1).padStart(2, '0')}-${String(periodStart.getDate()).padStart(2, '0')}`, salary = window.salaries[periodKey] || 0, periodExpenses = window.transactions.filter(t => {
       const tDate = new Date(t.date); tDate.setHours(0, 0, 0, 0); return tDate >= periodStart && tDate <= periodEnd
     });
     if (salary > 0 || periodExpenses.length > 0) {
@@ -1683,7 +1682,7 @@ function calculateCarryForward(upToPeriodNum) {
     const periodKey = `period-${periodStart.getFullYear()}-${String(periodStart.getMonth() + 1).padStart(2, '0')}-${String(periodStart.getDate()).padStart(2, '0')}`, salary = window.salaries[periodKey] || 0, periodExpenses = window.transactions.filter(t => {
       const tDate = new Date(t.date); tDate.setHours(0, 0, 0, 0); return tDate >= periodStart && tDate <= periodEnd
     }), totalExpenses = periodExpenses.reduce((sum, t) => sum + t.amount, 0);
-    cumulativeSavings += (salary + otherIncome) - totalExpenses
+    cumulativeSavings += salary - totalExpenses
   }
   return cumulativeSavings
 }
