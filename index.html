@@ -1196,7 +1196,6 @@ async function loadFirebaseData() {
       window.settings = { startDate: new Date().toISOString().split('T')[0] };
       window.transactions = [];
       window.salaries = {};
-window.otherIncomes = {};
       window.utilities = [];
 
       await setDoc(docRef, {
@@ -1297,8 +1296,7 @@ onAuthStateChanged(auth, async (user) => {
 <div class="pane" id="pane-period">
 <div class="pane-header"><div class="period-nav"><button onclick="changePeriod(-1)">◀</button><div class="period-title" id="period-dates">Loading...</div><button onclick="changePeriod(1)">▶</button></div><div class="star-toggle" id="star-current" onclick="jumpToCurrent()">⭐</div></div>
 <div class="summary">
-<div class="summary-item"><div class="summary-label">Salary</div><div class="summary-value" id="salary-display">$0</div>
-<div class="summary-item"><div class="summary-label">Other Income</div><div class="summary-value positive" id="other-income-display">$0</div></div></div>
+<div class="summary-item"><div class="summary-label">Total Income</div><div class="summary-value" id="total-income-display">$0</div></div>
 <div class="summary-item"><div class="summary-label">Expenses</div><div class="summary-value" id="expenses-display">$0</div></div>
 <div class="summary-item"><div class="summary-label">This Period Savings</div><div class="summary-value" id="savings-display">$0</div></div>
 <div class="summary-item"><div class="summary-label">Previous Balance</div><div class="summary-value info" id="carry-forward-display">$0</div></div>
