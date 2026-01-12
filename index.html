@@ -1856,8 +1856,8 @@ document.getElementById('other-income-input').addEventListener('change', functio
   const period = getPeriod(currentPeriodOffset);
   if (period) {
     window.otherIncomes[period.key] = parseFloat(this.value) || 0;
-    renderPeriod();
     saveData();
+    renderPeriod();
   }
 });
 
