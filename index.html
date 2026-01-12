@@ -1680,10 +1680,10 @@ function calculateCarryForward(upToPeriodNum) {
   for (let i = 0; i < upToPeriodNum; i++) {
     const periodStart = new Date(startDate); periodStart.setDate(periodStart.getDate() + 14 * i);
     const periodEnd = new Date(periodStart); periodEnd.setDate(periodEnd.getDate() + 13), periodEnd.setHours(23, 59, 59, 999);
-    const periodKey = `period-${periodStart.getFullYear()}-${String(periodStart.getMonth() + 1).padStart(2, '0')}-${String(periodStart.getDate()).padStart(2, '0')}`, salary = window.salaries[periodKey] || 0 otherIncome = window.otherIncomes[periodKey] || 0,, periodExpenses = window.transactions.filter(t => {
+    const periodKey = `period-${periodStart.getFullYear()}-${String(periodStart.getMonth() + 1).padStart(2, '0')}-${String(periodStart.getDate()).padStart(2, '0')}`, salary = window.salaries[periodKey] || 0, periodExpenses = window.transactions.filter(t => {
       const tDate = new Date(t.date); tDate.setHours(0, 0, 0, 0); return tDate >= periodStart && tDate <= periodEnd
     }), totalExpenses = periodExpenses.reduce((sum, t) => sum + t.amount, 0);
-    cumulativeSavings += (salary + otherIncome) - totalExpenses
+    cumulativeSavings += salary - totalExpenses
   }
   return cumulativeSavings
 }
