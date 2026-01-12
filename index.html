@@ -1534,7 +1534,7 @@ function calculateAllTimeStats() {
   for (let i = 0; i < totalPeriods; i++) {
     const periodStart = new Date(startDate); periodStart.setDate(periodStart.getDate() + 14 * i);
     const periodEnd = new Date(periodStart); periodEnd.setDate(periodEnd.getDate() + 13), periodEnd.setHours(23, 59, 59, 999);
-    const periodKey = `period-${periodStart.getFullYear()}-${String(periodStart.getMonth() + 1).padStart(2, '0')}-${String(periodStart.getDate()).padStart(2, '0')}`, salary = window.salaries[periodKey] || 0, periodExpenses = window.transactions.filter(t => {
+    const periodKey = `period-${periodStart.getFullYear()}-${String(periodStart.getMonth() + 1).padStart(2, '0')}-${String(periodStart.getDate()).padStart(2, '0')}`, salary = window.salaries[periodKey] || 0, otherIncome = window.otherIncomes[periodKey] || 0, periodExpenses = window.transactions.filter(t => {
       const tDate = new Date(t.date); tDate.setHours(0, 0, 0, 0); return tDate >= periodStart && tDate <= periodEnd
     });
     if (salary > 0 || periodExpenses.length > 0) {
@@ -1683,7 +1683,7 @@ function calculateCarryForward(upToPeriodNum) {
     const periodKey = `period-${periodStart.getFullYear()}-${String(periodStart.getMonth() + 1).padStart(2, '0')}-${String(periodStart.getDate()).padStart(2, '0')}`, salary = window.salaries[periodKey] || 0, periodExpenses = window.transactions.filter(t => {
       const tDate = new Date(t.date); tDate.setHours(0, 0, 0, 0); return tDate >= periodStart && tDate <= periodEnd
     }), totalExpenses = periodExpenses.reduce((sum, t) => sum + t.amount, 0);
-    cumulativeSavings += salary - totalExpenses
+    cumulativeSavings += (salary + otherIncome) - totalExpenses
   }
   return cumulativeSavings
 }
@@ -1766,6 +1766,14 @@ function addUtility() {
 document.getElementById('salary-input').addEventListener('change', function() {
   const period = getPeriod(currentPeriodOffset);
   period && (window.salaries[period.key] = parseFloat(this.value) || 0, updatePeriodDisplay(), window.saveData())
+}),
+document.getElementById('other-income-input').addEventListener('change', function() {
+  const period = getPeriod(currentPeriodOffset);
+  if (period) {
+    window.otherIncomes[period.key] = parseFloat(this.value) || 0;
+    saveData();
+    renderPeriod();
+  }
 }), document.getElementById('amount-input').addEventListener('keypress', function(e) { 'Enter' === e.key && addExpense() }), document.getElementById('utility-amount').addEventListener('keypress', function(e) { 'Enter' === e.key && addUtility() }), checkFirstTimeUser();
 
 // ... (keep the rest of your auth, swipe, disclaimer, notifications code unchanged)
@@ -1855,15 +1863,6 @@ document.getElementById('salary-input').addEventListener('change', function() {
 
     // Touch events
     pane.addEventListener('touchstart', handleStart, { passive: true });
-document.getElementById('other-income-input').addEventListener('change', function() {
-  const period = getPeriod(currentPeriodOffset);
-  if (period) {
-    window.otherIncomes[period.key] = parseFloat(this.value) || 0;
-    saveData();
-    renderPeriod();
-  }
-});
-
     pane.addEventListener('touchmove', handleMove, { passive: false });
     pane.addEventListener('touchend', handleEnd, { passive: true });
     
