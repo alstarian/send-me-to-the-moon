@@ -1,3 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Expense Tracker</title>
+<!-- iOS App Icons -->
+<link rel="apple-touch-icon" sizes="180x180" href="icon.jpg">
+<link rel="apple-touch-icon" sizes="152x152" href="icon.jpg">
+<link rel="apple-touch-icon" sizes="120x120" href="icon.jpg">
+<link rel="icon" type="image/jpeg" href="icon.jpg">
+<!-- PWA Settings -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Expense Tracker">
+<!-- Theme Colors -->
+<meta name="theme-color" content="#000000">
+<meta name="msapplication-TileColor" content="#ffffff">
+<meta name="msapplication-TileImage" content="icon.jpg">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}.app-header{position:fixed;top:0;left:0;right:0;background:linear-gradient(135deg,rgba(10,10,10,.95) 0%,rgba(0,0,0,.98) 100%);backdrop-filter:blur(20px) saturate(180%);-webkit-backdrop-filter:blur(20px) saturate(180%);border-bottom:1px solid rgba(255,255,255,.1);padding:16px 20px;display:flex;align-items:center;justify-content:center;gap:16px;z-index:1001;box-shadow:0 4px 24px rgba(0,0,0,.5)}.app-logo{font-size:2.5rem;animation:float 3s ease-in-out infinite;filter:drop-shadow(0 0 20px rgba(251,191,36,.4))}.app-title{font-size:1.8rem;font-weight:800;background:linear-gradient(135deg,#fbbf24,#f59e0b,#fbbf24);background-size:200% 200%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;letter-spacing:-1px;animation:gradient-shift 3s ease infinite}@keyframes gradient-shift{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#000;background-image:radial-gradient(at 0% 0%,rgba(30,64,175,.15) 0px,transparent 50%),radial-gradient(at 100% 0%,rgba(139,92,246,.15) 0px,transparent 50%),radial-gradient(at 100% 100%,rgba(16,185,129,.1) 0px,transparent 50%);min-height:100vh;padding:100px 20px 60px 20px;display:flex;align-items:center;justify-content:center;color:#fff;position:relative;overflow-x:hidden}body::before{content:'';position:fixed;top:0;left:0;right:0;bottom:0;background:linear-gradient(45deg,transparent 48%,rgba(255,255,255,.01) 50%,transparent 52%),linear-gradient(-45deg,transparent 48%,rgba(255,255,255,.01) 50%,transparent 52%);background-size:60px 60px;pointer-events:none;opacity:.3}.container{max-width:1600px;width:100%;display:grid;grid-template-columns:1fr 1fr;gap:32px;position:relative;z-index:1}.sync-bar{grid-column:1/-1;background:rgba(255,255,255,.03);backdrop-filter:blur(30px) saturate(180%);-webkit-backdrop-filter:blur(30px) saturate(180%);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:20px 28px;display:flex;gap:16px;justify-content:center;align-items:center;flex-wrap:wrap;box-shadow:0 8px 32px rgba(0,0,0,.3),inset 0 1px 0 rgba(255,255,255,.1);position:relative;overflow:hidden}.sync-bar::before{content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.05),transparent);animation:shimmer 3s infinite}@keyframes shimmer{to{left:200%}}.sync-btn{background:linear-gradient(135deg,rgba(255,255,255,.1),rgba(255,255,255,.05));border:1px solid rgba(255,255,255,.15);color:white;padding:12px 24px;border-radius:12px;cursor:pointer;font-size:.95rem;font-weight:600;transition:all .3s cubic-bezier(.4,0,.2,1);display:flex;align-items:center;gap:10px;position:relative;overflow:hidden;box-shadow:0 4px 16px rgba(0,0,0,.2)}.sync-btn::before{content:'';position:absolute;top:0;left:0;width:100%;height:100%;background:linear-gradient(135deg,rgba(255,255,255,.2),transparent);opacity:0;transition:opacity .3s}.sync-btn:hover::before{opacity:1}.sync-btn:hover{transform:translateY(-3px);box-shadow:0 8px 24px rgba(0,0,0,.3)}.sync-btn:active{transform:translateY(-1px)}.sync-btn.export{background:linear-gradient(135deg,rgba(16,185,129,.25),rgba(16,185,129,.15));border-color:rgba(16,185,129,.4);box-shadow:0 4px 20px rgba(16,185,129,.2)}.sync-btn.import{background:linear-gradient(135deg,rgba(99,102,241,.25),rgba(99,102,241,.15));border-color:rgba(99,102,241,.4);box-shadow:0 4px 20px rgba(99,102,241,.2)}.sync-btn.analytics{background:linear-gradient(135deg,rgba(251,191,36,.25),rgba(251,191,36,.15));border-color:rgba(251,191,36,.4);box-shadow:0 4px 20px rgba(251,191,36,.2)}.sync-btn.insights{background:linear-gradient(135deg,rgba(236,72,153,.25),rgba(236,72,153,.15));border-color:rgba(236,72,153,.4);box-shadow:0 4px 20px rgba(236,72,153,.2)}.sync-btn.settings{background:linear-gradient(135deg,rgba(139,92,246,.25),rgba(139,92,246,.15));border-color:rgba(139,92,246,.4);box-shadow:0 4px 20px rgba(139,92,246,.2)}.sync-btn.danger{background:linear-gradient(135deg,rgba(239,68,68,.25),rgba(239,68,68,.15));border-color:rgba(239,68,68,.4);box-shadow:0 4px 20px rgba(239,68,68,.2)}.pane{background:linear-gradient(135deg,rgba(30,30,30,.95) 0%,rgba(15,15,15,.98) 100%);backdrop-filter:blur(30px) saturate(180%);-webkit-backdrop-filter:blur(30px) saturate(180%);border:1px solid rgba(255,255,255,.1);border-radius:24px;padding:36px;box-shadow:0 24px 64px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.1);position:relative;overflow:hidden;transition:all .4s cubic-bezier(.4,0,.2,1)}.pane::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.2),transparent)}.pane::after{content:'';position:absolute;top:0;left:0;width:100%;height:100%;background:radial-gradient(circle at 50% 0%,rgba(255,255,255,.05),transparent 70%);pointer-events:none}.pane.current{border-color:rgba(251,191,36,.4);box-shadow:0 24px 64px rgba(0,0,0,.5),0 0 40px rgba(251,191,36,.15),inset 0 1px 0 rgba(251,191,36,.2)}.pane.current::before{background:linear-gradient(90deg,transparent,rgba(251,191,36,.4),transparent)}.pane.monthly{border-color:rgba(59,130,246,.4);box-shadow:0 24px 64px rgba(0,0,0,.5),0 0 40px rgba(59,130,246,.15),inset 0 1px 0 rgba(59,130,246,.2)}.pane.monthly::before{background:linear-gradient(90deg,transparent,rgba(59,130,246,.4),transparent)}.pane:hover{transform:translateY(-4px);box-shadow:0 32px 80px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.15)}.pane-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;padding-bottom:20px;border-bottom:1px solid rgba(255,255,255,.08);position:relative;z-index:1;gap:20px}.period-nav{display:flex;gap:12px;align-items:center;flex:1}.period-nav button{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);color:white;width:36px;height:36px;border-radius:8px;cursor:pointer;font-size:1.1rem;transition:all .2s;display:flex;align-items:center;justify-content:center}.period-nav button:hover{background:rgba(255,255,255,.15);transform:scale(1.1)}.period-nav button:active{transform:scale(.95)}.period-title{font-size:1.1rem;font-weight:600;color:#fff;text-align:center;flex:1}.star-toggle{font-size:1.8rem;cursor:pointer;transition:all .3s cubic-bezier(.4,0,.2,1);user-select:none;filter:grayscale(100%) brightness(.5);flex-shrink:0}.star-toggle:hover{transform:scale(1.2) rotate(15deg);filter:grayscale(0%) brightness(1)}.star-toggle.active{filter:grayscale(0%) brightness(1);animation:pulse 2s ease-in-out infinite;text-shadow:0 0 12px rgba(251,191,36,.6)}@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.7;transform:scale(1.15)}}.summary{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:28px;position:relative;z-index:1}.summary-item{background:linear-gradient(135deg,rgba(255,255,255,.08),rgba(255,255,255,.03));padding:18px;border-radius:14px;text-align:center;border:1px solid rgba(255,255,255,.1);transition:all .3s cubic-bezier(.4,0,.2,1);position:relative;overflow:hidden;box-shadow:0 4px 16px rgba(0,0,0,.2),inset 0 1px 0 rgba(255,255,255,.1)}.summary-item.full-width{grid-column:1/-1}.summary-item::before{content:'';position:absolute;top:0;left:0;width:100%;height:100%;background:linear-gradient(135deg,rgba(255,255,255,.1),transparent);opacity:0;transition:opacity .3s}.summary-item:hover::before{opacity:1}.summary-item:hover{border-color:rgba(255,255,255,.2);transform:translateY(-3px) scale(1.02);box-shadow:0 8px 24px rgba(0,0,0,.3),inset 0 1px 0 rgba(255,255,255,.15)}.summary-label{font-size:.65rem;color:rgba(255,255,255,.6);margin-bottom:8px;text-transform:uppercase;letter-spacing:1.2px;font-weight:600}.summary-value{font-size:1.6rem;font-weight:800;color:#fff;letter-spacing:-1px;text-shadow:0 2px 12px rgba(0,0,0,.3)}#other-income-display{color:#34d399;text-shadow:0 2px 12px rgba(52,211,153,.4)}.summary-value.positive{color:#10b981;text-shadow:0 2px 12px rgba(16,185,129,.4)}.summary-value.negative{color:#ef4444;text-shadow:0 2px 12px rgba(239,68,68,.4)}.summary-value.info{color:#8b5cf6;text-shadow:0 2px 12px rgba(139,92,246,.4)}.input-group{margin-bottom:16px;position:relative;z-index:1}.input-label{font-size:.75rem;color:rgba(255,255,255,.7);margin-bottom:8px;display:block;font-weight:600;text-transform:uppercase;letter-spacing:.8px}input,select{width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:12px 14px;color:#fff;font-size:.95rem;font-family:inherit;transition:all .3s cubic-bezier(.4,0,.2,1);box-shadow:inset 0 2px 8px rgba(0,0,0,.15)}input[type="date"]{color-scheme:dark}input::placeholder{color:rgba(255,255,255,.35)}input:focus,select:focus{outline:0;background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.25);box-shadow:inset 0 2px 8px rgba(0,0,0,.15),0 0 0 4px rgba(255,255,255,.05);transform:translateY(-1px)}select option{background:#1a1a1a;color:#fff}.btn{width:100%;background:linear-gradient(135deg,#fff,#f0f0f0);color:#0a0a0a;border:none;border-radius:10px;padding:14px;font-size:.85rem;font-weight:700;cursor:pointer;transition:all .3s cubic-bezier(.4,0,.2,1);text-transform:uppercase;letter-spacing:.8px;position:relative;overflow:hidden;box-shadow:0 4px 16px rgba(255,255,255,.15),0 8px 24px rgba(0,0,0,.2)}.btn::before{content:'';position:absolute;top:0;left:0;width:100%;height:100%;background:linear-gradient(135deg,rgba(255,255,255,.3),transparent);opacity:0;transition:opacity .3s}.btn:hover::before{opacity:1}.btn:hover{transform:translateY(-3px);box-shadow:0 6px 20px rgba(255,255,255,.2),0 12px 32px rgba(0,0,0,.3)}.btn:active{transform:translateY(-1px)}.quick-add-section{margin-top:20px;padding-top:16px;border-top:1px solid rgba(255,255,255,.08);position:relative;z-index:1}.quick-add-label{font-size:.75rem;color:rgba(255,255,255,.6);margin-bottom:10px;text-transform:uppercase;letter-spacing:.8px;font-weight:600}.quick-add-buttons{display:flex;flex-wrap:wrap;gap:8px}.quick-add-btn{background:linear-gradient(135deg,rgba(251,191,36,.15),rgba(251,191,36,.08));border:1px solid rgba(251,191,36,.3);color:#fbbf24;padding:8px 16px;border-radius:8px;cursor:pointer;font-size:.85rem;font-weight:600;transition:all .3s cubic-bezier(.4,0,.2,1);display:flex;align-items:center;gap:6px;white-space:nowrap;box-shadow:0 2px 8px rgba(251,191,36,.1)}.quick-add-btn:hover{background:linear-gradient(135deg,rgba(251,191,36,.25),rgba(251,191,36,.15));border-color:rgba(251,191,36,.5);transform:translateY(-2px);box-shadow:0 4px 12px rgba(251,191,36,.2)}.quick-add-btn:active{transform:translateY(0)}.quick-add-empty{font-size:.85rem;color:rgba(255,255,255,.4);font-style:italic}.expenses-list{max-height:350px;overflow-y:auto;overflow-x:hidden;margin-top:20px;padding-right:8px;position:relative;z-index:1}.expense-item-wrapper{position:relative;margin-bottom:10px;overflow:visible}.expense-item{background:linear-gradient(135deg,rgba(255,255,255,.06),rgba(255,255,255,.03));padding:14px 16px;border-radius:12px;display:flex;justify-content:space-between;align-items:center;border:1px solid rgba(255,255,255,.08);box-shadow:0 2px 8px rgba(0,0,0,.15);position:relative;touch-action:pan-y;-webkit-user-select:none;user-select:none;will-change:transform;-webkit-transform:translate3d(0,0,0);transform:translate3d(0,0,0)}.expense-item.transitioning{transition:transform .3s cubic-bezier(.4,0,.2,1)}.swipe-actions{position:absolute;right:0;top:0;bottom:0;display:flex;opacity:0;transition:opacity .3s;pointer-events:none}.expense-item.swiped{transform:translate3d(-160px,0,0)}.expense-item.swiped+.swipe-actions{opacity:1;pointer-events:auto}@media (hover:hover) and (pointer:fine){.expense-item-wrapper:hover .expense-item{transform:translate3d(-160px,0,0);transition:transform .3s cubic-bezier(.4,0,.2,1)}.expense-item-wrapper:hover .swipe-actions{opacity:1;pointer-events:auto}}.action-btn{width:80px;border:none;color:white;font-weight:700;font-size:.8rem;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;transition:all .2s}.action-btn.edit{background:linear-gradient(135deg,#3b82f6,#2563eb);border-radius:0}.action-btn.edit:hover{background:linear-gradient(135deg,#2563eb,#1d4ed8);transform:scale(1.05)}.action-btn.delete{background:linear-gradient(135deg,#ef4444,#dc2626);border-radius:0 12px 12px 0}.action-btn.delete:hover{background:linear-gradient(135deg,#dc2626,#b91c1c);transform:scale(1.05)}.action-icon{font-size:1.2rem}.expense-info{flex:1;pointer-events:none}.expense-desc{font-size:.95rem;font-weight:600;color:#fff;margin-bottom:4px}.expense-cat{font-size:.75rem;color:rgba(255,255,255,.5)}.expense-amount{font-size:1.1rem;font-weight:700;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.2);min-width:80px;text-align:right;pointer-events:none}.empty-state{text-align:center;padding:50px 20px;color:rgba(255,255,255,.35)}.empty-state-icon{font-size:3rem;margin-bottom:16px;opacity:.5;filter:drop-shadow(0 4px 12px rgba(0,0,0,.3))}.expenses-list::-webkit-scrollbar{width:6px}.expenses-list::-webkit-scrollbar-track{background:rgba(255,255,255,.03);border-radius:3px}.expenses-list::-webkit-scrollbar-thumb{background:linear-gradient(180deg,rgba(255,255,255,.15),rgba(255,255,255,.1));border-radius:3px;border:1px solid rgba(255,255,255,.05)}.expenses-list::-webkit-scrollbar-thumb:hover{background:linear-gradient(180deg,rgba(255,255,255,.2),rgba(255,255,255,.15))}.month-nav{display:flex;gap:8px;align-items:center;justify-content:center;margin-bottom:16px}.month-nav button{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);color:white;padding:8px 12px;border-radius:8px;cursor:pointer;font-size:1.2rem;transition:all .2s}.month-nav button:hover{background:rgba(255,255,255,.15);transform:scale(1.1)}.month-display{font-size:1.1rem;font-weight:600;min-width:140px;text-align:center}.pane-title{font-size:1.4rem;font-weight:700;color:#fff;letter-spacing:-.8px;text-shadow:0 2px 10px rgba(0,0,0,.3)}.modal{display:none;position:fixed;z-index:1000;left:0;top:0;width:100%;height:100%;background:rgba(0,0,0,.85);backdrop-filter:blur(10px)}.modal.active{display:flex;align-items:center;justify-content:center}.modal-content{background:linear-gradient(135deg,rgba(30,30,30,.98) 0%,rgba(15,15,15,.98) 100%);border:1px solid rgba(255,255,255,.2);border-radius:24px;padding:40px;max-width:500px;width:90%;max-height:85vh;overflow-y:auto;box-shadow:0 32px 96px rgba(0,0,0,.7);position:relative}.insights-content{max-width:700px}.modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:30px;padding-bottom:20px;border-bottom:1px solid rgba(255,255,255,.1)}.modal-title{font-size:1.8rem;font-weight:700;color:#fff}.close-btn{background:rgba(239,68,68,.2);border:1px solid rgba(239,68,68,.3);color:#ef4444;width:36px;height:36px;border-radius:50%;cursor:pointer;font-size:1.2rem;display:flex;align-items:center;justify-content:center;transition:all .3s}.close-btn:hover{background:rgba(239,68,68,.3);transform:rotate(90deg)}.modal-buttons{display:flex;gap:12px;margin-top:24px}.modal-btn{flex:1;padding:14px;border-radius:10px;font-size:.9rem;font-weight:700;cursor:pointer;transition:all .3s;text-transform:uppercase;letter-spacing:.8px;border:none}.modal-btn.cancel{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:white}.modal-btn.cancel:hover{background:rgba(255,255,255,.15)}.modal-btn.save{background:linear-gradient(135deg,#10b981,#059669);border:none;color:white}.modal-btn.save:hover{transform:translateY(-2px);box-shadow:0 4px 16px rgba(16,185,129,.4)}.insights-body{display:flex;flex-direction:column;gap:24px}.insight-section{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:24px}.insight-title{font-size:1.1rem;font-weight:700;color:#fff;margin-bottom:16px;display:flex;align-items:center;gap:10px}.insight-card{background:rgba(255,255,255,.05);border-radius:12px;padding:16px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center}.insight-label{font-size:.9rem;color:rgba(255,255,255,.7)}.insight-value{font-size:1.3rem;font-weight:700;color:#fff}.insight-trend{font-size:.85rem;font-weight:600;margin-left:8px}.insight-trend.up{color:#ef4444}.insight-trend.down{color:#10b981}.category-breakdown{display:flex;flex-direction:column;gap:12px}.category-item{display:flex;justify-content:space-between;align-items:center;padding:12px;background:rgba(255,255,255,.03);border-radius:10px}.category-name{font-size:.95rem;font-weight:600;color:#fff}.category-amount{font-size:1.1rem;font-weight:700;color:#fbbf24}.stat-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}.stat-card{background:rgba(255,255,255,.05);border-radius:12px;padding:16px;text-align:center}.stat-label{font-size:.75rem;color:rgba(255,255,255,.6);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px}.stat-value{font-size:1.4rem;font-weight:800;color:#fff}.analytics-table{width:100%;border-collapse:collapse;margin-top:20px}.analytics-table th,.analytics-table td{padding:16px;text-align:left;border-bottom:1px solid rgba(255,255,255,.08)}.analytics-table th{background:rgba(255,255,255,.05);font-weight:700;text-transform:uppercase;font-size:.75rem;letter-spacing:1px;color:rgba(255,255,255,.7)}.analytics-table td{font-size:.95rem;color:rgba(255,255,255,.9)}.analytics-table tr:hover{background:rgba(255,255,255,.03)}.analytics-table td:last-child{font-weight:700;color:#10b981}.setup-wizard{text-align:center}.setup-wizard .modal-content{max-width:600px}.wizard-icon{font-size:4rem;margin-bottom:20px;animation:float 3s ease-in-out infinite}.wizard-subtitle{font-size:1rem;color:rgba(255,255,255,.7);margin-bottom:30px;line-height:1.6}.quick-dates{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin:20px 0}.quick-date-btn{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);color:white;padding:12px;border-radius:10px;cursor:pointer;font-size:.9rem;font-weight:600;transition:all .3s}.quick-date-btn:hover{background:rgba(255,255,255,.15);border-color:rgba(255,255,255,.25);transform:translateY(-2px)}.quick-date-btn.selected{background:linear-gradient(135deg,rgba(16,185,129,.25),rgba(16,185,129,.15));border-color:rgba(16,185,129,.4)}.divider{display:flex;align-items:center;gap:16px;margin:24px 0;color:rgba(255,255,255,.4);font-size:.85rem}.divider::before,.divider::after{content:'';flex:1;height:1px;background:rgba(255,255,255,.1)}.settings-info{background:rgba(139,92,246,.1);border:1px solid rgba(139,92,246,.3);border-radius:12px;padding:16px;margin-bottom:24px}.settings-info-title{font-size:.85rem;font-weight:700;color:rgba(255,255,255,.9);margin-bottom:8px;text-transform:uppercase;letter-spacing:.8px}.settings-info-value{font-size:1.1rem;font-weight:600;color:#8b5cf6}.warning-box{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:12px;padding:16px;margin:20px 0}.warning-box p{font-size:.9rem;color:rgba(255,255,255,.8);line-height:1.6;margin:0}@media (max-width:1200px){.container{grid-template-columns:1fr}}@media (max-width:768px){.app-header{padding:12px 16px}.app-logo{font-size:2rem}.app-title{font-size:1.4rem}body{padding:80px 20px 60px 20px}.summary{grid-template-columns:1fr}.stat-grid{grid-template-columns:1fr}.quick-dates{grid-template-columns:1fr}.quick-add-buttons{gap:6px}.quick-add-btn{font-size:.8rem;padding:6px 12px}.analytics-table{font-size:.85rem}.analytics-table th,.analytics-table td{padding:12px 8px}}
+.auth-modal .modal-content { max-width: 500px; }
+.auth-content { text-align: center; }
+.auth-icon { font-size: 5rem; margin: 20px 0; animation: float 3s ease-in-out infinite; }
+.auth-subtitle { color: rgba(255,255,255,0.7); font-size: 0.95rem; line-height: 1.6; margin-bottom: 30px; }
+.passcode-input-group { display: flex; gap: 10px; justify-content: center; margin: 30px 0; }
+.passcode-digit {
+      width: 50px;
+      height: 60px;
+      font-size: 28px;
+      text-align: center;
+      border: 2px solid rgba(255,255,255,0.2);
+      border-radius: 12px;
+      background: rgba(255,255,255,0.05);
+      color: white;
+      font-weight: 700;
+      transition: all 0.2s;
+      caret-color: #60a5fa;
+      line-height: 60px;
+      padding: 0;
+      box-sizing: border-box;
+    }
+.passcode-digit:focus {
+  border-color: #fbbf24 !important; background: rgba(251,191,36,0.1) !important;
+  transform: scale(1.1); box-shadow: 0 0 20px rgba(251,191,36,0.3);
+}
+.passcode-hint { color: rgba(255,255,255,0.5); font-size: 0.85rem; margin-top: -20px; margin-bottom: 20px; }
+#lock-screen {
+  position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+  background: linear-gradient(135deg, #000 0%, #1a1a1a 100%);
+  display: flex; align-items: center; justify-content: center; z-index: 10000;
+}
+.lock-container {
+  text-align: center; padding: 40px; background: rgba(0,0,0,0.5);
+  border-radius: 24px; backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1);
+}
+.lock-header { margin-bottom: 20px; }
+.unlock-forgot-btn {
+  background: none; border: none; color: #fbbf24; font-size: 0.9rem;
+  cursor: pointer; text-decoration: underline; transition: all 0.3s;
+}
+.unlock-forgot-btn:hover { color: #f59e0b; transform: scale(1.05); }
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-10px); }
+  20%, 40%, 60%, 80% { transform: translateX(10px); }
+}
+.shake-error { animation: shake 0.5s; }
+</style>
+</head>
+<body>
+
+<!-- Firebase Login Screen -->
+<div id="firebase-login-screen" style="
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #1e1e1e 0%, #2d2d2d 100%);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10000;
+">
+    <div style="
+        background: rgba(40, 40, 40, 0.95);
+        padding: 40px;
+        border-radius: 20px;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        max-width: 400px;
+        width: 90%;
+        text-align: center;
+    ">
+        <div style="font-size: 64px; margin-bottom: 20px;">💰</div>
+        <h2 style="color: white; margin-bottom: 10px;">Expense Tracker</h2>
+        <p style="color: #888; margin-bottom: 30px; font-size: 14px;">Sign in to sync your data</p>
+        <input type="email" id="firebase-email" placeholder="Email" autocomplete="email" style="width: 100%; padding: 15px; margin: 10px 0; border-radius: 10px; border: 1px solid #444; background: #2a2a2a; color: white; font-size: 16px; box-sizing: border-box;" />
+        <input type="password" id="firebase-password" placeholder="Password" autocomplete="current-password" onkeypress="if(event.key==='Enter')firebaseLogin()" style="width: 100%; padding: 15px; margin: 10px 0; border-radius: 10px; border: 1px solid #444; background: #2a2a2a; color: white; font-size: 16px; box-sizing: border-box;" />
+        <button onclick="firebaseLogin()" style="width: 100%; padding: 15px; margin: 20px 0; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 10px; font-size: 18px; font-weight: bold; cursor: pointer; box-sizing: border-box;">
+            🔓 Sign In
+        </button>
+        <div id="firebase-message" style="margin-top: 15px; padding: 10px; border-radius: 8px; display: none; font-size: 14px;"></div>
+    </div>
+</div>
+
+<div class="app-header">
+  <div class="app-logo">💰</div>
+  <h1 class="app-title">Expense Tracker</h1>
+</div>
+
+<div class="container">
+  <div class="sync-bar">
+    <button class="sync-btn settings" onclick="showSettings()">⚙️ Settings</button>
+    <button class="sync-btn insights" onclick="showInsights()">📈 Insights</button>
+    <button class="sync-btn analytics" onclick="showAnalytics()">📊 Analytics</button>
+    <button class="sync-btn export" onclick="exportData()">📥 Export</button>
+    <button class="sync-btn import" onclick="document.getElementById('import-file').click()">📤 Import</button>
+    <button class="sync-btn danger" onclick="resetApp()">🔄 Reset</button>
+    <input type="file" id="import-file" accept=".json" style="display:none" onchange="importData(event)">
+  </div>
+
+  <div class="pane" id="pane-period">
+    <div class="pane-header">
+      <div class="period-nav">
+        <button onclick="changePeriod(-1)">◀</button>
+        <div class="period-title" id="period-dates">Loading...</div>
+        <button onclick="changePeriod(1)">▶</button>
+      </div>
+      <div class="star-toggle" id="star-current" onclick="jumpToCurrent()">⭐</div>
+    </div>
+
+    <div class="summary">
+      <div class="summary-item">
+        <div class="summary-label">Salary</div>
+        <div class="summary-value" id="salary-display">$0</div>
+      </div>
+      <div class="summary-item">
+        <div class="summary-label">Other Income</div>
+        <div class="summary-value positive" id="other-income-display">$0</div>
+      </div>
+      <div class="summary-item">
+        <div class="summary-label">Total Income</div>
+        <div class="summary-value positive" id="total-income-display">$0</div>
+      </div>
+      <div class="summary-item">
+        <div class="summary-label">Expenses</div>
+        <div class="summary-value negative" id="expenses-display">$0</div>
+      </div>
+      <div class="summary-item">
+        <div class="summary-label">This Period Savings</div>
+        <div class="summary-value" id="savings-display">$0</div>
+      </div>
+      <div class="summary-item">
+        <div class="summary-label">Previous Balance</div>
+        <div class="summary-value info" id="carry-forward-display">$0</div>
+      </div>
+      <div class="summary-item full-width">
+        <div class="summary-label">Total Cumulative Savings</div>
+        <div class="summary-value" id="total-savings-display">$0</div>
+      </div>
+    </div>
+
+    <div class="input-group">
+      <label class="input-label">Salary</label>
+      <input type="number" id="salary-input" placeholder="Enter salary" step="0.01">
+    </div>
+
+    <div class="input-group">
+      <label class="input-label">Other Income</label>
+      <input type="number" id="other-income-input" placeholder="Side hustle, investments, etc." step="0.01">
+    </div>
+
+    <div class="input-group">
+      <label class="input-label">Category</label>
+      <input type="text" id="category-input" placeholder="e.g., Groceries, Rent">
+    </div>
+
+    <div class="input-group">
+      <label class="input-label">Amount</label>
+      <input type="number" id="amount-input" placeholder="0.00" step="0.01">
+    </div>
+
+    <button class="btn" onclick="addExpense()">Add Expense</button>
+
+    <div class="quick-add-section">
+      <div class="quick-add-label">Quick Add:</div>
+      <div class="quick-add-buttons" id="quick-add-buttons"></div>
+    </div>
+
+    <div class="expenses-list" id="expenses-list">
+      <div class="empty-state">
+        <div class="empty-state-icon">📊</div>
+        <div>No expenses yet</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Monthly Utilities Pane remains unchanged -->
+  <div class="pane monthly">
+    <div class="pane-header">
+      <div class="pane-title">Monthly Utilities</div>
+    </div>
+    <div class="month-nav">
+      <button onclick="changeMonth(-1)">◀</button>
+      <div class="month-display" id="month-display">Loading...</div>
+      <button onclick="changeMonth(1)">▶</button>
+    </div>
+    <!-- ... rest of monthly utilities pane remains the same ... -->
+  </div>
+</div>
+
+<!-- Modals remain the same - setup-wizard, settings, edit, analytics, insights, etc. -->
+
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, setPersistence, browserLocalPersistence } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+import { getFirestore, doc, getDoc, setDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAHgeL8cnjLGegRPvL-VCLbd_PCTo81Xvg",
+  authDomain: "expensetracker-650bb.firebaseapp.com",
+  projectId: "expensetracker-650bb",
+  storageBucket: "expensetracker-650bb.firebasestorage.app",
+  messagingSenderId: "1049493175328",
+  appId: "1:1049493175328:web:b3ba0b37fa104b3724d045"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+setPersistence(auth, browserLocalPersistence);
+
+window.auth = auth;
+window.db = db;
+window.currentUser = null;
+window.unsubscribe = null;
+
+window.transactions = [];
+window.salaries = {};
+window.otherIncomes = {};      // ← NEW
+window.utilities = [];
+window.settings = null;
+
+let currentPeriodOffset = 0;
+let currentMonthOffset = 0;
+let editingItem = null;
+let editingType = null;
+let selectedQuickDate = null;
+
+// ────────────────────────────────────────────────
+// BLOCK LOCALSTORAGE (keeping your original protection)
+// ────────────────────────────────────────────────
+const origGetItem = Storage.prototype.getItem;
+Storage.prototype.getItem = function(key) {
+  console.log(`⚠️ Blocked localStorage.getItem('${key}')`);
+  return null;
+};
+
+// ────────────────────────────────────────────────
+// Firebase Login
+// ────────────────────────────────────────────────
+window.firebaseLogin = async function() {
+  const email = document.getElementById('firebase-email').value.trim();
+  const password = document.getElementById('firebase-password').value;
+  const messageDiv = document.getElementById('firebase-message');
+
+  if (!email || !password) {
+    messageDiv.textContent = '⚠️ Enter email and password';
+    messageDiv.style.background = 'rgba(255,68,68,0.1)';
+    messageDiv.style.color = '#ff4444';
+    messageDiv.style.display = 'block';
+    return;
+  }
+
+  try {
+    messageDiv.textContent = '🔄 Signing in...';
+    messageDiv.style.background = 'rgba(68,138,255,0.1)';
+    messageDiv.style.color = '#448aff';
+    messageDiv.style.display = 'block';
+    await signInWithEmailAndPassword(auth, email, password);
+  } catch (error) {
+    console.error('Login error:', error);
+    messageDiv.textContent = '❌ Invalid credentials';
+    messageDiv.style.background = 'rgba(255,68,68,0.1)';
+    messageDiv.style.color = '#ff4444';
+    messageDiv.style.display = 'block';
+  }
+};
+
+// ────────────────────────────────────────────────
+// Load from Firebase
+// ────────────────────────────────────────────────
+async function loadFirebaseData() {
+  if (!window.currentUser) return;
+  try {
+    console.log('📥 Loading from Firebase...');
+    const docRef = doc(db, 'users', window.currentUser.uid);
+    const docSnap = await getDoc(docRef);
+
+    if (docSnap.exists()) {
+      const data = docSnap.data();
+      console.log('✅ Data loaded:', data);
+
+      window.settings     = data.settings     || { startDate: new Date().toISOString().split('T')[0] };
+      window.transactions = data.transactions || [];
+      window.salaries     = data.salaries     || {};
+      window.otherIncomes = data.otherIncomes || {};   // ← NEW
+      window.utilities    = data.utilities    || [];
+
+      console.log(`📊 ${window.transactions.length} transactions, ${window.utilities.length} utilities`);
+      setTimeout(() => {
+        if (typeof updatePeriodDisplay === 'function') updatePeriodDisplay();
+        if (typeof renderTransactions === 'function') renderTransactions();
+        if (typeof updateUtilitiesList === 'function') updateUtilitiesList();
+        console.log('✅ UI updated');
+      }, 200);
+    } else {
+      console.log('📝 New user');
+      window.settings = { startDate: new Date().toISOString().split('T')[0] };
+      window.transactions = [];
+      window.salaries = {};
+      window.otherIncomes = {};
+      window.utilities = [];
+
+      await setDoc(docRef, {
+        settings: window.settings,
+        transactions: [],
+        salaries: {},
+        otherIncomes: {},
+        utilities: [],
+        lastUpdated: new Date().toISOString()
+      });
+    }
+
+    window.unsubscribe = onSnapshot(docRef, (snapshot) => {
+      if (!snapshot.exists()) return;
+      const data = snapshot.data();
+      console.log('🔄 Real-time update');
+      window.settings     = data.settings     || window.settings;
+      window.transactions = data.transactions || [];
+      window.salaries     = data.salaries     || {};
+      window.otherIncomes = data.otherIncomes || {};
+      window.utilities    = data.utilities    || [];
+
+      if (typeof updatePeriodDisplay === 'function') updatePeriodDisplay();
+      if (typeof updateMonthlyDisplay === 'function') updateMonthlyDisplay();
+    });
+
+    console.log('✅ Real-time sync active');
+  } catch (error) {
+    console.error('❌ Load error:', error);
+  }
+}
+
+// ────────────────────────────────────────────────
+// Save to Firebase
+// ────────────────────────────────────────────────
+window.saveToFirebase = async function() {
+  if (!window.currentUser) {
+    console.warn('⚠️ Not logged in');
+    return;
+  }
+  try {
+    console.log('💾 Saving to Firebase...');
+    await setDoc(doc(db, 'users', window.currentUser.uid), {
+      settings: window.settings || {},
+      transactions: window.transactions || [],
+      salaries: window.salaries || {},
+      otherIncomes: window.otherIncomes || {},   // ← NEW
+      utilities: window.utilities || [],
+      lastUpdated: new Date().toISOString()
+    });
+    console.log('✅ Saved to Firebase!');
+  } catch (error) {
+    console.error('❌ Save error:', error);
+  }
+};
+
+// ────────────────────────────────────────────────
+// Auth State Listener
+// ────────────────────────────────────────────────
+onAuthStateChanged(auth, async (user) => {
+  if (user) {
+    console.log('✅ Logged in:', user.email);
+    window.currentUser = user;
+    await loadFirebaseData();
+    document.getElementById('firebase-login-screen').style.display = 'none';
+    checkFirstTimeUser();
+  } else {
+    console.log('⚠️ Not logged in');
+    window.currentUser = null;
+    document.getElementById('firebase-login-screen').style.display = 'flex';
+  }
+});
+
+// ────────────────────────────────────────────────
+// Your existing functions (resetApp, checkFirstTimeUser, etc.)
+// ────────────────────────────────────────────────
+// ... keep all your original functions: resetApp, showSetupWizard, completeSetup, etc. ...
+
+// ────────────────────────────────────────────────
+// UPDATED: updatePeriodDisplay with Other Income
+// ────────────────────────────────────────────────
 function updatePeriodDisplay() {
   const period = getPeriod(currentPeriodOffset);
   if (!period) return;
@@ -11,23 +416,19 @@ function updatePeriodDisplay() {
   isCurrent ? (star.classList.add('active'), pane.classList.add('current')) 
             : (star.classList.remove('active'), pane.classList.remove('current'));
 
-  // ────────────────────────────────────────────────
-  // Income section
-  // ────────────────────────────────────────────────
-  const salary = window.salaries[period.key] || 0;
+  // Income
+  const salary      = window.salaries[period.key]     || 0;
   const otherIncome = window.otherIncomes[period.key] || 0;
   const totalIncome = salary + otherIncome;
 
-  document.getElementById('salary-input').value = salary || '';
+  document.getElementById('salary-input').value      = salary || '';
   document.getElementById('other-income-input').value = otherIncome || '';
 
-  document.getElementById('salary-display').textContent          = `$${salary.toFixed(0)}`;
-  document.getElementById('other-income-display').textContent    = `$${otherIncome.toFixed(0)}`;
-  document.getElementById('total-income-display').textContent    = `$${totalIncome.toFixed(0)}`;
+  document.getElementById('salary-display').textContent       = `$${salary.toFixed(0)}`;
+  document.getElementById('other-income-display').textContent = `$${otherIncome.toFixed(0)}`;
+  document.getElementById('total-income-display').textContent = `$${totalIncome.toFixed(0)}`;
 
-  // ────────────────────────────────────────────────
   // Expenses & Savings
-  // ────────────────────────────────────────────────
   const periodExpenses = window.transactions.filter(t => {
     const tDate = new Date(t.date);
     tDate.setHours(0, 0, 0, 0);
@@ -35,7 +436,6 @@ function updatePeriodDisplay() {
   });
 
   const totalExpenses = periodExpenses.reduce((sum, t) => sum + t.amount, 0);
-
   const thisPeriodSavings = totalIncome - totalExpenses;
   const carryForward = calculateCarryForward(period.periodNum);
   const totalCumulativeSavings = carryForward + thisPeriodSavings;
@@ -56,3 +456,33 @@ function updatePeriodDisplay() {
 
   renderExpenses(periodExpenses);
 }
+
+// ────────────────────────────────────────────────
+// Other Income input listener
+// ────────────────────────────────────────────────
+document.getElementById('other-income-input').addEventListener('change', function() {
+  const period = getPeriod(currentPeriodOffset);
+  if (period) {
+    window.otherIncomes[period.key] = parseFloat(this.value) || 0;
+    updatePeriodDisplay();
+    window.saveData();
+  }
+});
+
+// Keep your existing salary listener (for consistency)
+document.getElementById('salary-input').addEventListener('change', function() {
+  const period = getPeriod(currentPeriodOffset);
+  if (period) {
+    window.salaries[period.key] = parseFloat(this.value) || 0;
+    updatePeriodDisplay();
+    window.saveData();
+  }
+});
+
+// ... keep the rest of your script (addExpense, renderExpenses, getPeriod, etc.) unchanged ...
+
+// Initialize
+checkFirstTimeUser();
+</script>
+</body>
+</html>
