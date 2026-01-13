@@ -1180,6 +1180,7 @@ async function loadFirebaseData() {
       window.settings = data.settings || { startDate: new Date().toISOString().split('T')[0] };
       window.transactions = data.transactions || [];
       window.salaries = data.salaries || {};
+    window.otherIncomes = data.otherIncomes || {};
       window.utilities = data.utilities || [];
 
       console.log(`📊 ${window.transactions.length} transactions, ${window.utilities.length} utilities`);
@@ -1203,6 +1204,7 @@ async function loadFirebaseData() {
         transactions: [],
         salaries: {},
         utilities: [],
+        otherIncomes: {},
         lastUpdated: new Date().toISOString()
       });
     }
@@ -1217,6 +1219,7 @@ async function loadFirebaseData() {
       window.transactions = data.transactions || [];
       window.salaries = data.salaries || {};
       window.utilities = data.utilities || [];
+      window.otherIncomes = data.otherIncomes || {};
 
       if (typeof updatePeriodDisplay === 'function') updatePeriodDisplay();
       if (typeof renderTransactions === 'function') renderTransactions();
@@ -1248,6 +1251,7 @@ window.saveToFirebase = async function() {
       transactions: window.transactions || [],
       salaries: window.salaries || {},
       utilities: window.utilities || [],
+      otherIncomes: window.otherIncomes || {},
       lastUpdated: new Date().toISOString()
     });
 
@@ -1687,11 +1691,11 @@ function updatePeriodDisplay() {
   const pane = document.getElementById('pane-period'), star = document.getElementById('star-current'), dateRange = `${formatDateShort(period.start)} - ${formatDateShort(period.end)}`, isCurrent = 0 === currentPeriodOffset;
   document.getElementById('period-dates').textContent = isCurrent ? `${dateRange} (CURRENT)` : dateRange;
   isCurrent ? (star.classList.add('active'), pane.classList.add('current')) : (star.classList.remove('active'), pane.classList.remove('current'));
-  const salary = window.salaries[period.key] || 0; document.getElementById('salary-input').value = salary || '';
+  const salary = window.salaries[period.key] || 0; const otherIncome = window.otherIncomes[period.key] || 0; const totalIncome = salary + otherIncome; document.getElementById('salary-input').value = salary || ''; document.getElementById('other-income-input').value = otherIncome || '';
   const periodExpenses = window.transactions.filter(t => {
     const tDate = new Date(t.date); tDate.setHours(0, 0, 0, 0); return tDate >= period.start && tDate <= period.end
-  }), totalExpenses = periodExpenses.reduce((sum, t) => sum + t.amount, 0), thisPeriodSavings = salary - totalExpenses, carryForward = calculateCarryForward(period.periodNum), totalCumulativeSavings = carryForward + thisPeriodSavings;
-  document.getElementById('salary-display').textContent = `$${salary.toFixed(0)}`, document.getElementById('expenses-display').textContent = `$${totalExpenses.toFixed(0)}`;
+  }), totalExpenses = periodExpenses.reduce((sum, t) => sum + t.amount, 0), thisPeriodSavings = totalIncome - totalExpenses, carryForward = calculateCarryForward(period.periodNum), totalCumulativeSavings = carryForward + thisPeriodSavings;
+  document.getElementById('salary-display').textContent = `$${totalIncome.toFixed(0)}`, document.getElementById('expenses-display').textContent = `$${totalExpenses.toFixed(0)}`;
   const savingsEl = document.getElementById('savings-display'); savingsEl.textContent = `$${thisPeriodSavings.toFixed(0)}`, savingsEl.className = 'summary-value ' + (thisPeriodSavings >= 0 ? 'positive' : 'negative');
   const carryForwardEl = document.getElementById('carry-forward-display'); carryForwardEl.textContent = `$${carryForward.toFixed(0)}`, carryForwardEl.className = 'summary-value info ' + (carryForward >= 0 ? 'positive' : 'negative');
   const totalSavingsEl = document.getElementById('total-savings-display'); totalSavingsEl.textContent = `$${totalCumulativeSavings.toFixed(0)}`, totalSavingsEl.className = 'summary-value ' + (totalCumulativeSavings >= 0 ? 'positive' : 'negative'), renderExpenses(periodExpenses)
