@@ -903,16 +903,28 @@ button,
         />
         <button
             onclick="firebaseLogin()"
-            style="width: 100%; padding: 15px; margin: 20px 0; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 10px; font-size: 18px; font-weight: bold; cursor: pointer; box-sizing: border-box;"
+            style="width: 100%; padding: 15px; margin: 10px 0; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 10px; font-size: 18px; font-weight: bold; cursor: pointer; box-sizing: border-box;"
         >
             🔓 Sign In
+        </button>
+        <button
+            onclick="showSignUp()"
+            style="width: 100%; padding: 15px; margin: 10px 0; background: linear-gradient(135deg, #10b981, #059669); color: white; border: none; border-radius: 10px; font-size: 18px; font-weight: bold; cursor: pointer; box-sizing: border-box;"
+        >
+            📝 Sign Up
+        </button>
+        <button
+            onclick="showForgotPassword()"
+            style="background: none; border: none; color: #fbbf24; font-size: 0.9rem; cursor: pointer; text-decoration: underline; transition: all 0.3s;"
+        >
+            Forgot Password?
         </button>
         <div id="firebase-message" style="margin-top: 15px; padding: 10px; border-radius: 8px; display: none; font-size: 14px;"></div>
     </div>
 </div>
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
-import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, setPersistence, browserLocalPersistence } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, onAuthStateChanged, setPersistence, browserLocalPersistence } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
 import { getFirestore, doc, getDoc, setDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 const firebaseConfig = {
   apiKey: "AIzaSyAHgeL8cnjLGegRPvL-VCLbd_PCTo81Xvg",
@@ -975,6 +987,73 @@ window.firebaseLogin = async function() {
   } catch (error) {
     console.error('Login error:', error);
     messageDiv.textContent = '❌ Invalid credentials';
+    messageDiv.style.background = 'rgba(255,68,68,0.1)';
+    messageDiv.style.color = '#ff4444';
+    messageDiv.style.display = 'block';
+  }
+};
+// SIGN UP
+window.firebaseSignUp = async function() {
+  const email = document.getElementById('firebase-email').value.trim();
+  const password = document.getElementById('firebase-password').value;
+  const messageDiv = document.getElementById('firebase-message');
+  if (!email || !password) {
+    messageDiv.textContent = '⚠️ Enter email and password';
+    messageDiv.style.background = 'rgba(255,68,68,0.1)';
+    messageDiv.style.color = '#ff4444';
+    messageDiv.style.display = 'block';
+    return;
+  }
+  try {
+    messageDiv.textContent = '🔄 Creating account...';
+    messageDiv.style.background = 'rgba(68,138,255,0.1)';
+    messageDiv.style.color = '#448aff';
+    messageDiv.style.display = 'block';
+    await createUserWithEmailAndPassword(auth, email, password);
+    messageDiv.textContent = '✅ Account created! Please sign in.';
+    messageDiv.style.background = 'rgba(16,185,129,0.1)';
+    messageDiv.style.color = '#10b981';
+  } catch (error) {
+    console.error('Sign up error:', error);
+    let errorMsg = '❌ Error creating account';
+    if (error.code === 'auth/email-already-in-use') {
+      errorMsg = '❌ Email already in use';
+    } else if (error.code === 'auth/weak-password') {
+      errorMsg = '❌ Password too weak';
+    }
+    messageDiv.textContent = errorMsg;
+    messageDiv.style.background = 'rgba(255,68,68,0.1)';
+    messageDiv.style.color = '#ff4444';
+    messageDiv.style.display = 'block';
+  }
+};
+// FORGOT PASSWORD
+window.firebaseForgotPassword = async function() {
+  const email = document.getElementById('firebase-email').value.trim();
+  const messageDiv = document.getElementById('firebase-message');
+  if (!email) {
+    messageDiv.textContent = '⚠️ Enter email to reset password';
+    messageDiv.style.background = 'rgba(255,68,68,0.1)';
+    messageDiv.style.color = '#ff4444';
+    messageDiv.style.display = 'block';
+    return;
+  }
+  try {
+    messageDiv.textContent = '🔄 Sending reset email...';
+    messageDiv.style.background = 'rgba(68,138,255,0.1)';
+    messageDiv.style.color = '#448aff';
+    messageDiv.style.display = 'block';
+    await sendPasswordResetEmail(auth, email);
+    messageDiv.textContent = '✅ Password reset email sent! Check your inbox.';
+    messageDiv.style.background = 'rgba(16,185,129,0.1)';
+    messageDiv.style.color = '#10b981';
+  } catch (error) {
+    console.error('Forgot password error:', error);
+    let errorMsg = '❌ Error sending reset email';
+    if (error.code === 'auth/user-not-found') {
+      errorMsg = '❌ No user found with this email';
+    }
+    messageDiv.textContent = errorMsg;
     messageDiv.style.background = 'rgba(255,68,68,0.1)';
     messageDiv.style.color = '#ff4444';
     messageDiv.style.display = 'block';
@@ -1515,28 +1594,13 @@ function addUtility() {
   const month = getMonth(currentMonthOffset), utility = { id: Date.now(), type: type, amount: amount, month: month.key };
   window.utilities.push(utility), document.getElementById('utility-type').value = '', document.getElementById('custom-utility').value = '', document.getElementById('utility-amount').value = '', document.getElementById('custom-utility-group').style.display = 'none', updateMonthlyDisplay(), window.saveData()
 }
-document.getElementById('salary-input').addEventListener('input', function() {
+document.getElementById('salary-input').addEventListener('change', function() {
   const period = getPeriod(currentPeriodOffset);
-  if (period) {
-    window.salaries[period.key] = parseFloat(this.value) || 0;
-    updatePeriodDisplay();
-    window.saveData();
-  }
-});
-document.getElementById('other-income-input').addEventListener('input', function() {
+  period && (window.salaries[period.key] = parseFloat(this.value) || 0, updatePeriodDisplay(), window.saveData())
+}), document.getElementById('other-income-input').addEventListener('change', function() {
   const period = getPeriod(currentPeriodOffset);
-  if (period) {
-    const value = parseFloat(this.value);
-    if (value > 0) {
-      window.otherIncomes[period.key] = value;
-    } else {
-      delete window.otherIncomes[period.key];
-    }
-    updatePeriodDisplay();
-    window.saveData();
-  }
-});
-document.getElementById('amount-input').addEventListener('keypress', function(e) { 'Enter' === e.key && addExpense() }), document.getElementById('utility-amount').addEventListener('keypress', function(e) { 'Enter' === e.key && addUtility() }), checkFirstTimeUser();
+  period && (window.otherIncomes[period.key] = parseFloat(this.value) || 0, updatePeriodDisplay(), window.saveData())
+}), document.getElementById('amount-input').addEventListener('keypress', function(e) { 'Enter' === e.key && addExpense() }), document.getElementById('utility-amount').addEventListener('keypress', function(e) { 'Enter' === e.key && addUtility() }), checkFirstTimeUser();
 // ... (keep the rest of your auth, swipe, disclaimer, notifications code unchanged)
 </script>
 <!-- ==================== AUTHENTICATION SYSTEM ==================== -->
