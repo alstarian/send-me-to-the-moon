@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+hi<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -1197,7 +1197,6 @@ async function loadFirebaseData() {
       window.settings = { startDate: new Date().toISOString().split('T')[0] };
       window.transactions = [];
       window.salaries = {};
-window.otherIncomes = {};
       window.utilities = [];
 
       await setDoc(docRef, {
@@ -1308,7 +1307,6 @@ onAuthStateChanged(auth, async (user) => {
 <div class="summary-item full-width"><div class="summary-label">Total Cumulative Savings</div><div class="summary-value" id="total-savings-display">$0</div></div>
 </div>
 <div class="input-group"><label class="input-label">Salary</label><input type="number" id="salary-input" placeholder="Enter salary" step="0.01"></div>
-<div class="input-group"><label class="input-label">💰 Other Income</label><input type="number" id="other-income-input" placeholder="0.00" step="0.01" min="0"></div>
 <div class="input-group"><label class="input-label">Category</label><input type="text" id="category-input" placeholder="e.g., Groceries, Rent"></div>
 <div class="input-group"><label class="input-label">Amount</label><input type="number" id="amount-input" placeholder="0.00" step="0.01"></div>
 <button class="btn" onclick="addExpense()">Add Expense</button>
@@ -1457,7 +1455,7 @@ function selectQuickDate(dateStr) {
 
 function completeSetup() {
   let startDate = document.getElementById('setup-start-date').value || selectedQuickDate;
-  startDate ? (window.settings = { startDate: startDate, setupComplete: !0, setupDate: (new Date).toISOString() }, currentPeriodOffset = 0, updatePeriodDisplay(), updateMonthlyDisplay(), renderQuickAddButtons(), window.saveData(), document.getElementById('setup-wizard').classList.remove('active')) : alert('Please select a start date')
+  startDate ? (window.settings = { startDate: startDate, setupComplete: !0, setupDate: (new Date).toISOString() }, currentPeriodOffset = 0, updatePeriodDisplay(), updateMonthlyDisplay(), renderQuickAddButtons(), window.saveData(), renderPeriod(), document.getElementById('setup-wizard').classList.remove('active')) : alert('Please select a start date')
 }
 
 function showSettings() {
@@ -1534,7 +1532,7 @@ function calculateAllTimeStats() {
   for (let i = 0; i < totalPeriods; i++) {
     const periodStart = new Date(startDate); periodStart.setDate(periodStart.getDate() + 14 * i);
     const periodEnd = new Date(periodStart); periodEnd.setDate(periodEnd.getDate() + 13), periodEnd.setHours(23, 59, 59, 999);
-    const periodKey = `period-${periodStart.getFullYear()}-${String(periodStart.getMonth() + 1).padStart(2, '0')}-${String(periodStart.getDate()).padStart(2, '0')}`, salary = window.salaries[periodKey] || 0, periodExpenses = window.transactions.filter(t => {
+    const periodKey = `period-${periodStart.getFullYear()}-${String(periodStart.getMonth() + 1).padStart(2, '0')}-${String(periodStart.getDate()).padStart(2, '0')}`, salary = window.salaries[periodKey] || 0, otherIncome = window.otherIncomes[periodKey] || 0, periodExpenses = window.transactions.filter(t => {
       const tDate = new Date(t.date); tDate.setHours(0, 0, 0, 0); return tDate >= periodStart && tDate <= periodEnd
     });
     if (salary > 0 || periodExpenses.length > 0) {
@@ -1683,7 +1681,7 @@ function calculateCarryForward(upToPeriodNum) {
     const periodKey = `period-${periodStart.getFullYear()}-${String(periodStart.getMonth() + 1).padStart(2, '0')}-${String(periodStart.getDate()).padStart(2, '0')}`, salary = window.salaries[periodKey] || 0, periodExpenses = window.transactions.filter(t => {
       const tDate = new Date(t.date); tDate.setHours(0, 0, 0, 0); return tDate >= periodStart && tDate <= periodEnd
     }), totalExpenses = periodExpenses.reduce((sum, t) => sum + t.amount, 0);
-    cumulativeSavings += salary - totalExpenses
+    cumulativeSavings += (salary + otherIncome) - totalExpenses
   }
   return cumulativeSavings
 }
@@ -1766,6 +1764,14 @@ function addUtility() {
 document.getElementById('salary-input').addEventListener('change', function() {
   const period = getPeriod(currentPeriodOffset);
   period && (window.salaries[period.key] = parseFloat(this.value) || 0, updatePeriodDisplay(), window.saveData())
+}),
+document.getElementById('other-income-input').addEventListener('change', function() {
+  const period = getPeriod(currentPeriodOffset);
+  if (period) {
+    window.otherIncomes[period.key] = parseFloat(this.value) || 0;
+    saveData();
+    renderPeriod();
+  }
 }), document.getElementById('amount-input').addEventListener('keypress', function(e) { 'Enter' === e.key && addExpense() }), document.getElementById('utility-amount').addEventListener('keypress', function(e) { 'Enter' === e.key && addUtility() }), checkFirstTimeUser();
 
 // ... (keep the rest of your auth, swipe, disclaimer, notifications code unchanged)
@@ -1855,15 +1861,6 @@ document.getElementById('salary-input').addEventListener('change', function() {
 
     // Touch events
     pane.addEventListener('touchstart', handleStart, { passive: true });
-document.getElementById('other-income-input').addEventListener('change', function() {
-  const period = getPeriod(currentPeriodOffset);
-  if (period) {
-    window.otherIncomes[period.key] = parseFloat(this.value) || 0;
-    saveData();
-    renderPeriod();
-  }
-});
-
     pane.addEventListener('touchmove', handleMove, { passive: false });
     pane.addEventListener('touchend', handleEnd, { passive: true });
     
