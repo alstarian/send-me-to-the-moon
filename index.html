@@ -1,4 +1,4 @@
-hi<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -1197,6 +1197,7 @@ async function loadFirebaseData() {
       window.settings = { startDate: new Date().toISOString().split('T')[0] };
       window.transactions = [];
       window.salaries = {};
+window.otherIncomes = {};
       window.utilities = [];
 
       await setDoc(docRef, {
@@ -1307,6 +1308,7 @@ onAuthStateChanged(auth, async (user) => {
 <div class="summary-item full-width"><div class="summary-label">Total Cumulative Savings</div><div class="summary-value" id="total-savings-display">$0</div></div>
 </div>
 <div class="input-group"><label class="input-label">Salary</label><input type="number" id="salary-input" placeholder="Enter salary" step="0.01"></div>
+<div class="input-group"><label class="input-label">💰 Other Income</label><input type="number" id="other-income-input" placeholder="0.00" step="0.01" min="0"></div>
 <div class="input-group"><label class="input-label">Category</label><input type="text" id="category-input" placeholder="e.g., Groceries, Rent"></div>
 <div class="input-group"><label class="input-label">Amount</label><input type="number" id="amount-input" placeholder="0.00" step="0.01"></div>
 <button class="btn" onclick="addExpense()">Add Expense</button>
@@ -1853,6 +1855,15 @@ document.getElementById('salary-input').addEventListener('change', function() {
 
     // Touch events
     pane.addEventListener('touchstart', handleStart, { passive: true });
+document.getElementById('other-income-input').addEventListener('change', function() {
+  const period = getPeriod(currentPeriodOffset);
+  if (period) {
+    window.otherIncomes[period.key] = parseFloat(this.value) || 0;
+    saveData();
+    renderPeriod();
+  }
+});
+
     pane.addEventListener('touchmove', handleMove, { passive: false });
     pane.addEventListener('touchend', handleEnd, { passive: true });
     
