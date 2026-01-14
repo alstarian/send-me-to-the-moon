@@ -856,6 +856,33 @@ button,
     padding: 40px 24px !important;
   }
 }
+
+
+
+/* SAFEST - Only this exact input */
+#settings-start-date {
+  max-width: 160px !important;
+  display: block !important;  /* Override width */
+}
+
+#settings-modal label[for="settings-start-date"],
+#settings-modal .input-label:has(~ #settings-start-date) {
+  display: inline-block !important;
+  width: auto !important;
+  margin-right: 12px !important;
+  font-size: 0.85rem !important;
+}
+
+/* Container flex */
+#settings-start-date ~ *,
+#settings-modal #settings-start-date {
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+}
+
+
+
 </style>
 </head>
 <body>
