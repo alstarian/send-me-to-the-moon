@@ -995,40 +995,75 @@ window.firebaseLogin = async function() {
   }
 };
 // SIGN UP
+// SIGN UP with strong password validation
 window.firebaseSignUp = async function() {
   const email = document.getElementById('firebase-email').value.trim();
   const password = document.getElementById('firebase-password').value;
   const messageDiv = document.getElementById('firebase-message');
+
+  // Clear previous messages
+  messageDiv.style.display = 'none';
+
   if (!email || !password) {
-    messageDiv.textContent = '⚠️ Enter email and password';
-    messageDiv.style.background = 'rgba(255,68,68,0.1)';
-    messageDiv.style.color = '#ff4444';
-    messageDiv.style.display = 'block';
+    showAuthMessage('⚠️ Please enter both email and password', 'warning');
     return;
   }
+
+  // Strong password validation
+  const errors = [];
+  if (password.length < 8) errors.push('• At least 8 characters');
+  if (!/[A-Z]/.test(password)) errors.push('• At least one uppercase letter');
+  if (!/[a-z]/.test(password)) errors.push('• At least one lowercase letter');
+  if (!/[0-9]/.test(password)) errors.push('• At least one number');
+  if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) errors.push('• At least one special character (!@#$%^&* etc.)');
+
+  if (errors.length > 0) {
+    showAuthMessage('❌ Strong password required:\n' + errors.join('\n'), 'error');
+    return;
+  }
+
   try {
-    messageDiv.textContent = '🔄 Creating account...';
-    messageDiv.style.background = 'rgba(68,138,255,0.1)';
-    messageDiv.style.color = '#448aff';
-    messageDiv.style.display = 'block';
+    showAuthMessage('🔄 Creating account...', 'info');
+
     await createUserWithEmailAndPassword(auth, email, password);
-    messageDiv.textContent = '✅ Account created! Please sign in.';
-    messageDiv.style.background = 'rgba(16,185,129,0.1)';
-    messageDiv.style.color = '#10b981';
+
+    showAuthMessage('✅ Account created! You can now sign in.', 'success');
+
+    // Optional: Clear fields after success
+    document.getElementById('firebase-email').value = '';
+    document.getElementById('firebase-password').value = '';
+
   } catch (error) {
-    console.error('Sign up error:', error);
-    let errorMsg = '❌ Error creating account';
-    if (error.code === 'auth/email-already-in-use') {
-      errorMsg = '❌ Email already in use';
-    } else if (error.code === 'auth/weak-password') {
-      errorMsg = '❌ Password too weak';
-    }
-    messageDiv.textContent = errorMsg;
-    messageDiv.style.background = 'rgba(255,68,68,0.1)';
-    messageDiv.style.color = '#ff4444';
-    messageDiv.style.display = 'block';
+    console.error('Signup error:', error);
+    let msg = '❌ Error creating account';
+    if (error.code === 'auth/email-already-in-use') msg = '❌ Email already in use';
+    else if (error.code === 'auth/invalid-email') msg = '❌ Invalid email';
+    else if (error.code === 'auth/weak-password') msg = '❌ Password too weak';
+
+    showAuthMessage(msg, 'error');
   }
 };
+
+// Helper for consistent messaging
+function showAuthMessage(text, type) {
+  const messageDiv = document.getElementById('firebase-message');
+  messageDiv.textContent = text;
+  messageDiv.style.display = 'block';
+
+  if (type === 'success') {
+    messageDiv.style.background = 'rgba(16,185,129,0.1)';
+    messageDiv.style.color = '#10b981';
+  } else if (type === 'error') {
+    messageDiv.style.background = 'rgba(255,68,68,0.1)';
+    messageDiv.style.color = '#ff4444';
+  } else if (type === 'warning') {
+    messageDiv.style.background = 'rgba(251,191,36,0.1)';
+    messageDiv.style.color = '#fbbf24';
+  } else {
+    messageDiv.style.background = 'rgba(68,138,255,0.1)';
+    messageDiv.style.color = '#448aff';
+  }
+}
 // FORGOT PASSWORD
 window.firebaseForgotPassword = async function() {
   const email = document.getElementById('firebase-email').value.trim();
