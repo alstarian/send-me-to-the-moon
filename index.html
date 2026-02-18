@@ -1231,14 +1231,9 @@ onAuthStateChanged(auth, async (user) => {
 </script>
 <div class="app-header"><div class="app-logo">💰</div><h1 class="app-title">Expense Tracker</h1></div>
 <div class="container">
-<div class="sync-bar">
-<button class="sync-btn settings" onclick="showSettings()">⚙️ Settings</button>
-<button class="sync-btn insights" onclick="showInsights()">📈 Insights</button>
-<button class="sync-btn analytics" onclick="showAnalytics()">📊 Analytics</button>
-<button class="sync-btn export" onclick="exportData()">📥 Export</button>
-<button class="sync-btn import" onclick="document.getElementById('import-file').click()">📤 Import</button>
-<button class="sync-btn danger" onclick="resetApp()">🔄 Reset</button>
-<input type="file" id="import-file" accept=".json" style="display:none" onchange="importData(event)">
+<<div class="sync-bar">
+  <button class="sync-btn settings" onclick="showSettings()">⚙️ Settings</button>
+  <input type="file" id="import-file" accept=".json" style="display:none" onchange="importData(event)">
 </div>
 <div class="pane" id="pane-period">
 <div class="pane-header"><div class="period-nav"><button onclick="changePeriod(-1)">◀</button><div class="period-title" id="period-dates">Loading...</div><button onclick="changePeriod(1)">▶</button></div><div class="star-toggle" id="star-current" onclick="jumpToCurrent()">⭐</div></div>
