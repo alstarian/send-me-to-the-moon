@@ -1295,7 +1295,40 @@ onAuthStateChanged(auth, async (user) => {
 </div>
 </div>
 <div id="setup-wizard" class="modal setup-wizard"><div class="modal-content"><div class="modal-header"><div class="modal-title">Welcome! 👋</div></div><div class="wizard-icon">💰</div><p class="wizard-subtitle">Let's get you set up! When does your bi-weekly pay cycle start? This helps us track your expenses accurately across pay periods.</p><div class="quick-dates" id="quick-dates"></div><div class="divider">OR CHOOSE A DATE</div><div class="input-group"><label class="input-label">Custom Start Date</label><input type="date" id="setup-start-date" max="2099-12-31"></div><div class="modal-buttons"><button class="modal-btn save" onclick="completeSetup()">Get Started! 🚀</button></div><p style="margin-top:20px;font-size:.85rem;color:rgba(255,255,255,.5)">💡 Tip: Choose the first day of any recent pay period.</p></div></div>
-<div id="settings-modal" class="modal"><div class="modal-content"><div class="modal-header"><div class="modal-title">Settings ⚙️</div><button class="close-btn" onclick="closeSettings()">✕</button></div><div class="settings-info"><div class="settings-info-title">Current Pay Cycle Start</div><div class="settings-info-value" id="current-start-date">Loading...</div></div><div class="input-group"><label class="input-label">Update Pay Cycle Start Date</label><input type="date" id="settings-start-date" max="2099-12-31"></div>
+<div id="settings-modal" class="modal"><div class="modal-content"><div class="modal-header"><div class="modal-title">Settings ⚙️</div><button class="close-btn" onclick="closeSettings()">✕</button></div>
+
+
+<!-- ===== TOOLS SECTION ===== -->
+<div class="divider">🛠️ Tools</div>
+<div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:28px;">
+  <button class="sync-btn insights" onclick="closeSettings(); showInsights();"
+    style="justify-content:center; padding:16px; border-radius:14px;">
+    📈 Insights
+  </button>
+  <button class="sync-btn analytics" onclick="closeSettings(); showAnalytics();"
+    style="justify-content:center; padding:16px; border-radius:14px;">
+    📊 Analytics
+  </button>
+  <button class="sync-btn export" onclick="closeSettings(); exportData();"
+    style="justify-content:center; padding:16px; border-radius:14px;">
+    📥 Export
+  </button>
+  <button class="sync-btn import" onclick="closeSettings(); document.getElementById('import-file').click();"
+    style="justify-content:center; padding:16px; border-radius:14px;">
+    📤 Import
+  </button>
+  <button class="sync-btn danger" onclick="closeSettings(); resetApp();"
+    style="justify-content:center; padding:16px; border-radius:14px; grid-column:1/-1;">
+    🔄 Reset All Data
+  </button>
+</div>
+<!-- ===== END TOOLS SECTION ===== -->
+
+
+
+
+
+<div class="settings-info"><div class="settings-info-title">Current Pay Cycle Start</div><div class="settings-info-value" id="current-start-date">Loading...</div></div><div class="input-group"><label class="input-label">Update Pay Cycle Start Date</label><input type="date" id="settings-start-date" max="2099-12-31"></div>
 <div class="divider" style="margin:30px 0">📅 Pay Cycle Settings</div>
 <div class="warning-box"><p>⚠️ <strong>Important:</strong> Changing your pay cycle start date will recalculate all periods.</p></div><div class="modal-buttons"><button class="modal-btn cancel" onclick="closeSettings()">Cancel</button><button class="modal-btn save" onclick="saveSettings()">Save Changes</button></div></div></div>
 <div id="edit-modal" class="modal"><div class="modal-content"><div class="modal-header"><div class="modal-title">Edit Expense</div><button class="close-btn" onclick="closeEditModal()">✕</button></div><div class="input-group"><label class="input-label">Category</label><input type="text" id="edit-category" placeholder="e.g., Groceries"></div><div class="input-group"><label class="input-label">Amount</label><input type="number" id="edit-amount" placeholder="0.00" step="0.01"></div><div class="modal-buttons"><button class="modal-btn cancel" onclick="closeEditModal()">Cancel</button><button class="modal-btn save" onclick="saveEdit()">Save Changes</button></div></div></div>
