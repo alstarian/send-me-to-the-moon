@@ -1916,4 +1916,69 @@ document.getElementById('salary-input').addEventListener('change', function() {
   }
 }
 </style>
+
+
+<script>
+// =============================================
+// IDLE AUTO-LOCK SYSTEM
+// =============================================
+(function() {
+  const IDLE_TIMEOUT_MS = 2 * 60 * 1000; // 2 minutes - change as needed
+  let idleTimer = null;
+
+  function lockApp() {
+    // Only lock if user has a passcode set
+    const passcode = localStorage.getItem('appPasscode');
+    if (!passcode) return;
+
+    // Show lock screen
+    const lockScreen = document.getElementById('lock-screen');
+    if (lockScreen) {
+      lockScreen.style.display = 'flex';
+      // Clear passcode inputs
+      document.querySelectorAll('.passcode-digit').forEach(input => input.value = '');
+      // Focus first digit
+      setTimeout(() => {
+        const first = document.querySelector('.passcode-digit');
+        if (first) first.focus();
+      }, 100);
+    }
+  }
+
+  function resetIdleTimer() {
+    clearTimeout(idleTimer);
+    // Don't start timer if lock screen is already showing
+    const lockScreen = document.getElementById('lock-screen');
+    if (lockScreen && lockScreen.style.display !== 'none') return;
+
+    idleTimer = setTimeout(lockApp, IDLE_TIMEOUT_MS);
+  }
+
+  // Reset timer on any user activity
+  const events = ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll', 'click'];
+  events.forEach(event => {
+    document.addEventListener(event, resetIdleTimer, { passive: true });
+  });
+
+  // Also lock when app goes to background (iOS home button)
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      lockApp(); // Lock immediately when app goes background
+    } else {
+      resetIdleTimer(); // Restart timer when app comes back
+    }
+  });
+
+  // Start the timer on load
+  resetIdleTimer();
+
+  console.log('🔒 Idle lock system active - locks after', IDLE_TIMEOUT_MS / 1000 / 60, 'minute(s)');
+})();
+</script>
+
+
+
+
+
+
 </body></html>
