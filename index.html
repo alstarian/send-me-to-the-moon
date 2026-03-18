@@ -1559,6 +1559,8 @@ function jumpToCurrent() {
   currentPeriodOffset = 0, updatePeriodDisplay()
 }
 function getPeriod(offset = 0) {
+
+console.log('startDate from settings:', window.settings.startDate);  // ADD THIS
   try {
     if (!window.settings || !window.settings.startDate) return null;
     const today = new Date; today.setHours(0, 0, 0, 0);
