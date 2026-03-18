@@ -1569,7 +1569,7 @@ console.log('startDate from settings:', window.settings.startDate);  // ADD THIS
     const startDate = new Date(window.settings.startDate + 'T00:00:00');
     if (isNaN(startDate.getTime())) return alert('Invalid start date. Reset app.'), null;
     startDate.setHours(0, 0, 0, 0);
-    const millisDiff = today.getTime() - startDate.getTime(), daysDiff = Math.floor(millisDiff / 864e5), currentPeriodNum = Math.floor(daysDiff / 14), targetPeriod = currentPeriodNum + offset, periodStart = new Date(startDate);
+    const millisDiff = today.getTime() - startDate.getTime(), daysDiff = Math.ceil(millisDiff / 864e5), currentPeriodNum = Math.floor(daysDiff / 14), targetPeriod = currentPeriodNum + offset, periodStart = new Date(startDate);
     periodStart.setDate(periodStart.getDate() + 14 * targetPeriod);
     const periodEnd = new Date(periodStart); periodEnd.setDate(periodEnd.getDate() + 13), periodEnd.setHours(23, 59, 59, 999);
     return { start: periodStart, end: periodEnd, key: `period-${periodStart.getFullYear()}-${String(periodStart.getMonth() + 1).padStart(2, '0')}-${String(periodStart.getDate()).padStart(2, '0')}`, periodNum: targetPeriod }
