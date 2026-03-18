@@ -1562,6 +1562,8 @@ function getPeriod(offset = 0) {
   try {
     if (!window.settings || !window.settings.startDate) return null;
     const today = new Date; today.setHours(0, 0, 0, 0);
+
+
     const startDate = new Date(window.settings.startDate + 'T00:00:00');
     if (isNaN(startDate.getTime())) return alert('Invalid start date. Reset app.'), null;
     startDate.setHours(0, 0, 0, 0);
