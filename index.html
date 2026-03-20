@@ -890,6 +890,33 @@ button,
 
 
 
+
+/* =============================================
+   BUDGET BAR FEATURE
+   ============================================= */
+.expense-budget-bar {
+  position: absolute;
+  top: 0; left: 0; bottom: 0;
+  border-radius: 16px;
+  opacity: 0.09;
+  pointer-events: none;
+  transition: width 0.5s ease;
+  z-index: 0;
+}
+.expense-type-toggle { display: flex; gap: 10px; margin-bottom: 16px; }
+.expense-type-btn {
+  flex: 1; padding: 12px; border-radius: 12px; font-weight: 700;
+  cursor: pointer; font-size: 0.9rem; transition: all 0.3s; border: 2px solid transparent;
+}
+.expense-type-btn.variable-active {
+  border-color: rgba(239,68,68,0.5) !important; background: rgba(239,68,68,0.15) !important; color: #ff6b6b !important;
+}
+.expense-type-btn.fixed-active {
+  border-color: rgba(102,126,234,0.5) !important; background: rgba(102,126,234,0.15) !important; color: #667eea !important;
+}
+.expense-type-btn.type-inactive {
+  border-color: rgba(0,0,0,0.15) !important; background: rgba(255,255,255,0.7) !important; color: rgba(0,0,0,0.4) !important;
+}
 </style>
 </head>
 <body>
@@ -1275,6 +1302,13 @@ onAuthStateChanged(auth, async (user) => {
 <div class="input-group"><label class="input-label">💰 Other Income</label><input type="number" id="other-income-input" placeholder="0.00" step="0.01" min="0"></div>
 <div class="input-group"><label class="input-label">Category</label><input type="text" id="category-input" placeholder="e.g., Groceries, Rent"></div>
 <div class="input-group"><label class="input-label">Amount</label><input type="number" id="amount-input" placeholder="0.00" step="0.01"></div>
+<div class="input-group">
+  <label class="input-label">Expense Type</label>
+  <div class="expense-type-toggle">
+    <button type="button" id="type-variable" class="expense-type-btn variable-active" onclick="setExpenseType('variable')">📈 Variable</button>
+    <button type="button" id="type-fixed" class="expense-type-btn type-inactive" onclick="setExpenseType('fixed')">📌 Fixed</button>
+  </div>
+</div>
 <button class="btn" onclick="addExpense()">Add Expense</button>
 <div class="quick-add-section"><div class="quick-add-label">Quick Add:</div><div class="quick-add-buttons" id="quick-add-buttons"></div></div>
 <div class="expenses-list" id="expenses-list"><div class="empty-state"><div class="empty-state-icon">📊</div><div>No expenses yet</div></div></div>
@@ -1397,7 +1431,7 @@ function completeSetup() {
 function showSettings() {
   if (!window.settings || !window.settings.startDate) return void alert('Complete setup first');
   const modal = document.getElementById('settings-modal'), dateObj = new Date(window.settings.startDate + 'T00:00:00');
-  document.getElementById('current-start-date').textContent = dateObj.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }), document.getElementById('settings-start-date').value = window.settings.startDate, modal.classList.add('active')
+  document.getElementById('current-start-date').textContent = dateObj.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }), document.getElementById('settings-start-date').value = window.settings.startDate; document.getElementById('settings-budget-limit').value = window.settings.budgetLimit || ''; modal.classList.add('active')
 }
 function closeSettings() {
   document.getElementById('settings-modal').classList.remove('active')
@@ -1559,17 +1593,13 @@ function jumpToCurrent() {
   currentPeriodOffset = 0, updatePeriodDisplay()
 }
 function getPeriod(offset = 0) {
-
-console.log('startDate from settings:', window.settings.startDate);  // ADD THIS
   try {
     if (!window.settings || !window.settings.startDate) return null;
     const today = new Date; today.setHours(0, 0, 0, 0);
-
-
     const startDate = new Date(window.settings.startDate + 'T00:00:00');
     if (isNaN(startDate.getTime())) return alert('Invalid start date. Reset app.'), null;
     startDate.setHours(0, 0, 0, 0);
-    const millisDiff = today.getTime() - startDate.getTime(), daysDiff = Math.ceil(millisDiff / 864e5), currentPeriodNum = Math.floor(daysDiff / 14), targetPeriod = currentPeriodNum + offset, periodStart = new Date(startDate);
+    const millisDiff = today.getTime() - startDate.getTime(), daysDiff = Math.floor(millisDiff / 864e5), currentPeriodNum = Math.floor(daysDiff / 14), targetPeriod = currentPeriodNum + offset, periodStart = new Date(startDate);
     periodStart.setDate(periodStart.getDate() + 14 * targetPeriod);
     const periodEnd = new Date(periodStart); periodEnd.setDate(periodEnd.getDate() + 13), periodEnd.setHours(23, 59, 59, 999);
     return { start: periodStart, end: periodEnd, key: `period-${periodStart.getFullYear()}-${String(periodStart.getMonth() + 1).padStart(2, '0')}-${String(periodStart.getDate()).padStart(2, '0')}`, periodNum: targetPeriod }
@@ -1622,7 +1652,21 @@ function updateMonthlyDisplay() {
 function renderExpenses(expenses) {
   const listEl = document.getElementById('expenses-list');
   if (0 === expenses.length) return void (listEl.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📊</div><div>No expenses yet</div></div>');
-  listEl.innerHTML = expenses.slice().reverse().map(exp => `<div class="expense-item-wrapper"><div class="expense-item" data-expense-id="${exp.id}"><div class="expense-info"><div class="expense-desc">${exp.category}</div><div class="expense-cat">${new Date(exp.date).toLocaleDateString()}</div></div><div class="expense-amount">$${exp.amount.toFixed(2)}</div></div><div class="swipe-actions"><button class="action-btn edit"><span class="action-icon">✏️</span><span>Edit</span></button><button class="action-btn delete"><span class="action-icon">🗑️</span><span>Delete</span></button></div></div>`).join(''), listEl.querySelectorAll('.expense-item').forEach(item => setupSwipeActions(item, 'expense'))
+  const budget = (window.settings && window.settings.budgetLimit) ? window.settings.budgetLimit : 0;
+  listEl.innerHTML = expenses.slice().reverse().map(exp => {
+    const isVariable = !exp.type || exp.type === 'variable';
+    let barHTML = '';
+    if (isVariable && budget > 0) {
+      const pct = Math.min((exp.amount / budget) * 100, 100);
+      const color = pct < 5 ? '#10b981' : pct < 10 ? '#f59e0b' : '#ef4444';
+      barHTML = `<div class="expense-budget-bar" style="width:${pct}%;background:${color};"></div>`;
+    }
+    const typeTag = exp.type === 'fixed'
+      ? `<span style="font-size:0.65rem;background:rgba(102,126,234,0.2);color:#667eea;padding:2px 6px;border-radius:6px;margin-left:6px;font-weight:700;">FIXED</span>`
+      : '';
+    return `<div class="expense-item-wrapper"><div class="expense-item" data-expense-id="${exp.id}">${barHTML}<div class="expense-info" style="position:relative;z-index:1;"><div class="expense-desc">${exp.category}${typeTag}</div><div class="expense-cat">${new Date(exp.date).toLocaleDateString()}</div></div><div class="expense-amount" style="position:relative;z-index:1;">$${exp.amount.toFixed(2)}</div></div><div class="swipe-actions"><button class="action-btn edit"><span class="action-icon">✏️</span><span>Edit</span></button><button class="action-btn delete"><span class="action-icon">🗑️</span><span>Delete</span></button></div></div>`;
+  }).join('');
+  listEl.querySelectorAll('.expense-item').forEach(item => setupSwipeActions(item, 'expense'));
 }
 function renderUtilities(utilityList) {
   const listEl = document.getElementById('utilities-list');
@@ -1652,12 +1696,23 @@ function setupSwipeActions(item, type) {
     }
   }), document.addEventListener('click', e => { wrapper.contains(e.target) || item.classList.remove('swiped') })
 }
+let currentExpenseType = 'variable';
+function setExpenseType(type) {
+  currentExpenseType = type;
+  document.getElementById('type-variable').className = type === 'variable' ? 'expense-type-btn variable-active' : 'expense-type-btn type-inactive';
+  document.getElementById('type-fixed').className = type === 'fixed' ? 'expense-type-btn fixed-active' : 'expense-type-btn type-inactive';
+}
 function addExpense() {
   const period = getPeriod(currentPeriodOffset); if (!period) return;
   const category = document.getElementById('category-input').value.trim(), amount = parseFloat(document.getElementById('amount-input').value);
   if (!category || !amount || amount <= 0) return void alert('Enter both category and amount');
-  const transaction = { id: Date.now(), category: category, amount: amount, date: period.start.toISOString() };
-  window.transactions.push(transaction), document.getElementById('category-input').value = '', document.getElementById('amount-input').value = '', updatePeriodDisplay(), renderQuickAddButtons(), window.saveData()
+  const transaction = { id: Date.now(), category: category, amount: amount, date: period.start.toISOString(), type: currentExpenseType };
+  window.transactions.push(transaction);
+  document.getElementById('category-input').value = '';
+  document.getElementById('amount-input').value = '';
+  currentExpenseType = 'variable';
+  setExpenseType('variable');
+  updatePeriodDisplay(), renderQuickAddButtons(), window.saveData();
 }
 function addUtility() {
   let type = document.getElementById('utility-type').value;
