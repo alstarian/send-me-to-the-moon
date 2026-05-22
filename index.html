@@ -1699,90 +1699,96 @@ const RECOVERY_KEY = 'appPinRecovery';
 
 function savePin(pin) { localStorage.setItem(PIN_KEY, btoa(pin)); }
 function getStoredPin() { return localStorage.getItem(PIN_KEY); }
-function verifyPin(pin) { const s = getStoredPin(); return s ? s === btoa(pin) : false; }
+function isPinSet() { return !!getStoredPin(); }
+function checkPin(pin) { return getStoredPin() === btoa(pin); }
 
 function generateRecoveryCode() {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   return Array.from({length: 4}, () => chars[Math.floor(Math.random() * chars.length)]).join('');
 }
 
-function readDigits(prefix, count) {
-  return Array.from({length: count}, (_, i) => (document.getElementById(`${prefix}-${i+1}`) || {}).value || '').join('');
+// ── Single-input PIN field helpers ────────────────────────────────────────────
+// Each "PIN field" is one <input type="tel" maxlength="6"> with a row of 6 dot
+// indicators on top. This avoids all focus/auto-advance bugs on iOS/Android.
+
+function initPinField(inputId, dotContainerId) {
+  const input = document.getElementById(inputId);
+  const dots = document.getElementById(dotContainerId);
+  if (!input || !dots) return;
+
+  function updateDots() {
+    const len = input.value.length;
+    dots.querySelectorAll('.pin-dot').forEach((dot, i) => {
+      dot.classList.toggle('filled', i < len);
+    });
+  }
+
+  input.addEventListener('input', function() {
+    // Allow digits only
+    this.value = this.value.replace(/\D/g, '').slice(0, 6);
+    updateDots();
+  });
+
+  updateDots();
 }
 
-function shakeInputs(selector) {
-  const el = document.querySelector(selector);
+function getPinValue(inputId) {
+  const el = document.getElementById(inputId);
+  return el ? el.value.replace(/\D/g, '') : '';
+}
+
+function clearPinField(inputId, dotContainerId) {
+  const el = document.getElementById(inputId);
+  if (el) { el.value = ''; el.dispatchEvent(new Event('input')); el.focus(); }
+}
+
+function shakePinField(dotContainerId) {
+  const el = document.getElementById(dotContainerId);
   if (!el) return;
   el.classList.add('shake-error');
   setTimeout(() => el.classList.remove('shake-error'), 600);
 }
 
-function clearDigits(prefix, count) {
-  Array.from({length: count}, (_, i) => {
-    const el = document.getElementById(`${prefix}-${i+1}`);
-    if (el) el.value = '';
-  });
-  const first = document.getElementById(`${prefix}-1`);
-  if (first) first.focus();
-}
-
-// Auto-advance digits for a given prefix/count
-function setupPasscodeInputs(prefix, count) {
-  for (let i = 1; i <= count; i++) {
-    const input = document.getElementById(`${prefix}-${i}`);
-    if (!input) continue;
-    input.addEventListener('input', function() {
-      if (this.value && i < count) document.getElementById(`${prefix}-${i+1}`).focus();
-    });
-    input.addEventListener('keydown', function(e) {
-      if (e.key === 'Backspace' && !this.value && i > 1) document.getElementById(`${prefix}-${i-1}`).focus();
-      if (e.key === 'Enter') {
-        if (prefix === 'lock') unlockWithPin();
-        else if (prefix === 'setup') completeAuthSetup();
-        else if (prefix === 'recovery') verifyRecoveryCode();
-        else if (prefix === 'newpin') saveNewPinAfterRecovery();
-        else if (prefix === 'verify') verifyPinAndGenerateNew();
-      }
-    });
-  }
-}
-
-// Prepare lock screen — show PIN view or no-PIN view
+// ── Lock screen ───────────────────────────────────────────────────────────────
 function prepareLockScreen() {
-  const hasPIN = !!getStoredPin();
-  document.getElementById('lock-pin-view').style.display = hasPIN ? 'block' : 'none';
-  document.getElementById('lock-no-pin-view').style.display = hasPIN ? 'none' : 'block';
-  document.getElementById('lock-error').textContent = '';
+  const pinView   = document.getElementById('lock-pin-view');
+  const noPinView = document.getElementById('lock-no-pin-view');
+  const errEl     = document.getElementById('lock-error');
+  if (isPinSet()) {
+    pinView.style.display   = 'block';
+    noPinView.style.display = 'none';
+    clearPinField('lock-pin-input', 'lock-pin-dots');
+  } else {
+    pinView.style.display   = 'none';
+    noPinView.style.display = 'block';
+  }
+  if (errEl) errEl.textContent = '';
 }
 
-// Unlock with entered PIN
 function unlockWithPin() {
-  const pin = readDigits('lock', 6);
+  const pin   = getPinValue('lock-pin-input');
   const errEl = document.getElementById('lock-error');
   if (pin.length < 6) { errEl.textContent = 'Enter all 6 digits'; return; }
-  if (verifyPin(pin)) {
+  if (checkPin(pin)) {
     document.getElementById('lock-screen').style.display = 'none';
-    clearDigits('lock', 6);
+    clearPinField('lock-pin-input', 'lock-pin-dots');
     errEl.textContent = '';
     if (window.resetIdleTimer) window.resetIdleTimer();
   } else {
     errEl.textContent = '❌ Incorrect PIN';
-    shakeInputs('#lock-pin-inputs');
-    setTimeout(() => { clearDigits('lock', 6); errEl.textContent = ''; }, 700);
+    shakePinField('lock-pin-dots');
+    setTimeout(() => { clearPinField('lock-pin-input', 'lock-pin-dots'); errEl.textContent = ''; }, 700);
   }
 }
 
-// Show recovery code input from lock screen
 function showLockRecovery() {
+  clearPinField('recovery-pin-input', 'recovery-pin-dots');
   document.getElementById('recovery-input-modal').classList.add('active');
-  clearDigits('recovery', 4);
 }
 
-// Show PIN setup modal from lock screen (when no PIN set)
 function showPinSetupFromLock() {
   document.getElementById('lock-screen').style.display = 'none';
-  clearDigits('setup', 6);
-  document.getElementById('passcode-setup-modal').classList.add('active');
+  openPinSetupModal();
 }
 
 function skipLockScreen() {
@@ -1790,140 +1796,259 @@ function skipLockScreen() {
   if (window.resetIdleTimer) window.resetIdleTimer();
 }
 
-// Complete PIN setup from setup modal
+// ── PIN Setup modal ───────────────────────────────────────────────────────────
+function openPinSetupModal() {
+  clearPinField('setup-pin-input', 'setup-pin-dots');
+  document.getElementById('pin-setup-modal').classList.add('active');
+}
+
+function closePinSetupModal() {
+  document.getElementById('pin-setup-modal').classList.remove('active');
+}
+
+function showChangePinSetup() {
+  closeSettings();
+  openPinSetupModal();
+}
+
 function completeAuthSetup() {
-  const pin = readDigits('setup', 6);
-  if (pin.length !== 6 || !/^\d{6}$/.test(pin)) { alert('Enter all 6 digits (numbers only)'); return; }
+  const pin = getPinValue('setup-pin-input');
+  if (pin.length !== 6) {
+    shakePinField('setup-pin-dots');
+    document.getElementById('setup-pin-error').textContent = 'Enter all 6 digits';
+    setTimeout(() => document.getElementById('setup-pin-error').textContent = '', 1500);
+    return;
+  }
   savePin(pin);
-  document.getElementById('passcode-setup-modal').classList.remove('active');
   const code = generateRecoveryCode();
   localStorage.setItem(RECOVERY_KEY, btoa(code));
+  closePinSetupModal();
   document.getElementById('recovery-display-code').textContent = code;
   document.getElementById('recovery-code-modal').classList.add('active');
 }
 
-function closeRecoveryCodeModal() { document.getElementById('recovery-code-modal').classList.remove('active'); }
-function closeRecoveryInputModal() { document.getElementById('recovery-input-modal').classList.remove('active'); }
-function closeRegenerateModal() { document.getElementById('regenerate-recovery-modal').classList.remove('active'); }
-function closeNewRecoveryModal() { document.getElementById('new-recovery-code-modal').classList.remove('active'); }
-function closeRecoveryKeyInput() { document.getElementById('recovery-key-input-modal').classList.remove('active'); }
-
-// Verify 4-char recovery code → open new-PIN modal
-function verifyRecoveryCode() {
-  const code = readDigits('recovery', 4).toUpperCase();
-  const stored = localStorage.getItem(RECOVERY_KEY);
-  if (!stored) { alert('No recovery code found.'); return; }
-  if (btoa(code) === stored) {
-    closeRecoveryInputModal();
-    localStorage.removeItem(PIN_KEY);
-    clearDigits('newpin', 6);
-    document.getElementById('new-pin-modal').classList.add('active');
-  } else {
-    shakeInputs('#recovery-input-modal .passcode-input-group');
-    setTimeout(() => { clearDigits('recovery', 4); }, 700);
-    document.getElementById('recovery-input-modal').querySelector('.passcode-hint').textContent = '❌ Wrong code — try again';
-    setTimeout(() => { document.getElementById('recovery-input-modal').querySelector('.passcode-hint').textContent = 'From email'; }, 1500);
-  }
+function closeRecoveryCodeModal() {
+  document.getElementById('recovery-code-modal').classList.remove('active');
 }
 
-// Save new PIN after successful recovery
-function saveNewPinAfterRecovery() {
-  const pin = readDigits('newpin', 6);
-  if (pin.length !== 6 || !/^\d{6}$/.test(pin)) { alert('Enter all 6 digits'); return; }
-  savePin(pin);
-  const newCode = generateRecoveryCode();
-  localStorage.setItem(RECOVERY_KEY, btoa(newCode));
-  document.getElementById('new-pin-modal').classList.remove('active');
-  document.getElementById('lock-screen').style.display = 'none';
-  document.getElementById('new-recovery-display').textContent = newCode;
-  document.getElementById('new-recovery-code-modal').classList.add('active');
-  if (window.resetIdleTimer) window.resetIdleTimer();
-}
-
-// Verify current PIN then generate new recovery code
-function verifyPinAndGenerateNew() {
-  const pin = readDigits('verify', 6);
-  if (!verifyPin(pin)) {
-    shakeInputs('#regenerate-recovery-modal .passcode-input-group');
-    setTimeout(() => clearDigits('verify', 6), 700);
-    return;
-  }
-  const newCode = generateRecoveryCode();
-  localStorage.setItem(RECOVERY_KEY, btoa(newCode));
-  closeRegenerateModal();
-  document.getElementById('new-recovery-display').textContent = newCode;
-  document.getElementById('new-recovery-code-modal').classList.add('active');
-}
-
-// Open PIN change flow (from settings)
-function showChangePinSetup() {
-  closeSettings();
-  clearDigits('setup', 6);
-  document.getElementById('passcode-setup-modal').classList.add('active');
-}
-
-// Unused 12-word key modal close
-function verifyRecoveryKey() { alert('Use the 4-character code from your email instead.'); }
-
-// Email recovery code via mailto
 function emailRecoveryCode() {
-  const code = (document.getElementById('recovery-display-code') || document.getElementById('new-recovery-display') || {}).textContent || '';
+  const code = document.getElementById('recovery-display-code').textContent || '';
   if (!code || code === 'XXXX') { alert('No code to email.'); return; }
   window.location.href = `mailto:?subject=Expense%20Tracker%20Recovery%20Code&body=Your%20recovery%20code%20is%3A%20${code}%0A%0AKeep%20this%20somewhere%20safe!`;
 }
 
-// Wire up auto-advance once DOM is ready
+// ── Forgot PIN / recovery ─────────────────────────────────────────────────────
+function closeRecoveryInputModal() {
+  document.getElementById('recovery-input-modal').classList.remove('active');
+}
+
+function verifyRecoveryCode() {
+  const code   = getPinValue('recovery-pin-input').toUpperCase() ||
+                 document.getElementById('recovery-text-input')?.value.trim().toUpperCase();
+  const stored = localStorage.getItem(RECOVERY_KEY);
+  const errEl  = document.getElementById('recovery-error');
+
+  if (!stored) { errEl.textContent = 'No recovery code found.'; return; }
+
+  const textInput = document.getElementById('recovery-text-input');
+  const enteredCode = textInput ? textInput.value.trim().toUpperCase() : '';
+
+  if (!enteredCode) { errEl.textContent = 'Enter your 4-character code'; return; }
+
+  if (btoa(enteredCode) === stored) {
+    closeRecoveryInputModal();
+    localStorage.removeItem(PIN_KEY);
+    clearPinField('newpin-input', 'newpin-dots');
+    document.getElementById('new-pin-modal').classList.add('active');
+  } else {
+    errEl.textContent = '❌ Wrong code';
+    shakePinField('recovery-pin-dots');
+    setTimeout(() => { errEl.textContent = ''; if (textInput) textInput.select(); }, 1200);
+  }
+}
+
+function closeNewPinModal() {
+  document.getElementById('new-pin-modal').classList.remove('active');
+}
+
+function saveNewPinAfterRecovery() {
+  const pin   = getPinValue('newpin-input');
+  const errEl = document.getElementById('newpin-error');
+  if (pin.length !== 6) {
+    shakePinField('newpin-dots');
+    errEl.textContent = 'Enter all 6 digits';
+    setTimeout(() => errEl.textContent = '', 1500);
+    return;
+  }
+  savePin(pin);
+  const newCode = generateRecoveryCode();
+  localStorage.setItem(RECOVERY_KEY, btoa(newCode));
+  closeNewPinModal();
+  document.getElementById('lock-screen').style.display = 'none';
+  document.getElementById('recovery-display-code').textContent = newCode;
+  document.getElementById('recovery-code-modal').classList.add('active');
+  if (window.resetIdleTimer) window.resetIdleTimer();
+}
+
+// Stubs for removed modals (referenced nowhere but kept for safety)
+function closeRecoveryKeyInput() {}
+function verifyRecoveryKey() {}
+function closeRegenerateModal() {}
+function verifyPinAndGenerateNew() {}
+function closeNewRecoveryModal() {}
+function closeRecoveryInputModal2() {}
+
+// Init PIN fields after DOM ready
 document.addEventListener('DOMContentLoaded', () => {
-  setupPasscodeInputs('setup', 6);
-  setupPasscodeInputs('lock', 6);
-  setupPasscodeInputs('recovery', 4);
-  setupPasscodeInputs('newpin', 6);
-  setupPasscodeInputs('verify', 6);
+  initPinField('setup-pin-input',    'setup-pin-dots');
+  initPinField('lock-pin-input',     'lock-pin-dots');
+  initPinField('newpin-input',       'newpin-dots');
+
+  // Enter key submits
+  document.getElementById('setup-pin-input')?.addEventListener('keydown', e => { if (e.key === 'Enter') completeAuthSetup(); });
+  document.getElementById('lock-pin-input')?.addEventListener('keydown',  e => { if (e.key === 'Enter') unlockWithPin(); });
+  document.getElementById('newpin-input')?.addEventListener('keydown',    e => { if (e.key === 'Enter') saveNewPinAfterRecovery(); });
+  document.getElementById('recovery-text-input')?.addEventListener('keydown', e => { if (e.key === 'Enter') verifyRecoveryCode(); });
 });
 </script>
-<!-- ==================== AUTHENTICATION SYSTEM ==================== -->
-<!-- Passcode Setup -->
-<div id="passcode-setup-modal" class="modal auth-modal">
-  <div class="modal-content auth-content">
-    <div class="modal-header"><div class="modal-title">🔐 Secure Your App</div></div>
-    <div class="auth-icon">🔒</div>
-    <p class="auth-subtitle">Create a 6-digit passcode to protect your financial data</p>
-    <div class="passcode-input-group">
-      <input type="password" id="setup-1" maxlength="1" class="passcode-digit" inputmode="numeric" pattern="[0-9]">
-      <input type="password" id="setup-2" maxlength="1" class="passcode-digit" inputmode="numeric" pattern="[0-9]">
-      <input type="password" id="setup-3" maxlength="1" class="passcode-digit" inputmode="numeric" pattern="[0-9]">
-      <input type="password" id="setup-4" maxlength="1" class="passcode-digit" inputmode="numeric" pattern="[0-9]">
-      <input type="password" id="setup-5" maxlength="1" class="passcode-digit" inputmode="numeric" pattern="[0-9]">
-      <input type="password" id="setup-6" maxlength="1" class="passcode-digit" inputmode="numeric" pattern="[0-9]">
+
+<style>
+/* ── PIN dot indicators ── */
+.pin-dots {
+  display: flex; gap: 10px; justify-content: center; margin: 20px 0 8px;
+}
+.pin-dot {
+  width: 16px; height: 16px; border-radius: 50%;
+  border: 2px solid rgba(255,255,255,0.4);
+  background: transparent;
+  transition: all 0.15s ease;
+}
+.pin-dot.filled {
+  background: #fbbf24;
+  border-color: #fbbf24;
+  box-shadow: 0 0 8px rgba(251,191,36,0.5);
+}
+.pin-hidden-input {
+  position: absolute; opacity: 0; width: 1px; height: 1px; pointer-events: none;
+}
+.pin-tap-area {
+  width: 100%; padding: 12px 0 4px;
+  display: flex; flex-direction: column; align-items: center;
+  cursor: text;
+}
+.pin-tap-hint { font-size: 0.78rem; color: rgba(255,255,255,0.4); margin-top: 4px; }
+
+/* Auth modals — always dark, regardless of global white theme */
+.auth-modal .modal-content {
+  background: linear-gradient(135deg, rgba(20,20,35,0.98), rgba(10,10,20,0.99)) !important;
+  border: 1px solid rgba(255,255,255,0.15) !important;
+  color: white !important;
+}
+.auth-modal .modal-content *:not(.pin-dot) {
+  color: white !important;
+}
+.auth-modal .modal-title { font-size: 1.5rem !important; color: white !important; }
+.auth-modal .close-btn {
+  background: rgba(239,68,68,0.2) !important;
+  border: 1px solid rgba(239,68,68,0.4) !important;
+  color: #ef4444 !important;
+}
+.auth-modal input[type="text"] {
+  background: rgba(255,255,255,0.08) !important;
+  border: 1.5px solid rgba(255,255,255,0.2) !important;
+  color: white !important;
+  text-transform: uppercase;
+  letter-spacing: 4px;
+  font-size: 1.4rem !important;
+  font-weight: 700;
+  text-align: center;
+}
+.auth-modal input[type="text"]::placeholder { color: rgba(255,255,255,0.3) !important; letter-spacing: 1px; font-size: 0.9rem !important; }
+.auth-modal input[type="text"]:focus { border-color: rgba(251,191,36,0.6) !important; box-shadow: 0 0 0 3px rgba(251,191,36,0.15) !important; }
+.auth-modal .modal-btn.save {
+  background: linear-gradient(135deg, #667eea, #764ba2) !important;
+  color: white !important;
+  border: none !important;
+}
+.auth-modal .modal-btn.cancel {
+  background: rgba(255,255,255,0.08) !important;
+  border: 1px solid rgba(255,255,255,0.2) !important;
+  color: white !important;
+}
+.auth-pin-error { color: #ef4444 !important; font-size: 0.85rem; min-height: 20px; margin: 6px 0; text-align: center; }
+</style>
+
+<!-- ── PIN Setup Modal ── -->
+<div id="pin-setup-modal" class="modal auth-modal">
+  <div class="modal-content" style="max-width:380px; text-align:center;">
+    <div class="modal-header">
+      <div class="modal-title">🔐 Set PIN</div>
+      <button class="close-btn" onclick="closePinSetupModal()">✕</button>
     </div>
-    <p class="passcode-hint">Enter 6 digits (0-9)</p>
-    <div class="modal-buttons">
-      <button class="modal-btn save" onclick="completeAuthSetup()">🔒 Complete Setup</button>
+    <p style="color:rgba(255,255,255,0.6); font-size:0.9rem; margin:0 0 8px;">Create a 6-digit PIN to lock your app</p>
+    <div class="pin-tap-area" onclick="document.getElementById('setup-pin-input').focus()">
+      <div class="pin-dots" id="setup-pin-dots">
+        <div class="pin-dot"></div><div class="pin-dot"></div><div class="pin-dot"></div>
+        <div class="pin-dot"></div><div class="pin-dot"></div><div class="pin-dot"></div>
+      </div>
+      <input type="tel" id="setup-pin-input" maxlength="6" inputmode="numeric" pattern="[0-9]*"
+        autocomplete="off" class="pin-hidden-input" style="pointer-events:auto; opacity:0; position:absolute;">
+      <span class="pin-tap-hint">Tap here and enter 6 digits</span>
+    </div>
+    <div id="setup-pin-error" class="auth-pin-error"></div>
+    <button class="modal-btn save" style="width:100%; margin-top:12px;" onclick="completeAuthSetup()">🔒 Save PIN</button>
+  </div>
+</div>
+
+<!-- ── Recovery Code Display Modal ── -->
+<div id="recovery-code-modal" class="modal auth-modal" style="z-index:10001;">
+  <div class="modal-content" style="max-width:400px; text-align:center;">
+    <div class="modal-header"><div class="modal-title">✅ PIN Saved!</div></div>
+    <p style="color:rgba(255,255,255,0.7); font-size:0.9rem; margin:0 0 16px;">Save this recovery code — you'll need it if you forget your PIN</p>
+    <div style="background:rgba(251,191,36,0.12); border:2px solid rgba(251,191,36,0.4); border-radius:16px; padding:28px; margin:0 0 16px;">
+      <div id="recovery-display-code" style="font-size:2.8rem; font-weight:800; letter-spacing:10px; color:#fbbf24; font-family:monospace;">XXXX</div>
+    </div>
+    <button class="modal-btn save" style="width:100%; margin-bottom:10px;" onclick="emailRecoveryCode()">📧 Email to myself</button>
+    <button class="modal-btn cancel" style="width:100%;" onclick="closeRecoveryCodeModal()">I've saved it</button>
+  </div>
+</div>
+
+<!-- ── Forgot PIN / Enter Recovery Code Modal ── -->
+<div id="recovery-input-modal" class="modal auth-modal" style="z-index:10001;">
+  <div class="modal-content" style="max-width:380px; text-align:center;">
+    <div class="modal-header">
+      <div class="modal-title">🔑 Forgot PIN</div>
+      <button class="close-btn" onclick="closeRecoveryInputModal()">✕</button>
+    </div>
+    <p style="color:rgba(255,255,255,0.6); font-size:0.9rem; margin:0 0 20px;">Enter the 4-character recovery code that was shown when you set up your PIN</p>
+    <input type="text" id="recovery-text-input" maxlength="4" inputmode="text"
+      placeholder="e.g. A3KX"
+      autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false"
+      style="width:100%; margin-bottom:8px; border-radius:14px !important;">
+    <div id="recovery-error" class="auth-pin-error"></div>
+    <div class="modal-buttons" style="margin-top:16px;">
+      <button class="modal-btn cancel" onclick="closeRecoveryInputModal()">Cancel</button>
+      <button class="modal-btn save" onclick="verifyRecoveryCode()">✅ Verify</button>
     </div>
   </div>
 </div>
-  <div id="recovery-code-modal" class="modal auth-modal" style="z-index:10001"><div class="modal-content" style="max-width:550px"><div class="modal-header"><div class="modal-title">✅ PIN Created!</div></div><div class="auth-content"><div class="auth-icon">🔑</div><p class="auth-subtitle" style="font-size:1.1rem;margin-bottom:20px"><strong>Your Recovery Code:</strong></p><div style="background:rgba(251,191,36,0.15);border:2px solid rgba(251,191,36,0.4);border-radius:16px;padding:30px;margin:20px 0"><div id="recovery-display-code" style="font-size:3rem;font-weight:800;letter-spacing:8px;color:#fbbf24;text-align:center;font-family:monospace">XXXX</div></div><div style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:12px;padding:20px;margin:20px 0"><p style="color:rgba(255,255,255,0.9);font-size:0.95rem;margin:0"><strong style="color:#ef4444">⚠️</strong> Email NOW!</p></div><button class="modal-btn save" style="width:100%;margin-bottom:12px" onclick="emailRecoveryCode()">📧 Email</button><button class="modal-btn cancel" style="width:100%" onclick="closeRecoveryCodeModal()">Later</button></div></div></div>
-  <div id="recovery-input-modal" class="modal auth-modal" style="z-index:10001"><div class="modal-content"><div class="modal-header"><div class="modal-title">🔓 Enter Code</div><button class="close-btn" onclick="closeRecoveryInputModal()">×</button></div><div class="auth-content"><div class="auth-icon">🔑</div><p class="auth-subtitle">4-character code from email</p><div class="passcode-input-group"><input type="text" class="passcode-digit" id="recovery-1" maxlength="1" style="text-transform:uppercase"><input type="text" class="passcode-digit" id="recovery-2" maxlength="1" style="text-transform:uppercase"><input type="text" class="passcode-digit" id="recovery-3" maxlength="1" style="text-transform:uppercase"><input type="text" class="passcode-digit" id="recovery-4" maxlength="1" style="text-transform:uppercase"></div><p class="passcode-hint">From email</p><button class="modal-btn save" style="width:100%;margin-top:20px" onclick="verifyRecoveryCode()">✅ Verify</button></div></div></div>
-  <div id="new-pin-modal" class="modal auth-modal" style="z-index:10001"><div class="modal-content"><div class="modal-header"><div class="modal-title">🔑 New PIN</div></div><div class="auth-content"><div class="auth-icon">✅</div><p class="auth-subtitle">Create new PIN</p><div class="passcode-input-group"><input type="password" class="passcode-digit" id="newpin-1" maxlength="1" inputmode="numeric"><input type="password" class="passcode-digit" id="newpin-2" maxlength="1" inputmode="numeric"><input type="password" class="passcode-digit" id="newpin-3" maxlength="1" inputmode="numeric"><input type="password" class="passcode-digit" id="newpin-4" maxlength="1" inputmode="numeric"><input type="password" class="passcode-digit" id="newpin-5" maxlength="1" inputmode="numeric"><input type="password" class="passcode-digit" id="newpin-6" maxlength="1" inputmode="numeric"></div><p class="passcode-hint">6 digits</p><button class="modal-btn save" style="width:100%;margin-top:20px" onclick="saveNewPinAfterRecovery()">✅ Save</button></div></div></div>
-  <div id="regenerate-recovery-modal" class="modal auth-modal" style="z-index:10001"><div class="modal-content"><div class="modal-header"><div class="modal-title">🔐 Verify PIN</div><button class="close-btn" onclick="closeRegenerateModal()">×</button></div><div class="auth-content"><div class="auth-icon">🔑</div><p class="auth-subtitle">Enter current PIN</p><div class="passcode-input-group"><input type="password" class="passcode-digit" id="verify-1" maxlength="1" inputmode="numeric"><input type="password" class="passcode-digit" id="verify-2" maxlength="1" inputmode="numeric"><input type="password" class="passcode-digit" id="verify-3" maxlength="1" inputmode="numeric"><input type="password" class="passcode-digit" id="verify-4" maxlength="1" inputmode="numeric"><input type="password" class="passcode-digit" id="verify-5" maxlength="1" inputmode="numeric"><input type="password" class="passcode-digit" id="verify-6" maxlength="1" inputmode="numeric"></div><p class="passcode-hint">Current PIN</p><button class="modal-btn save" style="width:100%;margin-top:20px" onclick="verifyPinAndGenerateNew()">✅ Generate</button></div></div></div>
-  <div id="new-recovery-code-modal" class="modal auth-modal" style="z-index:10002"><div class="modal-content" style="max-width:550px"><div class="modal-header"><div class="modal-title">✅ New Code!</div></div><div class="auth-content"><div class="auth-icon">🔑</div><p class="auth-subtitle" style="font-size:1.1rem;margin-bottom:20px"><strong>NEW Code:</strong></p><div style="background:rgba(251,191,36,0.15);border:2px solid rgba(251,191,36,0.4);border-radius:16px;padding:30px;margin:20px 0"><div id="new-recovery-display" style="font-size:3rem;font-weight:800;letter-spacing:8px;color:#fbbf24;text-align:center;font-family:monospace">XXXX</div></div><div style="background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.3);border-radius:12px;padding:20px;margin:20px 0"><p style="color:rgba(255,255,255,0.9);font-size:0.95rem;margin:0"><strong style="color:#3b82f6">ℹ️</strong> Old code invalid!</p></div><button class="modal-btn save" style="width:100%;margin-bottom:12px" onclick="emailRecoveryCode()">📧 Email</button><button class="modal-btn cancel" style="width:100%" onclick="closeNewRecoveryModal()">Done</button></div></div></div>
-  <!-- Lock Screen -->
-<!-- Recovery Key Input -->
-<div id="recovery-key-input-modal" class="modal auth-modal">
-  <div class="modal-content auth-content">
-    <div class="modal-header">
-      <div class="modal-title">🔑 Enter Recovery Key</div>
-      <button class="close-btn" onclick="closeRecoveryKeyInput()">✕</button>
+
+<!-- ── New PIN after Recovery Modal ── -->
+<div id="new-pin-modal" class="modal auth-modal" style="z-index:10002;">
+  <div class="modal-content" style="max-width:380px; text-align:center;">
+    <div class="modal-header"><div class="modal-title">🔑 New PIN</div></div>
+    <p style="color:rgba(255,255,255,0.6); font-size:0.9rem; margin:0 0 8px;">Recovery verified! Set your new 6-digit PIN</p>
+    <div class="pin-tap-area" onclick="document.getElementById('newpin-input').focus()">
+      <div class="pin-dots" id="newpin-dots">
+        <div class="pin-dot"></div><div class="pin-dot"></div><div class="pin-dot"></div>
+        <div class="pin-dot"></div><div class="pin-dot"></div><div class="pin-dot"></div>
+      </div>
+      <input type="tel" id="newpin-input" maxlength="6" inputmode="numeric" pattern="[0-9]*"
+        autocomplete="off" class="pin-hidden-input" style="pointer-events:auto; opacity:0; position:absolute;">
+      <span class="pin-tap-hint">Tap here and enter 6 digits</span>
     </div>
-    <p class="auth-subtitle">Enter your 12-word recovery key (separated by spaces or dashes)</p>
-    <div class="input-group">
-      <textarea id="recovery-key-input" placeholder="word1-word2-word3-word4-word5-word6-word7-word8-word9-word10-word11-word12" rows="4" style="width:100%; resize:vertical"></textarea>
-    </div>
-    <div id="recovery-key-error" style="display:none; color:#ef4444; margin-top:10px; font-weight:600">❌ Invalid recovery key</div>
-    <div class="modal-buttons">
-      <button class="modal-btn cancel" onclick="closeRecoveryKeyInput()">Cancel</button>
-      <button class="modal-btn save" onclick="verifyRecoveryKey()">Unlock App</button>
-    </div>
+    <div id="newpin-error" class="auth-pin-error"></div>
+    <button class="modal-btn save" style="width:100%; margin-top:12px;" onclick="saveNewPinAfterRecovery()">✅ Save New PIN</button>
   </div>
 </div>
 <script>
@@ -2180,18 +2305,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
     <!-- PIN entry (shown when PIN is set) -->
     <div id="lock-pin-view">
-      <p style="color:rgba(255,255,255,0.55); font-size:0.85rem; margin:0 0 24px;">Enter your 6-digit PIN to continue</p>
-      <div class="passcode-input-group" id="lock-pin-inputs" style="justify-content:center; margin-bottom:0;">
-        <input type="password" id="lock-1" maxlength="1" class="passcode-digit" inputmode="numeric" pattern="[0-9]">
-        <input type="password" id="lock-2" maxlength="1" class="passcode-digit" inputmode="numeric" pattern="[0-9]">
-        <input type="password" id="lock-3" maxlength="1" class="passcode-digit" inputmode="numeric" pattern="[0-9]">
-        <input type="password" id="lock-4" maxlength="1" class="passcode-digit" inputmode="numeric" pattern="[0-9]">
-        <input type="password" id="lock-5" maxlength="1" class="passcode-digit" inputmode="numeric" pattern="[0-9]">
-        <input type="password" id="lock-6" maxlength="1" class="passcode-digit" inputmode="numeric" pattern="[0-9]">
+      <p style="color:rgba(255,255,255,0.55); font-size:0.85rem; margin:0 0 8px;">Enter your 6-digit PIN to continue</p>
+      <div class="pin-tap-area" onclick="document.getElementById('lock-pin-input').focus()">
+        <div class="pin-dots" id="lock-pin-dots">
+          <div class="pin-dot"></div><div class="pin-dot"></div><div class="pin-dot"></div>
+          <div class="pin-dot"></div><div class="pin-dot"></div><div class="pin-dot"></div>
+        </div>
+        <input type="tel" id="lock-pin-input" maxlength="6" inputmode="numeric" pattern="[0-9]*"
+          autocomplete="off" class="pin-hidden-input" style="pointer-events:auto; opacity:0; position:absolute;">
+        <span class="pin-tap-hint">Tap dots to type your PIN</span>
       </div>
-      <div id="lock-error" style="color:#ef4444; font-size:0.85rem; margin:10px 0 16px; min-height:20px;"></div>
-      <button onclick="unlockWithPin()" style="background:linear-gradient(135deg,#667eea,#764ba2); color:white; border:none; border-radius:14px; padding:15px; font-size:1rem; font-weight:700; cursor:pointer; width:100%; margin-bottom:14px; letter-spacing:0.5px;">🔓 Unlock</button>
-      <button onclick="showLockRecovery()" style="background:none; border:none; color:rgba(255,255,255,0.45); font-size:0.85rem; cursor:pointer; text-decoration:underline; transition:color 0.2s;" onmouseover="this.style.color='rgba(255,255,255,0.8)'" onmouseout="this.style.color='rgba(255,255,255,0.45)'">Forgot PIN?</button>
+      <div id="lock-error" style="color:#ef4444; font-size:0.85rem; margin:8px 0 14px; min-height:20px;"></div>
+      <button onclick="unlockWithPin()" style="background:linear-gradient(135deg,#667eea,#764ba2); color:white; border:none; border-radius:14px; padding:15px; font-size:1rem; font-weight:700; cursor:pointer; width:100%; margin-bottom:14px;">🔓 Unlock</button>
+      <button onclick="showLockRecovery()" style="background:none; border:none; color:rgba(255,255,255,0.45); font-size:0.85rem; cursor:pointer; text-decoration:underline;">Forgot PIN?</button>
     </div>
 
     <!-- No PIN set view -->
