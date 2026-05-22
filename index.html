@@ -979,11 +979,12 @@ window.db = db;
 window.currentUser = null;
 window.unsubscribe = null;
 console.log('🔥 Firebase initialized');
-// BLOCK LOCALSTORAGE COMPLETELY
+// Allow localStorage reads for PIN/app-settings keys; block only data keys
 const origGetItem = Storage.prototype.getItem;
+const LOCAL_ONLY_KEYS = ['appPin', 'appPinRecovery', 'utilityDisclaimerDismissed'];
 Storage.prototype.getItem = function(key) {
-  console.log(`⚠️ Blocked localStorage.getItem('${key}')`);
-  return null;
+  if (LOCAL_ONLY_KEYS.includes(key)) return origGetItem.call(this, key);
+  return null; // app data comes from Firebase, not localStorage
 };
 // OVERRIDE SAVEDATA IMMEDIATELY
 const origSaveData = window.saveData;
@@ -2324,7 +2325,7 @@ document.addEventListener('DOMContentLoaded', () => {
     <div id="lock-no-pin-view" style="display:none;">
       <p style="color:rgba(255,255,255,0.6); font-size:0.9rem; margin:12px 0 24px; line-height:1.5;">No PIN set up yet.<br>Add one to protect your data.</p>
       <button onclick="showPinSetupFromLock()" style="background:linear-gradient(135deg,#667eea,#764ba2); color:white; border:none; border-radius:14px; padding:15px; font-size:1rem; font-weight:700; cursor:pointer; width:100%; margin-bottom:12px;">🔐 Set Up PIN</button>
-      <button onclick="skipLockScreen()" style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); color:rgba(255,255,255,0.7); border-radius:14px; padding:13px; font-size:0.9rem; cursor:pointer; width:100%;">Skip for now</button>
+      <button onclick="skipLockScreen()" style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); color:rgba(255,255,255,0.7) !important; border-radius:14px; padding:13px; font-size:0.9rem; cursor:pointer; width:100%;">Skip for now</button>
     </div>
   </div>
 </div>
