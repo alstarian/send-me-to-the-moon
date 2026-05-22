@@ -979,12 +979,12 @@ window.db = db;
 window.currentUser = null;
 window.unsubscribe = null;
 console.log('🔥 Firebase initialized');
-// Allow localStorage reads for PIN/app-settings keys; block only data keys
+// Allow localStorage reads for UI-preference keys only; app data comes from Firebase
 const origGetItem = Storage.prototype.getItem;
-const LOCAL_ONLY_KEYS = ['appPin', 'appPinRecovery', 'utilityDisclaimerDismissed'];
+const LOCAL_ONLY_KEYS = ['utilityDisclaimerDismissed'];
 Storage.prototype.getItem = function(key) {
   if (LOCAL_ONLY_KEYS.includes(key)) return origGetItem.call(this, key);
-  return null; // app data comes from Firebase, not localStorage
+  return null;
 };
 // OVERRIDE SAVEDATA IMMEDIATELY
 const origSaveData = window.saveData;
@@ -1146,6 +1146,7 @@ async function loadFirebaseData() {
       window.salaries = data.salaries || {};
       window.otherIncomes = data.otherIncomes || {};
       window.utilities = data.utilities || [];
+      window.pinData = data.pinData || { pinHash: null, recoveryCodeHash: null };
       console.log(`📊 ${window.transactions.length} transactions, ${window.utilities.length} utilities`);
       setTimeout(() => {
         if (typeof updatePeriodDisplay === 'function') updatePeriodDisplay();
@@ -1159,12 +1160,14 @@ async function loadFirebaseData() {
       window.salaries = {};
       window.otherIncomes = {};
       window.utilities = [];
+      window.pinData = { pinHash: null, recoveryCodeHash: null };
       await setDoc(docRef, {
         settings: window.settings,
         transactions: [],
         salaries: {},
         otherIncomes: {},
         utilities: [],
+        pinData: {},
         lastUpdated: new Date().toISOString()
       });
     }
@@ -1178,6 +1181,7 @@ async function loadFirebaseData() {
       window.salaries = data.salaries || {};
       window.otherIncomes = data.otherIncomes || {};
       window.utilities = data.utilities || [];
+      window.pinData = data.pinData || window.pinData || { pinHash: null, recoveryCodeHash: null };
       if (typeof updatePeriodDisplay === 'function') updatePeriodDisplay();
       if (typeof updateMonthlyDisplay === 'function') updateMonthlyDisplay();
     });
@@ -1205,6 +1209,7 @@ window.saveToFirebase = async function() {
       salaries: window.salaries || {},
       otherIncomes: window.otherIncomes || {},
       utilities: window.utilities || [],
+      pinData: window.pinData || {},
       lastUpdated: new Date().toISOString()
     });
     console.log('✅ Saved to Firebase!');
@@ -1694,14 +1699,27 @@ function showUtilityDisclaimer() {
   }
 }
 
-// ── PIN Management ────────────────────────────────────────────────────────────
-const PIN_KEY = 'appPin';
-const RECOVERY_KEY = 'appPinRecovery';
+// ── PIN Management (stored in Firebase, cached in window.pinData) ─────────────
+window.pinData = window.pinData || { pinHash: null, recoveryCodeHash: null };
 
-function savePin(pin) { localStorage.setItem(PIN_KEY, btoa(pin)); }
-function getStoredPin() { return localStorage.getItem(PIN_KEY); }
-function isPinSet() { return !!getStoredPin(); }
-function checkPin(pin) { return getStoredPin() === btoa(pin); }
+function isPinSet() { return !!(window.pinData && window.pinData.pinHash); }
+function checkPin(pin) { return !!(window.pinData && window.pinData.pinHash === btoa(pin)); }
+
+function savePin(pin) {
+  if (!window.pinData) window.pinData = {};
+  window.pinData.pinHash = btoa(pin);
+  if (window.saveToFirebase) window.saveToFirebase();
+}
+
+function saveRecoveryCode(code) {
+  if (!window.pinData) window.pinData = {};
+  window.pinData.recoveryCodeHash = btoa(code);
+  if (window.saveToFirebase) window.saveToFirebase();
+}
+
+function checkRecoveryCode(code) {
+  return !!(window.pinData && window.pinData.recoveryCodeHash === btoa(code.toUpperCase()));
+}
 
 function generateRecoveryCode() {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -1820,9 +1838,9 @@ function completeAuthSetup() {
     setTimeout(() => document.getElementById('setup-pin-error').textContent = '', 1500);
     return;
   }
-  savePin(pin);
   const code = generateRecoveryCode();
-  localStorage.setItem(RECOVERY_KEY, btoa(code));
+  savePin(pin);           // saves pinHash to Firebase
+  saveRecoveryCode(code); // saves recoveryCodeHash to Firebase
   closePinSetupModal();
   document.getElementById('recovery-display-code').textContent = code;
   document.getElementById('recovery-code-modal').classList.add('active');
@@ -1844,26 +1862,20 @@ function closeRecoveryInputModal() {
 }
 
 function verifyRecoveryCode() {
-  const code   = getPinValue('recovery-pin-input').toUpperCase() ||
-                 document.getElementById('recovery-text-input')?.value.trim().toUpperCase();
-  const stored = localStorage.getItem(RECOVERY_KEY);
-  const errEl  = document.getElementById('recovery-error');
-
-  if (!stored) { errEl.textContent = 'No recovery code found.'; return; }
-
-  const textInput = document.getElementById('recovery-text-input');
+  const textInput   = document.getElementById('recovery-text-input');
   const enteredCode = textInput ? textInput.value.trim().toUpperCase() : '';
+  const errEl       = document.getElementById('recovery-error');
 
   if (!enteredCode) { errEl.textContent = 'Enter your 4-character code'; return; }
+  if (!isPinSet())  { errEl.textContent = 'No PIN is set up.'; return; }
 
-  if (btoa(enteredCode) === stored) {
+  if (checkRecoveryCode(enteredCode)) {
     closeRecoveryInputModal();
-    localStorage.removeItem(PIN_KEY);
+    window.pinData.pinHash = null; // clear PIN in memory; Firebase updated on next save
     clearPinField('newpin-input', 'newpin-dots');
     document.getElementById('new-pin-modal').classList.add('active');
   } else {
     errEl.textContent = '❌ Wrong code';
-    shakePinField('recovery-pin-dots');
     setTimeout(() => { errEl.textContent = ''; if (textInput) textInput.select(); }, 1200);
   }
 }
@@ -1881,9 +1893,9 @@ function saveNewPinAfterRecovery() {
     setTimeout(() => errEl.textContent = '', 1500);
     return;
   }
-  savePin(pin);
   const newCode = generateRecoveryCode();
-  localStorage.setItem(RECOVERY_KEY, btoa(newCode));
+  savePin(pin);               // saves to Firebase
+  saveRecoveryCode(newCode);  // saves to Firebase
   closeNewPinModal();
   document.getElementById('lock-screen').style.display = 'none';
   document.getElementById('recovery-display-code').textContent = newCode;
