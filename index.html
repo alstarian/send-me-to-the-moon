@@ -1341,6 +1341,16 @@ onAuthStateChanged(auth, async (user) => {
     🔄 Reset All Data
   </button>
 </div>
+
+<!-- PIN Security -->
+<div class="divider">🔐 Security</div>
+<div style="margin-bottom:28px;">
+  <button class="sync-btn settings" onclick="showChangePinSetup()"
+    style="width:100%; justify-content:center; padding:16px; border-radius:14px;" id="pin-settings-btn">
+    🔑 Set Up / Change PIN
+  </button>
+  <p style="font-size:0.8rem; color:#888; margin-top:10px; text-align:center;">App locks after 2 minutes of inactivity</p>
+</div>
 <!-- ===== END TOOLS SECTION ===== -->
 
 
@@ -1683,18 +1693,193 @@ function showUtilityDisclaimer() {
   }
 }
 
-// ── Auth / PIN stubs (Firebase email auth is primary; PIN system UI exists but backend is not wired) ──
-function completeAuthSetup() { document.getElementById('passcode-setup-modal').classList.remove('active'); }
+// ── PIN Management ────────────────────────────────────────────────────────────
+const PIN_KEY = 'appPin';
+const RECOVERY_KEY = 'appPinRecovery';
+
+function savePin(pin) { localStorage.setItem(PIN_KEY, btoa(pin)); }
+function getStoredPin() { return localStorage.getItem(PIN_KEY); }
+function verifyPin(pin) { const s = getStoredPin(); return s ? s === btoa(pin) : false; }
+
+function generateRecoveryCode() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  return Array.from({length: 4}, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+}
+
+function readDigits(prefix, count) {
+  return Array.from({length: count}, (_, i) => (document.getElementById(`${prefix}-${i+1}`) || {}).value || '').join('');
+}
+
+function shakeInputs(selector) {
+  const el = document.querySelector(selector);
+  if (!el) return;
+  el.classList.add('shake-error');
+  setTimeout(() => el.classList.remove('shake-error'), 600);
+}
+
+function clearDigits(prefix, count) {
+  Array.from({length: count}, (_, i) => {
+    const el = document.getElementById(`${prefix}-${i+1}`);
+    if (el) el.value = '';
+  });
+  const first = document.getElementById(`${prefix}-1`);
+  if (first) first.focus();
+}
+
+// Auto-advance digits for a given prefix/count
+function setupPasscodeInputs(prefix, count) {
+  for (let i = 1; i <= count; i++) {
+    const input = document.getElementById(`${prefix}-${i}`);
+    if (!input) continue;
+    input.addEventListener('input', function() {
+      if (this.value && i < count) document.getElementById(`${prefix}-${i+1}`).focus();
+    });
+    input.addEventListener('keydown', function(e) {
+      if (e.key === 'Backspace' && !this.value && i > 1) document.getElementById(`${prefix}-${i-1}`).focus();
+      if (e.key === 'Enter') {
+        if (prefix === 'lock') unlockWithPin();
+        else if (prefix === 'setup') completeAuthSetup();
+        else if (prefix === 'recovery') verifyRecoveryCode();
+        else if (prefix === 'newpin') saveNewPinAfterRecovery();
+        else if (prefix === 'verify') verifyPinAndGenerateNew();
+      }
+    });
+  }
+}
+
+// Prepare lock screen — show PIN view or no-PIN view
+function prepareLockScreen() {
+  const hasPIN = !!getStoredPin();
+  document.getElementById('lock-pin-view').style.display = hasPIN ? 'block' : 'none';
+  document.getElementById('lock-no-pin-view').style.display = hasPIN ? 'none' : 'block';
+  document.getElementById('lock-error').textContent = '';
+}
+
+// Unlock with entered PIN
+function unlockWithPin() {
+  const pin = readDigits('lock', 6);
+  const errEl = document.getElementById('lock-error');
+  if (pin.length < 6) { errEl.textContent = 'Enter all 6 digits'; return; }
+  if (verifyPin(pin)) {
+    document.getElementById('lock-screen').style.display = 'none';
+    clearDigits('lock', 6);
+    errEl.textContent = '';
+    if (window.resetIdleTimer) window.resetIdleTimer();
+  } else {
+    errEl.textContent = '❌ Incorrect PIN';
+    shakeInputs('#lock-pin-inputs');
+    setTimeout(() => { clearDigits('lock', 6); errEl.textContent = ''; }, 700);
+  }
+}
+
+// Show recovery code input from lock screen
+function showLockRecovery() {
+  document.getElementById('recovery-input-modal').classList.add('active');
+  clearDigits('recovery', 4);
+}
+
+// Show PIN setup modal from lock screen (when no PIN set)
+function showPinSetupFromLock() {
+  document.getElementById('lock-screen').style.display = 'none';
+  clearDigits('setup', 6);
+  document.getElementById('passcode-setup-modal').classList.add('active');
+}
+
+function skipLockScreen() {
+  document.getElementById('lock-screen').style.display = 'none';
+  if (window.resetIdleTimer) window.resetIdleTimer();
+}
+
+// Complete PIN setup from setup modal
+function completeAuthSetup() {
+  const pin = readDigits('setup', 6);
+  if (pin.length !== 6 || !/^\d{6}$/.test(pin)) { alert('Enter all 6 digits (numbers only)'); return; }
+  savePin(pin);
+  document.getElementById('passcode-setup-modal').classList.remove('active');
+  const code = generateRecoveryCode();
+  localStorage.setItem(RECOVERY_KEY, btoa(code));
+  document.getElementById('recovery-display-code').textContent = code;
+  document.getElementById('recovery-code-modal').classList.add('active');
+}
+
 function closeRecoveryCodeModal() { document.getElementById('recovery-code-modal').classList.remove('active'); }
 function closeRecoveryInputModal() { document.getElementById('recovery-input-modal').classList.remove('active'); }
-function verifyRecoveryCode() { alert('Recovery code verification is not yet implemented.'); }
-function saveNewPinAfterRecovery() { document.getElementById('new-pin-modal').classList.remove('active'); }
 function closeRegenerateModal() { document.getElementById('regenerate-recovery-modal').classList.remove('active'); }
-function verifyPinAndGenerateNew() { alert('PIN regeneration is not yet implemented.'); }
 function closeNewRecoveryModal() { document.getElementById('new-recovery-code-modal').classList.remove('active'); }
 function closeRecoveryKeyInput() { document.getElementById('recovery-key-input-modal').classList.remove('active'); }
-function verifyRecoveryKey() { alert('Recovery key verification is not yet implemented.'); }
-function emailRecoveryCode() { alert('Please copy the code shown and store it safely.'); }
+
+// Verify 4-char recovery code → open new-PIN modal
+function verifyRecoveryCode() {
+  const code = readDigits('recovery', 4).toUpperCase();
+  const stored = localStorage.getItem(RECOVERY_KEY);
+  if (!stored) { alert('No recovery code found.'); return; }
+  if (btoa(code) === stored) {
+    closeRecoveryInputModal();
+    localStorage.removeItem(PIN_KEY);
+    clearDigits('newpin', 6);
+    document.getElementById('new-pin-modal').classList.add('active');
+  } else {
+    shakeInputs('#recovery-input-modal .passcode-input-group');
+    setTimeout(() => { clearDigits('recovery', 4); }, 700);
+    document.getElementById('recovery-input-modal').querySelector('.passcode-hint').textContent = '❌ Wrong code — try again';
+    setTimeout(() => { document.getElementById('recovery-input-modal').querySelector('.passcode-hint').textContent = 'From email'; }, 1500);
+  }
+}
+
+// Save new PIN after successful recovery
+function saveNewPinAfterRecovery() {
+  const pin = readDigits('newpin', 6);
+  if (pin.length !== 6 || !/^\d{6}$/.test(pin)) { alert('Enter all 6 digits'); return; }
+  savePin(pin);
+  const newCode = generateRecoveryCode();
+  localStorage.setItem(RECOVERY_KEY, btoa(newCode));
+  document.getElementById('new-pin-modal').classList.remove('active');
+  document.getElementById('lock-screen').style.display = 'none';
+  document.getElementById('new-recovery-display').textContent = newCode;
+  document.getElementById('new-recovery-code-modal').classList.add('active');
+  if (window.resetIdleTimer) window.resetIdleTimer();
+}
+
+// Verify current PIN then generate new recovery code
+function verifyPinAndGenerateNew() {
+  const pin = readDigits('verify', 6);
+  if (!verifyPin(pin)) {
+    shakeInputs('#regenerate-recovery-modal .passcode-input-group');
+    setTimeout(() => clearDigits('verify', 6), 700);
+    return;
+  }
+  const newCode = generateRecoveryCode();
+  localStorage.setItem(RECOVERY_KEY, btoa(newCode));
+  closeRegenerateModal();
+  document.getElementById('new-recovery-display').textContent = newCode;
+  document.getElementById('new-recovery-code-modal').classList.add('active');
+}
+
+// Open PIN change flow (from settings)
+function showChangePinSetup() {
+  closeSettings();
+  clearDigits('setup', 6);
+  document.getElementById('passcode-setup-modal').classList.add('active');
+}
+
+// Unused 12-word key modal close
+function verifyRecoveryKey() { alert('Use the 4-character code from your email instead.'); }
+
+// Email recovery code via mailto
+function emailRecoveryCode() {
+  const code = (document.getElementById('recovery-display-code') || document.getElementById('new-recovery-display') || {}).textContent || '';
+  if (!code || code === 'XXXX') { alert('No code to email.'); return; }
+  window.location.href = `mailto:?subject=Expense%20Tracker%20Recovery%20Code&body=Your%20recovery%20code%20is%3A%20${code}%0A%0AKeep%20this%20somewhere%20safe!`;
+}
+
+// Wire up auto-advance once DOM is ready
+document.addEventListener('DOMContentLoaded', () => {
+  setupPasscodeInputs('setup', 6);
+  setupPasscodeInputs('lock', 6);
+  setupPasscodeInputs('recovery', 4);
+  setupPasscodeInputs('newpin', 6);
+  setupPasscodeInputs('verify', 6);
+});
 </script>
 <!-- ==================== AUTHENTICATION SYSTEM ==================== -->
 <!-- Passcode Setup -->
@@ -1947,22 +2132,18 @@ function emailRecoveryCode() { alert('Please copy the code shown and store it sa
   let idleTimer = null;
 
   function triggerLock() {
-    // Only lock if the lock screen div actually exists in the DOM
     const lockScreen = document.getElementById('lock-screen');
     if (!lockScreen) return;
+    if (lockScreen.style.display === 'flex') return; // already locked
 
-    // Only lock if it's currently hidden (app is unlocked)
-    if (lockScreen.style.display === 'none' || lockScreen.style.display === '') {
-      lockScreen.style.display = 'flex';
-      // Clear all digit inputs
-      lockScreen.querySelectorAll('.passcode-digit')
-        .forEach(el => el.value = '');
-      // Focus first digit
-      setTimeout(() => {
-        const first = lockScreen.querySelector('.passcode-digit');
-        if (first) first.focus();
-      }, 150);
-    }
+    if (typeof prepareLockScreen === 'function') prepareLockScreen();
+    lockScreen.style.display = 'flex';
+
+    // Focus first digit if PIN view is active
+    setTimeout(() => {
+      const first = document.getElementById('lock-1');
+      if (first && document.getElementById('lock-pin-view').style.display !== 'none') first.focus();
+    }, 150);
   }
 
   function resetIdleTimer() {
@@ -1991,16 +2172,34 @@ function emailRecoveryCode() { alert('Please copy the code shown and store it sa
 })();
 </script>
 
-<!-- Lock screen shown after idle timeout -->
-<div id="lock-screen" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:linear-gradient(135deg,#000 0%,#1a1a1a 100%); align-items:center; justify-content:center; z-index:10000;">
-  <div style="text-align:center; padding:40px; background:rgba(0,0,0,0.5); border-radius:24px; backdrop-filter:blur(20px); border:1px solid rgba(255,255,255,0.1);">
-    <div style="font-size:4rem; margin-bottom:16px;">🔒</div>
-    <h2 style="color:white; margin-bottom:8px;">App Locked</h2>
-    <p style="color:rgba(255,255,255,0.6); margin-bottom:24px; font-size:0.9rem;">Locked due to inactivity</p>
-    <button onclick="document.getElementById('lock-screen').style.display='none'; if(window.resetIdleTimer) window.resetIdleTimer();"
-      style="background:linear-gradient(135deg,#667eea,#764ba2); color:white; border:none; border-radius:12px; padding:14px 32px; font-size:1rem; font-weight:700; cursor:pointer;">
-      🔓 Unlock
-    </button>
+<!-- Lock screen shown after idle timeout — requires PIN to unlock -->
+<div id="lock-screen" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:linear-gradient(135deg,#000 0%,#1a1a1a 100%); flex-direction:column; align-items:center; justify-content:center; z-index:10000;">
+  <div style="text-align:center; padding:40px; background:rgba(0,0,0,0.55); border-radius:28px; backdrop-filter:blur(24px); border:1px solid rgba(255,255,255,0.12); max-width:380px; width:90%;">
+    <div style="font-size:3.5rem; margin-bottom:12px;">🔒</div>
+    <h2 style="color:white; margin:0 0 4px; font-size:1.5rem; font-weight:800;">App Locked</h2>
+
+    <!-- PIN entry (shown when PIN is set) -->
+    <div id="lock-pin-view">
+      <p style="color:rgba(255,255,255,0.55); font-size:0.85rem; margin:0 0 24px;">Enter your 6-digit PIN to continue</p>
+      <div class="passcode-input-group" id="lock-pin-inputs" style="justify-content:center; margin-bottom:0;">
+        <input type="password" id="lock-1" maxlength="1" class="passcode-digit" inputmode="numeric" pattern="[0-9]">
+        <input type="password" id="lock-2" maxlength="1" class="passcode-digit" inputmode="numeric" pattern="[0-9]">
+        <input type="password" id="lock-3" maxlength="1" class="passcode-digit" inputmode="numeric" pattern="[0-9]">
+        <input type="password" id="lock-4" maxlength="1" class="passcode-digit" inputmode="numeric" pattern="[0-9]">
+        <input type="password" id="lock-5" maxlength="1" class="passcode-digit" inputmode="numeric" pattern="[0-9]">
+        <input type="password" id="lock-6" maxlength="1" class="passcode-digit" inputmode="numeric" pattern="[0-9]">
+      </div>
+      <div id="lock-error" style="color:#ef4444; font-size:0.85rem; margin:10px 0 16px; min-height:20px;"></div>
+      <button onclick="unlockWithPin()" style="background:linear-gradient(135deg,#667eea,#764ba2); color:white; border:none; border-radius:14px; padding:15px; font-size:1rem; font-weight:700; cursor:pointer; width:100%; margin-bottom:14px; letter-spacing:0.5px;">🔓 Unlock</button>
+      <button onclick="showLockRecovery()" style="background:none; border:none; color:rgba(255,255,255,0.45); font-size:0.85rem; cursor:pointer; text-decoration:underline; transition:color 0.2s;" onmouseover="this.style.color='rgba(255,255,255,0.8)'" onmouseout="this.style.color='rgba(255,255,255,0.45)'">Forgot PIN?</button>
+    </div>
+
+    <!-- No PIN set view -->
+    <div id="lock-no-pin-view" style="display:none;">
+      <p style="color:rgba(255,255,255,0.6); font-size:0.9rem; margin:12px 0 24px; line-height:1.5;">No PIN set up yet.<br>Add one to protect your data.</p>
+      <button onclick="showPinSetupFromLock()" style="background:linear-gradient(135deg,#667eea,#764ba2); color:white; border:none; border-radius:14px; padding:15px; font-size:1rem; font-weight:700; cursor:pointer; width:100%; margin-bottom:12px;">🔐 Set Up PIN</button>
+      <button onclick="skipLockScreen()" style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); color:rgba(255,255,255,0.7); border-radius:14px; padding:13px; font-size:0.9rem; cursor:pointer; width:100%;">Skip for now</button>
+    </div>
   </div>
 </div>
 
