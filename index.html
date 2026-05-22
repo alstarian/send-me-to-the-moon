@@ -919,7 +919,6 @@ button,
     ">
         <div style="font-size: 64px; margin-bottom: 20px;">💰</div>
         <h2 style="color: white; margin-bottom: 10px;">Expense Tracker</h2>
-        <p style="color: #888; margin-bottom: 30px; font-size: 14px;">Sign in to sync your data</p>
         <input
             type="email"
             id="firebase-email"
@@ -1149,8 +1148,7 @@ async function loadFirebaseData() {
       console.log(`📊 ${window.transactions.length} transactions, ${window.utilities.length} utilities`);
       setTimeout(() => {
         if (typeof updatePeriodDisplay === 'function') updatePeriodDisplay();
-        if (typeof renderTransactions === 'function') renderTransactions();
-        if (typeof updateUtilitiesList === 'function') updateUtilitiesList();
+        if (typeof updateMonthlyDisplay === 'function') updateMonthlyDisplay();
         console.log('✅ UI updated');
       }, 200);
     } else {
@@ -1180,8 +1178,7 @@ async function loadFirebaseData() {
       window.otherIncomes = data.otherIncomes || {};
       window.utilities = data.utilities || [];
       if (typeof updatePeriodDisplay === 'function') updatePeriodDisplay();
-      if (typeof renderTransactions === 'function') renderTransactions();
-      if (typeof updateUtilitiesList === 'function') updateUtilitiesList();
+      if (typeof updateMonthlyDisplay === 'function') updateMonthlyDisplay();
     });
     console.log('✅ Real-time sync active');
   } catch (error) {
@@ -1559,8 +1556,6 @@ function jumpToCurrent() {
   currentPeriodOffset = 0, updatePeriodDisplay()
 }
 function getPeriod(offset = 0) {
-
-console.log('startDate from settings:', window.settings.startDate);  // ADD THIS
   try {
     if (!window.settings || !window.settings.startDate) return null;
     const today = new Date; today.setHours(0, 0, 0, 0);
@@ -1674,8 +1669,32 @@ document.getElementById('salary-input').addEventListener('change', function() {
 }), document.getElementById('other-income-input').addEventListener('change', function() {
   const period = getPeriod(currentPeriodOffset);
   period && (window.otherIncomes[period.key] = parseFloat(this.value) || 0, updatePeriodDisplay(), window.saveData())
-}), document.getElementById('amount-input').addEventListener('keypress', function(e) { 'Enter' === e.key && addExpense() }), document.getElementById('utility-amount').addEventListener('keypress', function(e) { 'Enter' === e.key && addUtility() }), checkFirstTimeUser();
-// ... (keep the rest of your auth, swipe, disclaimer, notifications code unchanged)
+}), document.getElementById('amount-input').addEventListener('keypress', function(e) { 'Enter' === e.key && addExpense() }), document.getElementById('utility-amount').addEventListener('keypress', function(e) { 'Enter' === e.key && addUtility() });
+// checkFirstTimeUser() is called by the Firebase onAuthStateChanged handler after data loads
+
+function dismissUtilityDisclaimer(permanent) {
+  document.getElementById('utility-disclaimer').style.display = 'none';
+  if (permanent) localStorage.setItem('utilityDisclaimerDismissed', '1');
+}
+
+function showUtilityDisclaimer() {
+  if (!localStorage.getItem('utilityDisclaimerDismissed')) {
+    document.getElementById('utility-disclaimer').style.display = 'block';
+  }
+}
+
+// ── Auth / PIN stubs (Firebase email auth is primary; PIN system UI exists but backend is not wired) ──
+function completeAuthSetup() { document.getElementById('passcode-setup-modal').classList.remove('active'); }
+function closeRecoveryCodeModal() { document.getElementById('recovery-code-modal').classList.remove('active'); }
+function closeRecoveryInputModal() { document.getElementById('recovery-input-modal').classList.remove('active'); }
+function verifyRecoveryCode() { alert('Recovery code verification is not yet implemented.'); }
+function saveNewPinAfterRecovery() { document.getElementById('new-pin-modal').classList.remove('active'); }
+function closeRegenerateModal() { document.getElementById('regenerate-recovery-modal').classList.remove('active'); }
+function verifyPinAndGenerateNew() { alert('PIN regeneration is not yet implemented.'); }
+function closeNewRecoveryModal() { document.getElementById('new-recovery-code-modal').classList.remove('active'); }
+function closeRecoveryKeyInput() { document.getElementById('recovery-key-input-modal').classList.remove('active'); }
+function verifyRecoveryKey() { alert('Recovery key verification is not yet implemented.'); }
+function emailRecoveryCode() { alert('Please copy the code shown and store it safely.'); }
 </script>
 <!-- ==================== AUTHENTICATION SYSTEM ==================== -->
 <!-- Passcode Setup -->
@@ -1972,8 +1991,18 @@ document.getElementById('salary-input').addEventListener('change', function() {
 })();
 </script>
 
-
-
+<!-- Lock screen shown after idle timeout -->
+<div id="lock-screen" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:linear-gradient(135deg,#000 0%,#1a1a1a 100%); align-items:center; justify-content:center; z-index:10000;">
+  <div style="text-align:center; padding:40px; background:rgba(0,0,0,0.5); border-radius:24px; backdrop-filter:blur(20px); border:1px solid rgba(255,255,255,0.1);">
+    <div style="font-size:4rem; margin-bottom:16px;">🔒</div>
+    <h2 style="color:white; margin-bottom:8px;">App Locked</h2>
+    <p style="color:rgba(255,255,255,0.6); margin-bottom:24px; font-size:0.9rem;">Locked due to inactivity</p>
+    <button onclick="document.getElementById('lock-screen').style.display='none'; if(window.resetIdleTimer) window.resetIdleTimer();"
+      style="background:linear-gradient(135deg,#667eea,#764ba2); color:white; border:none; border-radius:12px; padding:14px 32px; font-size:1rem; font-weight:700; cursor:pointer;">
+      🔓 Unlock
+    </button>
+  </div>
+</div>
 
 
 
