@@ -425,6 +425,30 @@ select { appearance: none; -webkit-appearance: none; }
   color: var(--ink-faint);
   font-size: .9rem;
 }
+.util-count-btn {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 1rem;
+  font-family: inherit;
+  cursor: pointer;
+  flex-shrink: 0;
+  margin-right: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color .2s;
+}
+.util-count-btn:hover { border-color: var(--ink); }
+.util-count-btn.counted {
+  border-color: var(--positive);
+  color: var(--positive);
+  background: rgba(27,127,77,.08);
+  cursor: default;
+}
 .expenses-list::-webkit-scrollbar { width: 5px; }
 .expenses-list::-webkit-scrollbar-track { background: transparent; }
 .expenses-list::-webkit-scrollbar-thumb { background: var(--line-strong); border-radius: 3px; }
@@ -819,7 +843,7 @@ select { appearance: none; -webkit-appearance: none; }
     </div>
 
     <div id="utility-disclaimer" class="note-box">
-      <strong>Tracking only.</strong> Utilities here are <strong>not</strong> added to your bi-weekly expenses automatically. To count one against your budget, add it as a regular expense too.
+      <strong>Tip:</strong> utilities are tracked here for analytics, and you choose which ones count against your budget. Tap the <strong>+</strong> on any bill to add it to the pay period you're viewing — it turns into a ✓ once counted.
       <div class="note-actions">
         <button onclick="dismissUtilityDisclaimer(false)">Got it</button>
         <button onclick="dismissUtilityDisclaimer(true)">Don't show again</button>
@@ -1277,6 +1301,14 @@ function saveEdit() {
     if (index !== -1) {
       window.utilities[index].type = newCategory;
       window.utilities[index].amount = newAmount;
+      // Keep the linked expense (if counted) in sync
+      const linked = window.transactions.find(t => t.utilityId === editingItem.id);
+      if (linked) {
+        linked.category = newCategory;
+        linked.amount = newAmount;
+        updatePeriodDisplay();
+        renderQuickAddButtons();
+      }
       updateMonthlyDisplay();
       window.saveData();
     }
@@ -1483,21 +1515,58 @@ function renderUtilities(utilityList) {
     listEl.innerHTML = '<div class="empty-state">No utilities yet</div>';
     return;
   }
-  listEl.innerHTML = utilityList.map(util =>
-    `<div class="expense-item-wrapper">
+  listEl.innerHTML = utilityList.map(util => {
+    const counted = window.transactions.some(t => t.utilityId === util.id);
+    return `<div class="expense-item-wrapper">
       <div class="expense-item" data-utility-id="${util.id}">
         <div class="expense-info">
           <div class="expense-desc">${escapeHtml(util.type)}</div>
-          <div class="expense-cat">${escapeHtml(util.month)}</div>
+          <div class="expense-cat">${counted ? 'Counted in expenses' : 'Not counted yet'}</div>
         </div>
+        <button class="util-count-btn${counted ? ' counted' : ''}" data-util-id="${util.id}"
+          title="${counted ? 'Already added to expenses' : 'Add to expenses'}">${counted ? '✓' : '+'}</button>
         <div class="expense-amount">$${util.amount.toFixed(2)}</div>
       </div>
       <div class="swipe-actions">
         <button class="action-btn edit">✏️<span>Edit</span></button>
         <button class="action-btn delete">🗑️<span>Delete</span></button>
       </div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
   listEl.querySelectorAll('.expense-item').forEach(item => setupSwipeActions(item, 'utility'));
+  listEl.querySelectorAll('.util-count-btn').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      addUtilityToExpense(parseInt(btn.dataset.utilId));
+    });
+  });
+}
+
+// One-tap copy of a utility into the pay period currently shown in the
+// expenses pane. The created expense remembers which utility it came
+// from (utilityId), which is what drives the ✓ — delete the expense and
+// the utility goes back to "+" automatically.
+function addUtilityToExpense(id) {
+  const util = window.utilities.find(u => u.id === id);
+  if (!util) return;
+  if (window.transactions.some(t => t.utilityId === util.id)) {
+    alert('This utility is already counted in your expenses. Delete that expense first if you want to re-add it.');
+    return;
+  }
+  const period = getPeriod(currentPeriodOffset);
+  if (!period) return;
+  const expenseDate = currentPeriodOffset === 0 ? new Date() : period.start;
+  window.transactions.push({
+    id: Date.now(),
+    category: util.type,
+    amount: util.amount,
+    date: expenseDate.toISOString(),
+    utilityId: util.id
+  });
+  updatePeriodDisplay();
+  updateMonthlyDisplay();
+  renderQuickAddButtons();
+  window.saveData();
 }
 
 // FIX: no per-item document listeners. One delegated listener (below)
@@ -1550,6 +1619,7 @@ function setupSwipeActions(item, type) {
       if (index !== -1) {
         window.transactions.splice(index, 1);
         updatePeriodDisplay();
+        updateMonthlyDisplay(); // refresh utility ✓ state if a linked expense was removed
         renderQuickAddButtons();
         window.saveData();
       }
