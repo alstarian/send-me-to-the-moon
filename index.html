@@ -64,15 +64,26 @@ body {
   padding: 14px 20px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   z-index: 1001;
 }
 
 .app-title {
-  font-size: 1.05rem;
+  font-size: 1.35rem;
   font-weight: 700;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.03em;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
+
+.app-header .icon-btn {
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+.app-header .icon-btn:active { transform: translateY(-50%) scale(.95); }
 
 .icon-btn {
   background: var(--surface);
@@ -754,7 +765,7 @@ select { appearance: none; -webkit-appearance: none; }
 
 <!-- HEADER -->
 <div class="app-header">
-  <h1 class="app-title">Expense Tracker</h1>
+  <h1 class="app-title"><span>💰</span>Expense Tracker</h1>
   <button class="icon-btn" onclick="showSettings()" aria-label="Settings">⚙️</button>
   <input type="file" id="import-file" accept=".json" style="display:none" onchange="importData(event)">
 </div>
@@ -1455,7 +1466,6 @@ function renderExpenses(expenses) {
       <div class="expense-item" data-expense-id="${exp.id}">
         <div class="expense-info">
           <div class="expense-desc">${escapeHtml(exp.category)}</div>
-          <div class="expense-cat">${new Date(exp.date).toLocaleDateString()}</div>
         </div>
         <div class="expense-amount">$${exp.amount.toFixed(2)}</div>
       </div>
