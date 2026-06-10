@@ -938,6 +938,15 @@ select { appearance: none; -webkit-appearance: none; }
   </div>
 </div>
 
+<!-- PERIOD PICKER (choose which pay period a utility counts against) -->
+<div id="period-picker-modal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header"><div class="modal-title">Count in which pay period?</div><button class="close-btn" onclick="closePeriodPicker()">✕</button></div>
+    <p id="period-picker-sub" style="font-size:.88rem;color:var(--ink-soft);margin-bottom:16px;"></p>
+    <div class="quick-dates" id="period-picker-options" style="grid-template-columns:1fr;"></div>
+  </div>
+</div>
+
 <!-- ANALYTICS -->
 <div id="analytics-modal" class="modal">
   <div class="modal-content">
@@ -1318,10 +1327,11 @@ function saveEdit() {
 
 // Close modals on backdrop click
 window.onclick = function(event) {
-  ['analytics-modal', 'insights-modal', 'edit-modal', 'settings-modal'].forEach(id => {
+  ['analytics-modal', 'insights-modal', 'edit-modal', 'settings-modal', 'period-picker-modal'].forEach(id => {
     if (event.target === document.getElementById(id)) {
       document.getElementById(id).classList.remove('active');
       if (id === 'edit-modal') { editingItem = null; editingType = null; }
+      if (id === 'period-picker-modal') { pendingUtilityId = null; }
     }
   });
 };
@@ -1542,10 +1552,13 @@ function renderUtilities(utilityList) {
   });
 }
 
-// One-tap copy of a utility into the pay period currently shown in the
-// expenses pane. The created expense remembers which utility it came
-// from (utilityId), which is what drives the ✓ — delete the expense and
-// the utility goes back to "+" automatically.
+// One-tap counting of a utility: tapping + opens a picker showing the
+// pay periods that overlap the bill's month, so you choose whether it
+// comes out of your first or second paycheck. The created expense
+// remembers which utility it came from (utilityId), which drives the ✓ —
+// delete the expense and the utility goes back to "+" automatically.
+let pendingUtilityId = null;
+
 function addUtilityToExpense(id) {
   const util = window.utilities.find(u => u.id === id);
   if (!util) return;
@@ -1553,9 +1566,60 @@ function addUtilityToExpense(id) {
     alert('This utility is already counted in your expenses. Delete that expense first if you want to re-add it.');
     return;
   }
-  const period = getPeriod(currentPeriodOffset);
-  if (!period) return;
-  const expenseDate = currentPeriodOffset === 0 ? new Date() : period.start;
+  if (!window.settings || !window.settings.startDate) return;
+
+  // Find all pay periods overlapping this utility's month
+  const [y, m] = util.month.split('-').map(Number);
+  const monthStart = new Date(y, m - 1, 1);
+  const monthEnd = new Date(y, m, 0); // last day of the month
+  const startDate = new Date(window.settings.startDate + 'T00:00:00');
+  startDate.setHours(0, 0, 0, 0);
+  const numFor = d => Math.floor((d - startDate) / 864e5 / 14);
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const currentNum = numFor(today);
+
+  const periods = [];
+  for (let n = Math.max(0, numFor(monthStart)); n <= numFor(monthEnd); n++) {
+    const ps = new Date(startDate); ps.setDate(ps.getDate() + 14 * n);
+    const pe = new Date(ps); pe.setDate(pe.getDate() + 13);
+    periods.push({ n, ps, pe });
+  }
+  if (periods.length === 0) {
+    alert('No pay periods found for this month — check your pay cycle start date.');
+    return;
+  }
+
+  pendingUtilityId = id;
+  document.getElementById('period-picker-sub').textContent =
+    `${util.type} — $${util.amount.toFixed(2)}`;
+  const container = document.getElementById('period-picker-options');
+  container.innerHTML = '';
+  periods.forEach(p => {
+    const btn = document.createElement('button');
+    btn.className = 'quick-date-btn';
+    btn.textContent = `${formatDateShort(p.ps)} – ${formatDateShort(p.pe)}` +
+      (p.n === currentNum ? ' (current)' : '');
+    btn.addEventListener('click', () => confirmUtilityPeriod(p.n));
+    container.appendChild(btn);
+  });
+  document.getElementById('period-picker-modal').classList.add('active');
+}
+
+function closePeriodPicker() {
+  document.getElementById('period-picker-modal').classList.remove('active');
+  pendingUtilityId = null;
+}
+
+function confirmUtilityPeriod(periodNum) {
+  const util = window.utilities.find(u => u.id === pendingUtilityId);
+  if (!util) { closePeriodPicker(); return; }
+  const startDate = new Date(window.settings.startDate + 'T00:00:00');
+  startDate.setHours(0, 0, 0, 0);
+  const ps = new Date(startDate); ps.setDate(ps.getDate() + 14 * periodNum);
+  const pe = new Date(ps); pe.setDate(pe.getDate() + 13); pe.setHours(23, 59, 59, 999);
+  const today = new Date();
+  // Use today's date if it falls inside the chosen period, else the period start
+  const expenseDate = (today >= ps && today <= pe) ? today : ps;
   window.transactions.push({
     id: Date.now(),
     category: util.type,
@@ -1563,6 +1627,7 @@ function addUtilityToExpense(id) {
     date: expenseDate.toISOString(),
     utilityId: util.id
   });
+  closePeriodPicker();
   updatePeriodDisplay();
   updateMonthlyDisplay();
   renderQuickAddButtons();
