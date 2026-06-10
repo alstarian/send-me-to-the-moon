@@ -738,7 +738,7 @@ select { appearance: none; -webkit-appearance: none; }
 <body>
 
 <!-- LOGIN -->
-<div id="firebase-login-screen" style="display:none">
+<div id="firebase-login-screen">
   <div class="login-card">
     <div class="login-logo">💰</div>
     <h2>Expense Tracker</h2>
@@ -1565,8 +1565,9 @@ document.addEventListener('click', e => {
 });
 
 // --- Add expense / utility ------------------------------------------
-// FIX: current-period expenses get today's date; past/future periods
-// keep the period start so they stay bucketed where you put them.
+// Current-period expenses get today's date (so the list shows the real
+// day you spent); adding to a past/future period stamps that period's
+// start date so it stays bucketed where you put it.
 function addExpense() {
   const period = getPeriod(currentPeriodOffset);
   if (!period) return;
@@ -1731,57 +1732,200 @@ function showUtilityDisclaimer() {
 })();
 </script>
 
-<script>
-// ===== PREVIEW MODE: demo data, no Firebase =====
-(function() {
-  const today = new Date();
-  // Pay cycle started 3 periods ago (Monday-ish)
-  const start = new Date(today);
-  start.setDate(start.getDate() - 42 - ((start.getDay() + 6) % 7));
-  const iso = d => d.toISOString().split('T')[0];
-  window.settings = { startDate: iso(start), setupComplete: true };
+<!-- ============================================================
+     FIREBASE (module — runs after the classic script above, so all
+     app functions already exist; no setTimeout hacks needed)
+     ============================================================ -->
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, onAuthStateChanged, setPersistence, browserLocalPersistence, signOut } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+import { getFirestore, doc, getDoc, setDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 
-  function periodKey(offset) {
-    const p = new Date(start);
-    // figure current period num
-    const days = Math.ceil((today - start) / 864e5);
-    const num = Math.floor(days / 14) + offset;
-    p.setDate(p.getDate() + 14 * num);
-    return { key: `period-${p.getFullYear()}-${String(p.getMonth()+1).padStart(2,'0')}-${String(p.getDate()).padStart(2,'0')}`, start: p };
+const firebaseConfig = {
+  apiKey: "AIzaSyAHgeL8cnjLGegRPvL-VCLbd_PCTo81Xvg",
+  authDomain: "expensetracker-650bb.firebaseapp.com",
+  projectId: "expensetracker-650bb",
+  storageBucket: "expensetracker-650bb.firebasestorage.app",
+  messagingSenderId: "1049493175328",
+  appId: "1:1049493175328:web:b3ba0b37fa104b3724d045"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+setPersistence(auth, browserLocalPersistence);
+
+window.currentUser = null;
+let unsubscribe = null;
+let isSaving = false;
+
+function showAuthMessage(text, type) {
+  const messageDiv = document.getElementById('firebase-message');
+  messageDiv.textContent = text;
+  messageDiv.className = type; // success | error | warning | info
+}
+
+// LOGIN
+window.firebaseLogin = async function() {
+  const email = document.getElementById('firebase-email').value.trim();
+  const password = document.getElementById('firebase-password').value;
+  if (!email || !password) return showAuthMessage('Enter email and password', 'warning');
+  try {
+    showAuthMessage('Signing in...', 'info');
+    await signInWithEmailAndPassword(auth, email, password);
+  } catch (error) {
+    console.error('Login error:', error);
+    showAuthMessage('Invalid credentials', 'error');
   }
+};
 
-  const cur = periodKey(0), prev = periodKey(-1), prev2 = periodKey(-2);
-  window.salaries = { [cur.key]: 2450, [prev.key]: 2450, [prev2.key]: 2450 };
-  window.otherIncomes = { [cur.key]: 120 };
+// SIGN UP
+window.firebaseSignUp = async function() {
+  const email = document.getElementById('firebase-email').value.trim();
+  const password = document.getElementById('firebase-password').value;
+  if (!email || !password) return showAuthMessage('Please enter both email and password', 'warning');
 
-  const d = (base, plus) => { const x = new Date(base); x.setDate(x.getDate() + plus); return x.toISOString(); };
-  window.transactions = [
-    { id: 1, category: 'Groceries', amount: 142.35, date: d(prev2.start, 2) },
-    { id: 2, category: 'Gas', amount: 58.00, date: d(prev2.start, 5) },
-    { id: 3, category: 'Restaurant', amount: 64.20, date: d(prev2.start, 9) },
-    { id: 4, category: 'Groceries', amount: 156.80, date: d(prev.start, 1) },
-    { id: 5, category: 'Coffee', amount: 12.50, date: d(prev.start, 4) },
-    { id: 6, category: 'Gas', amount: 61.40, date: d(prev.start, 7) },
-    { id: 7, category: 'Shopping', amount: 89.99, date: d(prev.start, 10) },
-    { id: 8, category: 'Groceries', amount: 134.12, date: d(cur.start, 1) },
-    { id: 9, category: 'Coffee', amount: 8.75, date: d(cur.start, 2) },
-    { id: 10, category: 'Gas', amount: 55.00, date: d(cur.start, 3) }
-  ];
+  const errors = [];
+  if (password.length < 8) errors.push('• at least 8 characters');
+  if (!/[A-Z]/.test(password)) errors.push('• an uppercase letter');
+  if (!/[a-z]/.test(password)) errors.push('• a lowercase letter');
+  if (!/[0-9]/.test(password)) errors.push('• a number');
+  if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) errors.push('• a special character');
+  if (errors.length > 0) return showAuthMessage('Password needs:\n' + errors.join('\n'), 'error');
 
-  const mk = off => { const m = new Date(today.getFullYear(), today.getMonth() + off, 1); return `${m.getFullYear()}-${String(m.getMonth()+1).padStart(2,'0')}`; };
-  window.utilities = [
-    { id: 101, type: '\u26a1 Hydro', amount: 96.40, month: mk(0) },
-    { id: 102, type: '\ud83d\udce1 Internet', amount: 79.99, month: mk(0) },
-    { id: 103, type: '\ud83d\udd25 Gas', amount: 112.30, month: mk(0) },
-    { id: 104, type: '\u26a1 Hydro', amount: 104.10, month: mk(-1) },
-    { id: 105, type: '\ud83d\udce1 Internet', amount: 79.99, month: mk(-1) }
-  ];
+  try {
+    showAuthMessage('Creating account...', 'info');
+    await createUserWithEmailAndPassword(auth, email, password);
+    showAuthMessage('Account created. You can now sign in.', 'success');
+    document.getElementById('firebase-email').value = '';
+    document.getElementById('firebase-password').value = '';
+  } catch (error) {
+    console.error('Signup error:', error);
+    let msg = 'Could not create account';
+    if (error.code === 'auth/email-already-in-use') msg = 'Email already in use';
+    else if (error.code === 'auth/invalid-email') msg = 'Invalid email';
+    else if (error.code === 'auth/weak-password') msg = 'Password too weak';
+    showAuthMessage(msg, 'error');
+  }
+};
 
-  window.currentUser = { uid: 'preview' };
-  window.saveToFirebase = function() {}; // no-op in preview
+// FORGOT PASSWORD
+window.firebaseForgotPassword = async function() {
+  const email = document.getElementById('firebase-email').value.trim();
+  if (!email) return showAuthMessage('Enter your email to reset password', 'warning');
+  try {
+    showAuthMessage('Sending reset email...', 'info');
+    await sendPasswordResetEmail(auth, email);
+    showAuthMessage('Password reset email sent. Check your inbox.', 'success');
+  } catch (error) {
+    console.error('Forgot password error:', error);
+    showAuthMessage('Could not send reset email', 'error');
+  }
+};
 
-  checkFirstTimeUser();
-})();
+// SIGN OUT (new)
+window.firebaseSignOut = async function() {
+  if (!confirm('Sign out?')) return;
+  try {
+    if (unsubscribe) { unsubscribe(); unsubscribe = null; }
+    await signOut(auth);
+    closeSettings();
+  } catch (error) {
+    console.error('Sign out error:', error);
+  }
+};
+
+// RESET (new — actually deletes the data in Firestore)
+window.resetFirebaseData = async function() {
+  if (!window.currentUser) throw new Error('Not logged in');
+  if (unsubscribe) { unsubscribe(); unsubscribe = null; }
+  await setDoc(doc(db, 'users', window.currentUser.uid), {
+    settings: {},
+    transactions: [],
+    salaries: {},
+    otherIncomes: {},
+    utilities: [],
+    lastUpdated: new Date().toISOString()
+  });
+};
+
+// LOAD
+async function loadFirebaseData() {
+  if (!window.currentUser) return;
+  try {
+    const docRef = doc(db, 'users', window.currentUser.uid);
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists()) {
+      const data = docSnap.data();
+      window.settings = (data.settings && data.settings.startDate) ? data.settings : null;
+      window.transactions = data.transactions || [];
+      window.salaries = data.salaries || {};
+      window.otherIncomes = data.otherIncomes || {};
+      window.utilities = data.utilities || [];
+    } else {
+      window.settings = null;
+      window.transactions = [];
+      window.salaries = {};
+      window.otherIncomes = {};
+      window.utilities = [];
+      await setDoc(docRef, {
+        settings: {}, transactions: [], salaries: {}, otherIncomes: {}, utilities: [],
+        lastUpdated: new Date().toISOString()
+      });
+    }
+    // Real-time listener (skips echoes of our own pending writes)
+    unsubscribe = onSnapshot(docRef, (snapshot) => {
+      if (!snapshot.exists() || snapshot.metadata.hasPendingWrites || isSaving) return;
+      const data = snapshot.data();
+      window.settings = (data.settings && data.settings.startDate) ? data.settings : window.settings;
+      window.transactions = data.transactions || [];
+      window.salaries = data.salaries || {};
+      window.otherIncomes = data.otherIncomes || {};
+      window.utilities = data.utilities || [];
+      if (window.settings && window.settings.startDate) {
+        updatePeriodDisplay();
+        updateMonthlyDisplay();
+        renderQuickAddButtons();
+      }
+    });
+  } catch (error) {
+    console.error('Load error:', error);
+  }
+}
+
+// SAVE
+window.saveToFirebase = async function() {
+  if (!window.currentUser) return;
+  try {
+    isSaving = true;
+    await setDoc(doc(db, 'users', window.currentUser.uid), {
+      settings: window.settings || {},
+      transactions: window.transactions || [],
+      salaries: window.salaries || {},
+      otherIncomes: window.otherIncomes || {},
+      utilities: window.utilities || [],
+      lastUpdated: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Save error:', error);
+  } finally {
+    isSaving = false;
+  }
+};
+
+// AUTH STATE
+onAuthStateChanged(auth, async (user) => {
+  if (user) {
+    window.currentUser = user;
+    await loadFirebaseData();
+    document.getElementById('firebase-login-screen').style.display = 'none';
+    checkFirstTimeUser();
+  } else {
+    window.currentUser = null;
+    if (unsubscribe) { unsubscribe(); unsubscribe = null; }
+    document.getElementById('firebase-login-screen').style.display = 'flex';
+  }
+});
 </script>
 
 </body>
