@@ -1574,7 +1574,9 @@ function addUtilityToExpense(id) {
   const monthEnd = new Date(y, m, 0); // last day of the month
   const startDate = new Date(window.settings.startDate + 'T00:00:00');
   startDate.setHours(0, 0, 0, 0);
-  const numFor = d => Math.floor((d - startDate) / 864e5 / 14);
+  // Same rounding as getPeriod(): ceil the day count first, otherwise a
+  // DST transition (23-hour day) shifts period boundaries off by one.
+  const numFor = d => Math.floor(Math.ceil((d - startDate) / 864e5) / 14);
   const today = new Date(); today.setHours(0, 0, 0, 0);
   const currentNum = numFor(today);
 
