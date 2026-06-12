@@ -1195,6 +1195,20 @@ function showInsights() {
     <div class="stat-card"><div class="stat-label">Total saved</div><div class="stat-value" style="color:${allTimeStats.totalSavings >= 0 ? 'var(--positive)' : 'var(--negative)'}">$${allTimeStats.totalSavings.toFixed(0)}</div></div>
   </div></div>`;
 
+  const yearlyStats = calculateYearlyStats();
+  if (yearlyStats.length > 0) {
+    html += `<div class="insight-section"><div class="insight-title">📅 Year by year</div>${
+      yearlyStats.map(y =>
+        `<div class="insight-card">
+          <div>
+            <div style="font-weight:600">${y.year}</div>
+            <div style="font-size:.75rem;color:var(--ink-faint)">In $${y.income.toFixed(0)} · Out $${y.expenses.toFixed(0)} · ${y.periods} period${y.periods === 1 ? '' : 's'}</div>
+          </div>
+          <span class="insight-value" style="color:${y.savings >= 0 ? 'var(--positive)' : 'var(--negative)'}">${y.savings >= 0 ? '+' : ''}$${y.savings.toFixed(0)}</span>
+        </div>`).join('')
+    }</div>`;
+  }
+
   if (allTimeStats.topCategories.length > 0) {
     html += `<div class="insight-section"><div class="insight-title">🏆 Top spending categories</div><div class="category-breakdown">${
       allTimeStats.topCategories.slice(0, 5).map((cat, idx) =>
@@ -1210,6 +1224,35 @@ function getCategoryBreakdown(expenses) {
   const categories = {};
   expenses.forEach(exp => { categories[exp.category] = (categories[exp.category] || 0) + exp.amount; });
   return Object.keys(categories).map(cat => ({ category: cat, amount: categories[cat] })).sort((a, b) => b.amount - a.amount);
+}
+
+// Buckets every pay period (with data) into the calendar year of its
+// start date, so Insights can show year-over-year totals.
+function calculateYearlyStats() {
+  if (!window.settings || !window.settings.startDate) return [];
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const startDate = new Date(window.settings.startDate + 'T00:00:00'); startDate.setHours(0, 0, 0, 0);
+  const daysSinceStart = Math.floor((today - startDate) / 864e5);
+  const totalPeriods = Math.floor(daysSinceStart / 14) + 1;
+  const years = {};
+  for (let i = 0; i < totalPeriods; i++) {
+    const periodStart = new Date(startDate); periodStart.setDate(periodStart.getDate() + 14 * i);
+    const periodEnd = new Date(periodStart); periodEnd.setDate(periodEnd.getDate() + 13); periodEnd.setHours(23, 59, 59, 999);
+    const periodKey = `period-${periodStart.getFullYear()}-${String(periodStart.getMonth() + 1).padStart(2, '0')}-${String(periodStart.getDate()).padStart(2, '0')}`;
+    const income = (window.salaries[periodKey] || 0) + (window.otherIncomes[periodKey] || 0);
+    const expenses = window.transactions.filter(t => {
+      const tDate = new Date(t.date); tDate.setHours(0, 0, 0, 0);
+      return tDate >= periodStart && tDate <= periodEnd;
+    }).reduce((s, t) => s + t.amount, 0);
+    if (income === 0 && expenses === 0) continue;
+    const y = periodStart.getFullYear();
+    years[y] = years[y] || { year: y, income: 0, expenses: 0, savings: 0, periods: 0 };
+    years[y].income += income;
+    years[y].expenses += expenses;
+    years[y].savings += income - expenses;
+    years[y].periods++;
+  }
+  return Object.values(years).sort((a, b) => b.year - a.year);
 }
 
 function calculateAllTimeStats() {
