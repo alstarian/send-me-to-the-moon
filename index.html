@@ -278,6 +278,22 @@ input:focus, select:focus {
 }
 select { appearance: none; -webkit-appearance: none; }
 
+/* iOS Safari: date inputs ignore width unless native appearance is
+   stripped; text kept centre-aligned by choice */
+input[type="date"] {
+  -webkit-appearance: none;
+  appearance: none;
+  display: block;
+  min-width: 0;
+  max-width: 100%;
+  min-height: 47px;
+  text-align: center;
+}
+input[type="date"]::-webkit-date-and-time-value {
+  text-align: center;
+  margin: 0;
+}
+
 .btn {
   width: 100%;
   background: var(--ink);
