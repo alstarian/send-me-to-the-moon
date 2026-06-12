@@ -1020,7 +1020,7 @@ function stripLeadingEmoji(str) {
 }
 
 function fmtMoney(n, decimals = 0) {
-  return `$${n.toFixed(decimals)}`;
+  return `$${n.toLocaleString('en-CA', { minimumFractionDigits: decimals, maximumFractionDigits: decimals })}`;
 }
 
 // Single saveData. The Firebase module attaches window.saveToFirebase;
@@ -1154,8 +1154,8 @@ function showAnalytics() {
   } else {
     const totalAvg = analytics.reduce((s, i) => s + i.average, 0);
     body.innerHTML = `<table class="analytics-table"><thead><tr><th>Utility</th><th>Months</th><th>Total</th><th>Average</th></tr></thead><tbody>${
-      analytics.map(item => `<tr><td>${escapeHtml(item.type)}</td><td>${item.count}</td><td>$${item.total.toFixed(2)}</td><td>$${item.average.toFixed(2)}</td></tr>`).join('')
-    }</tbody><tfoot><tr style="font-weight:700"><td>Monthly average</td><td></td><td></td><td>$${totalAvg.toFixed(2)}</td></tr></tfoot></table>`;
+      analytics.map(item => `<tr><td>${escapeHtml(item.type)}</td><td>${item.count}</td><td>${fmtMoney(item.total, 2)}</td><td>${fmtMoney(item.average, 2)}</td></tr>`).join('')
+    }</tbody><tfoot><tr style="font-weight:700"><td>Monthly average</td><td></td><td></td><td>${fmtMoney(totalAvg, 2)}</td></tr></tfoot></table>`;
   }
   modal.classList.add('active');
 }
@@ -1187,7 +1187,7 @@ function showInsights() {
   let html = `<div class="insight-section"><div class="insight-title">💰 This pay period</div>${
     currentCategories.length > 0
       ? `<div class="category-breakdown">${currentCategories.slice(0, 3).map(cat =>
-          `<div class="category-item"><span class="category-name">${escapeHtml(cat.category)}</span><span class="category-amount">$${cat.amount.toFixed(2)}</span></div>`).join('')}</div>`
+          `<div class="category-item"><span class="category-name">${escapeHtml(cat.category)}</span><span class="category-amount">${fmtMoney(cat.amount, 2)}</span></div>`).join('')}</div>`
       : '<div class="empty-state" style="padding:16px">No expenses yet this period</div>'
   }</div>`;
 
@@ -1196,19 +1196,19 @@ function showInsights() {
     const expenseChangePercent = previousTotal > 0 ? expenseChange / previousTotal * 100 : 0;
     const savingsChange = currentSavings - previousSavings;
     html += `<div class="insight-section"><div class="insight-title">📊 vs last period</div>
-      <div class="insight-card"><span class="insight-label">Total expenses</span><div><span class="insight-value">$${currentTotal.toFixed(0)}</span>${
+      <div class="insight-card"><span class="insight-label">Total expenses</span><div><span class="insight-value">${fmtMoney(currentTotal, 0)}</span>${
         Math.abs(expenseChangePercent) > 0
           ? `<span class="insight-trend ${expenseChange > 0 ? 'up' : 'down'}">${expenseChange > 0 ? '↑' : '↓'} ${Math.abs(expenseChangePercent).toFixed(0)}%</span>` : ''
       }</div></div>
-      <div class="insight-card"><span class="insight-label">Savings change</span><div><span class="insight-value" style="color:${savingsChange >= 0 ? 'var(--positive)' : 'var(--negative)'}">${savingsChange >= 0 ? '+' : ''}$${savingsChange.toFixed(0)}</span></div></div>
+      <div class="insight-card"><span class="insight-label">Savings change</span><div><span class="insight-value" style="color:${savingsChange >= 0 ? 'var(--positive)' : 'var(--negative)'}">${savingsChange >= 0 ? '+' : ''}${fmtMoney(savingsChange, 0)}</span></div></div>
     </div>`;
   }
 
   html += `<div class="insight-section"><div class="insight-title">🎯 All-time stats</div><div class="stat-grid">
     <div class="stat-card"><div class="stat-label">Periods tracked</div><div class="stat-value">${allTimeStats.periodsTracked}</div></div>
-    <div class="stat-card"><div class="stat-label">Avg savings</div><div class="stat-value" style="color:${allTimeStats.avgSavings >= 0 ? 'var(--positive)' : 'var(--negative)'}">$${allTimeStats.avgSavings.toFixed(0)}</div></div>
-    <div class="stat-card"><div class="stat-label">Best period</div><div class="stat-value">$${allTimeStats.bestSavings.toFixed(0)}</div></div>
-    <div class="stat-card"><div class="stat-label">Total saved</div><div class="stat-value" style="color:${allTimeStats.totalSavings >= 0 ? 'var(--positive)' : 'var(--negative)'}">$${allTimeStats.totalSavings.toFixed(0)}</div></div>
+    <div class="stat-card"><div class="stat-label">Avg savings</div><div class="stat-value" style="color:${allTimeStats.avgSavings >= 0 ? 'var(--positive)' : 'var(--negative)'}">${fmtMoney(allTimeStats.avgSavings, 0)}</div></div>
+    <div class="stat-card"><div class="stat-label">Best period</div><div class="stat-value">${fmtMoney(allTimeStats.bestSavings, 0)}</div></div>
+    <div class="stat-card"><div class="stat-label">Total saved</div><div class="stat-value" style="color:${allTimeStats.totalSavings >= 0 ? 'var(--positive)' : 'var(--negative)'}">${fmtMoney(allTimeStats.totalSavings, 0)}</div></div>
   </div></div>`;
 
   const yearlyStats = calculateYearlyStats();
@@ -1218,9 +1218,9 @@ function showInsights() {
         `<div class="insight-card">
           <div>
             <div style="font-weight:600">${y.year}</div>
-            <div style="font-size:.75rem;color:var(--ink-faint)">In $${y.income.toFixed(0)} · Out $${y.expenses.toFixed(0)} · ${y.periods} period${y.periods === 1 ? '' : 's'}</div>
+            <div style="font-size:.75rem;color:var(--ink-faint)">In ${fmtMoney(y.income, 0)} · Out ${fmtMoney(y.expenses, 0)} · ${y.periods} period${y.periods === 1 ? '' : 's'}</div>
           </div>
-          <span class="insight-value" style="color:${y.savings >= 0 ? 'var(--positive)' : 'var(--negative)'}">${y.savings >= 0 ? '+' : ''}$${y.savings.toFixed(0)}</span>
+          <span class="insight-value" style="color:${y.savings >= 0 ? 'var(--positive)' : 'var(--negative)'}">${y.savings >= 0 ? '+' : ''}${fmtMoney(y.savings, 0)}</span>
         </div>`).join('')
     }</div>`;
   }
@@ -1228,7 +1228,7 @@ function showInsights() {
   if (allTimeStats.topCategories.length > 0) {
     html += `<div class="insight-section"><div class="insight-title">🏆 Top spending categories</div><div class="category-breakdown">${
       allTimeStats.topCategories.slice(0, 5).map((cat, idx) =>
-        `<div class="category-item"><span class="category-name">${idx + 1}. ${escapeHtml(cat.category)}</span><span class="category-amount">$${cat.total.toFixed(0)}</span></div>`).join('')
+        `<div class="category-item"><span class="category-name">${idx + 1}. ${escapeHtml(cat.category)}</span><span class="category-amount">${fmtMoney(cat.total, 0)}</span></div>`).join('')
     }</div></div>`;
   }
   body.innerHTML = html;
@@ -1591,7 +1591,7 @@ function renderExpenses(expenses) {
         <div class="expense-info">
           <div class="expense-desc">${escapeHtml(exp.category)}</div>
         </div>
-        <div class="expense-amount">$${exp.amount.toFixed(2)}</div>
+        <div class="expense-amount">${fmtMoney(exp.amount, 2)}</div>
       </div>
       <div class="swipe-actions">
         <button class="action-btn edit">✏️<span>Edit</span></button>
@@ -1617,7 +1617,7 @@ function renderUtilities(utilityList) {
         </div>
         <button class="util-count-btn${counted ? ' counted' : ''}" data-util-id="${util.id}"
           title="${counted ? 'Already added to expenses' : 'Add to expenses'}">${counted ? '✓' : '+'}</button>
-        <div class="expense-amount">$${util.amount.toFixed(2)}</div>
+        <div class="expense-amount">${fmtMoney(util.amount, 2)}</div>
       </div>
       <div class="swipe-actions">
         <button class="action-btn edit">✏️<span>Edit</span></button>
@@ -1675,7 +1675,7 @@ function addUtilityToExpense(id) {
 
   pendingUtilityId = id;
   document.getElementById('period-picker-sub').textContent =
-    `${util.type} — $${util.amount.toFixed(2)}`;
+    `${util.type} — ${fmtMoney(util.amount, 2)}`;
   const container = document.getElementById('period-picker-options');
   container.innerHTML = '';
   periods.forEach(p => {
