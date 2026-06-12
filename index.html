@@ -980,6 +980,11 @@ function escapeHtml(str) {
   return String(str).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
 
+// "💧 Water" -> "Water" (utility list keeps the emoji; expenses don't)
+function stripLeadingEmoji(str) {
+  return String(str).replace(/^[^\p{L}\p{N}]+\s*/u, '').trim() || String(str).trim();
+}
+
 function fmtMoney(n, decimals = 0) {
   return `$${n.toFixed(decimals)}`;
 }
@@ -1313,7 +1318,7 @@ function saveEdit() {
       // Keep the linked expense (if counted) in sync
       const linked = window.transactions.find(t => t.utilityId === editingItem.id);
       if (linked) {
-        linked.category = newCategory;
+        linked.category = stripLeadingEmoji(newCategory);
         linked.amount = newAmount;
         updatePeriodDisplay();
         renderQuickAddButtons();
@@ -1624,7 +1629,7 @@ function confirmUtilityPeriod(periodNum) {
   const expenseDate = (today >= ps && today <= pe) ? today : ps;
   window.transactions.push({
     id: Date.now(),
-    category: util.type,
+    category: stripLeadingEmoji(util.type),
     amount: util.amount,
     date: expenseDate.toISOString(),
     utilityId: util.id
